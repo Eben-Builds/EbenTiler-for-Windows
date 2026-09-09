@@ -67,6 +67,8 @@ namespace RectangleWindows
         private CheckBox _winModifier;
         private CheckBox _cycleHalves;
         private NumericUpDown _gap;
+        private PreviewPanel _preview;
+        private Label _previewNote;
 
         public Config ResultConfig { get { return _config; } }
 
@@ -91,24 +93,28 @@ namespace RectangleWindows
         private void BuildUi()
         {
             Text = "Rectangle for Windows - 단축키 설정";
-            FormBorderStyle = FormBorderStyle.FixedDialog;
+            ShowIcon = true;
+            Icon = AppIcon.LoadLarge();
+            // FixedDialog 로 두면 제목 표시줄에 아이콘이 나오지 않는다.
+            // 크기 조절은 막으면서 아이콘은 보이는 FixedSingle 을 쓴다.
+            FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.White;
             Font = new Font("Malgun Gothic", 9f * _scale, GraphicsUnit.Point);
-            ClientSize = new Size(S(560), S(600));
+            ClientSize = new Size(S(660), S(560));
             KeyPreview = true;
 
             Label listLabel = new Label();
             listLabel.Text = "기능을 고른 뒤 아래에서 새 단축키를 눌러 지정하세요.";
             listLabel.Location = new Point(S(14), S(12));
-            listLabel.Size = new Size(S(520), S(20));
+            listLabel.Size = new Size(S(392), S(20));
             Controls.Add(listLabel);
 
             _list = new ListView();
             _list.Location = new Point(S(14), S(36));
-            _list.Size = new Size(S(532), S(360));
+            _list.Size = new Size(S(392), S(404));
             _list.View = View.Details;
             _list.FullRowSelect = true;
             _list.MultiSelect = false;
@@ -116,73 +122,94 @@ namespace RectangleWindows
             _list.BorderStyle = BorderStyle.FixedSingle;
             _list.AccessibleName = "기능 목록";
             _list.TabIndex = 0;
-            _list.Columns.Add("기능", S(200));
-            _list.Columns.Add("단축키", S(240));
-            _list.Columns.Add("분류", S(80));
+            _list.Columns.Add("기능", S(160));
+            _list.Columns.Add("단축키", S(150));
+            _list.Columns.Add("분류", S(58));
             _list.SelectedIndexChanged += OnSelectionChanged;
             Controls.Add(_list);
 
-            Label captureLabel = new Label();
-            captureLabel.Text = "새 단축키";
-            captureLabel.Location = new Point(S(14), S(408));
-            captureLabel.Size = new Size(S(70), S(22));
-            Controls.Add(captureLabel);
+            // ── 오른쪽 칸: 고른 기능이 창을 어디에 놓는지 그림으로 보여 준다 ──
+            Label previewLabel = new Label();
+            previewLabel.Text = "미리보기";
+            previewLabel.Location = new Point(S(418), S(12));
+            previewLabel.Size = new Size(S(228), S(20));
+            Controls.Add(previewLabel);
 
-            _capture = new HotkeyCaptureBox();
-            _capture.Location = new Point(S(84), S(405));
-            _capture.Size = new Size(S(260), S(26));
-            _capture.AccessibleName = "새 단축키 입력";
-            _capture.TabIndex = 1;
-            Controls.Add(_capture);
+            _preview = new PreviewPanel();
+            _preview.Location = new Point(S(418), S(36));
+            _preview.Size = new Size(S(228), S(178));
+            _preview.AccessibleName = "배치 미리보기";
+            Controls.Add(_preview);
 
-            _winModifier = new CheckBox();
-            _winModifier.Text = "Win 키 포함";
-            _winModifier.Location = new Point(S(354), S(407));
-            _winModifier.Size = new Size(S(110), S(22));
-            _winModifier.FlatStyle = FlatStyle.Flat;
-            Controls.Add(_winModifier);
-
-            Button assign = MakeButton("이 단축키로 지정", S(14), S(440), S(140));
-            assign.Click += OnAssign;
-            Controls.Add(assign);
-
-            Button clear = MakeButton("단축키 지우기", S(164), S(440), S(120));
-            clear.Click += OnClear;
-            Controls.Add(clear);
-
-            Button reset = MakeButton("전체 기본값 복원", S(294), S(440), S(140));
-            reset.Click += OnResetDefaults;
-            Controls.Add(reset);
+            _previewNote = new Label();
+            _previewNote.Location = new Point(S(418), S(222));
+            _previewNote.Size = new Size(S(228), S(96));
+            _previewNote.ForeColor = Color.FromArgb(90, 100, 115);
+            Controls.Add(_previewNote);
 
             _cycleHalves = new CheckBox();
             _cycleHalves.Text = "같은 단축키를 연달아 누르면 1/2 → 1/3 → 2/3 으로 폭 바꾸기";
-            _cycleHalves.Location = new Point(S(14), S(482));
-            _cycleHalves.Size = new Size(S(460), S(24));
+            _cycleHalves.Location = new Point(S(418), S(326));
+            _cycleHalves.Size = new Size(S(228), S(48));
             _cycleHalves.FlatStyle = FlatStyle.Flat;
             _cycleHalves.Checked = _config.CycleHalves;
             Controls.Add(_cycleHalves);
 
             Label gapLabel = new Label();
             gapLabel.Text = "창 사이 여백(픽셀)";
-            gapLabel.Location = new Point(S(14), S(514));
-            gapLabel.Size = new Size(S(130), S(22));
+            gapLabel.Location = new Point(S(418), S(382));
+            gapLabel.Size = new Size(S(140), S(22));
             Controls.Add(gapLabel);
 
             _gap = new NumericUpDown();
-            _gap.Location = new Point(S(148), S(511));
+            _gap.Location = new Point(S(418), S(406));
             _gap.Size = new Size(S(70), S(24));
             _gap.Minimum = 0;
             _gap.Maximum = 100;
             _gap.Value = Math.Max(0, Math.Min(100, _config.Gap));
             _gap.BorderStyle = BorderStyle.FixedSingle;
             _gap.AccessibleName = "창 사이 여백";
+            _gap.ValueChanged += delegate { _preview.Invalidate(); };
             Controls.Add(_gap);
 
-            Button save = MakeButton("저장", S(346), S(552), S(90));
+            // ── 아래쪽: 단축키 지정 ──
+            Label captureLabel = new Label();
+            captureLabel.Text = "새 단축키";
+            captureLabel.Location = new Point(S(14), S(452));
+            captureLabel.Size = new Size(S(70), S(22));
+            Controls.Add(captureLabel);
+
+            _capture = new HotkeyCaptureBox();
+            _capture.Location = new Point(S(84), S(449));
+            _capture.Size = new Size(S(230), S(26));
+            _capture.AccessibleName = "새 단축키 입력";
+            _capture.TabIndex = 1;
+            Controls.Add(_capture);
+
+            _winModifier = new CheckBox();
+            _winModifier.Text = "Win 포함";
+            _winModifier.Location = new Point(S(322), S(451));
+            _winModifier.Size = new Size(S(84), S(22));
+            _winModifier.FlatStyle = FlatStyle.Flat;
+            Controls.Add(_winModifier);
+
+            Button assign = MakeButton("이 단축키로 지정", S(14), S(484), S(130));
+            assign.Click += OnAssign;
+            Controls.Add(assign);
+
+            Button clear = MakeButton("단축키 지우기", S(152), S(484), S(110));
+            clear.Click += OnClear;
+            Controls.Add(clear);
+
+            Button reset = MakeButton("전체 기본값 복원", S(270), S(484), S(136));
+            reset.Click += OnResetDefaults;
+            Controls.Add(reset);
+
+            Button save = MakeButton("저장", S(446), S(484), S(90));
             save.Click += OnSave;
             Controls.Add(save);
 
-            Button cancel = MakeButton("취소", S(446), S(552), S(90));
+            Button cancel = MakeButton("취소", S(546), S(484), S(90));
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
             Controls.Add(cancel);
 
@@ -258,6 +285,9 @@ namespace RectangleWindows
             Hotkey hotkey = _config.Get(action);
             _capture.Captured = hotkey;
             _winModifier.Checked = hotkey.Win;
+
+            _preview.SetAction(action);
+            _previewNote.Text = SnapActions.Label(action) + "\r\n" + PreviewPanel.Describe(action);
         }
 
         private void OnAssign(object sender, EventArgs e)

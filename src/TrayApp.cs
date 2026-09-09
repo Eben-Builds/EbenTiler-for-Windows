@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace RectangleWindows
@@ -14,6 +15,7 @@ namespace RectangleWindows
         private readonly HotkeyManager _hotkeys;
         private readonly NotifyIcon _tray;
         private readonly ToolStripMenuItem _startupItem;
+        private ContextMenuStrip _menu;
         private SettingsForm _settingsForm;
 
         public TrayApp()
@@ -25,8 +27,11 @@ namespace RectangleWindows
             _hotkeys = new HotkeyManager();
             _hotkeys.HotkeyPressed += OnHotkeyPressed;
 
+            // 체크 표시가 그려질 왼쪽 여백을 남겨 둔다. 이걸 끄면 체크가 보이지 않는다.
+            // 체크 전용 여백까지 켜면 칸이 두 겹으로 생기므로 이미지 여백 하나만 쓴다.
             ContextMenuStrip menu = new ContextMenuStrip();
-            menu.ShowImageMargin = false;
+            menu.ShowImageMargin = true;
+            menu.ShowCheckMargin = false;
 
             ToolStripMenuItem settingsItem = new ToolStripMenuItem("단축키 설정...");
             settingsItem.Click += delegate { ShowSettings(); };
@@ -44,12 +49,18 @@ namespace RectangleWindows
             exitItem.Click += delegate { ExitApp(); };
             menu.Items.Add(exitItem);
 
+            // 메뉴를 열 때마다 실제 상태를 다시 읽어 체크를 맞춘다.
+            // 설정 창이나 다른 곳에서 값이 바뀌었을 수 있기 때문이다.
+            menu.Opening += delegate { _startupItem.Checked = Startup.IsEnabled(); };
+
+            _menu = menu;
+
             _tray = new NotifyIcon();
             _tray.Icon = LoadIcon();
             _tray.Text = "Rectangle for Windows";
             _tray.ContextMenuStrip = menu;
             _tray.Visible = true;
-            _tray.DoubleClick += delegate { ShowSettings(); };
+            _tray.MouseUp += OnTrayMouseUp;
 
             int failedCount = ApplyHotkeys(true);
 
@@ -70,6 +81,39 @@ namespace RectangleWindows
                     "아이콘은 작업표시줄 오른쪽 숨김(∧) 안에 있을 수 있습니다.";
                 _tray.BalloonTipIcon = ToolTipIcon.Info;
                 _tray.ShowBalloonTip(7000);
+            }
+        }
+
+        /// <summary>
+        /// 아이콘을 왼쪽으로 눌러도 메뉴가 뜨게 한다.
+        /// 오른쪽 클릭은 NotifyIcon 이 알아서 처리한다.
+        /// </summary>
+        private void OnTrayMouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left)
+            {
+                return;
+            }
+
+            // NotifyIcon 의 내부 메뉴 표시 로직을 그대로 쓴다.
+            // 이렇게 해야 메뉴 밖을 눌렀을 때 정상적으로 닫힌다.
+            try
+            {
+                MethodInfo method = typeof(NotifyIcon).GetMethod(
+                    "ShowContextMenu", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (method != null)
+                {
+                    method.Invoke(_tray, null);
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            if (_menu != null)
+            {
+                _menu.Show(Control.MousePosition);
             }
         }
 

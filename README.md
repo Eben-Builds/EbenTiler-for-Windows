@@ -78,9 +78,13 @@ build\Rectangle.exe
 알림 영역(작업표시줄 오른쪽)에 아이콘이 생긴다. **아이콘이 안 보이면 `∧` 를 눌러 숨김 목록을 확인**하면 된다.
 Windows 는 처음 보는 프로그램의 아이콘을 기본으로 숨김 처리한다.
 
-- 아이콘 **더블클릭** 또는 오른쪽 클릭 → `단축키 설정...` : 설정 창
-- 오른쪽 클릭 → `Windows 시작할 때 함께 실행` : 자동 시작 등록/해제
-- 오른쪽 클릭 → `종료`
+아이콘을 **왼쪽으로 누르든 오른쪽으로 누르든** 메뉴가 뜬다.
+
+- `단축키 설정...` : 설정 창
+- `Windows 시작할 때 함께 실행` : 자동 시작 등록/해제. 현재 켜져 있으면 앞에 체크 표시가 붙는다.
+- `종료`
+
+메뉴를 열 때마다 실제 등록 상태를 다시 읽어 체크를 맞추므로, 설정을 다른 데서 바꿔도 표시가 어긋나지 않는다.
 
 ## 명령줄에서 쓰기
 
@@ -143,6 +147,9 @@ powershell -ExecutionPolicy Bypass -File tools\verify-more.ps1
 
 # 설정 창을 실제 마우스 클릭과 키 입력으로 조작해서 저장까지 확인
 powershell -ExecutionPolicy Bypass -File tools\verify-settings.ps1
+
+# 알림 영역 아이콘을 눌러 메뉴를 띄우고 체크 표시와 토글 동작 확인
+powershell -ExecutionPolicy Bypass -File tools\verify-tray-menu.ps1
 
 # 설정 창과 알림 영역 화면 캡처
 powershell -ExecutionPolicy Bypass -File tools\capture-ui.ps1

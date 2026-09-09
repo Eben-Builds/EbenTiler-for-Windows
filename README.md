@@ -47,7 +47,29 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 
 결과물은 `build\Rectangle.exe` 하나다. 원하는 곳에 두고 실행하면 된다.
 
+## 설치
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+관리자 권한이 필요 없다. 현재 사용자 계정에만 설치된다.
+
+- 프로그램: `%LOCALAPPDATA%\Programs\Rectangle\Rectangle.exe`
+- 시작 메뉴 바로 가기 등록
+- 윈도우 시작 시 자동 실행 등록 (`-NoStartup` 을 붙이면 등록하지 않는다)
+- 단축키 충돌이 있으면 어떤 것이 겹치는지 알려 준다
+- 설치 후 바로 실행된다
+
+제거는 이렇게 한다. 설정까지 남기고 싶으면 `-KeepConfig` 를 붙인다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
+```
+
 ## 실행
+
+설치했다면 이미 실행 중이다. 설치 없이 그냥 써 보려면:
 
 ```powershell
 build\Rectangle.exe

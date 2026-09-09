@@ -53,11 +53,17 @@ namespace RectangleWindows
 
             int failedCount = ApplyHotkeys(true);
 
-            // 처음 실행이면 어디에 있는지 알려 준다. 알림 영역 아이콘은 숨김 목록에 들어가기 쉽다.
+            // 처음 실행이면 설정 파일을 만들어 둔다. 사용자가 파일을 직접 열어
+            // 단축키를 고칠 수 있어야 하므로, 등록 실패가 있어도 저장은 한다.
+            if (firstRun)
+            {
+                _config.Save();
+            }
+
+            // 알림 영역 아이콘은 숨김 목록에 들어가기 쉬워서 어디 있는지 한 번 알려 준다.
             // 등록 실패 안내가 이미 떠 있으면 그쪽을 우선한다.
             if (firstRun && failedCount == 0)
             {
-                _config.Save();
                 _tray.BalloonTipTitle = "Rectangle for Windows 실행 중";
                 _tray.BalloonTipText =
                     "Ctrl+Alt+방향키로 창을 절반씩 배치하고, Ctrl+Alt+U/I/J/K로 사분면에 붙입니다.\n" +

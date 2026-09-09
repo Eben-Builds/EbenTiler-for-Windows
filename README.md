@@ -129,9 +129,11 @@ conflict=오른쪽 1/3 (Ctrl + Alt + H)
 `assets\app.ico` 를 빌드 때 실행 파일에 박는다. 16 / 24 / 32 / 48 / 64 / 128 / 256 픽셀이 한 파일에 들어 있고,
 **크기마다 따로 그렸다.** 큰 그림 하나를 줄여 쓰면 알림 영역(16픽셀)에서 뭉개지기 때문이다.
 
+모양은 창 두 장이 겹친 것이다. 창을 정리하기 전 모습을 그대로 아이콘으로 삼았다.
+색은 파랑과 흰색만 쓴다. 검정 테두리는 어두운 작업표시줄에서 배경에 묻혀 사라지기 때문이다.
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\make-appicon.ps1   # 아이콘 다시 만들기
-powershell -ExecutionPolicy Bypass -File tools\make-icons.ps1     # 다른 시안들 비교표 만들기
 ```
 
 ## 설정 파일

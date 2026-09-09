@@ -114,6 +114,8 @@ namespace RectangleWindows
             _list.MultiSelect = false;
             _list.HideSelection = false;
             _list.BorderStyle = BorderStyle.FixedSingle;
+            _list.AccessibleName = "기능 목록";
+            _list.TabIndex = 0;
             _list.Columns.Add("기능", S(200));
             _list.Columns.Add("단축키", S(240));
             _list.Columns.Add("분류", S(80));
@@ -129,6 +131,8 @@ namespace RectangleWindows
             _capture = new HotkeyCaptureBox();
             _capture.Location = new Point(S(84), S(405));
             _capture.Size = new Size(S(260), S(26));
+            _capture.AccessibleName = "새 단축키 입력";
+            _capture.TabIndex = 1;
             Controls.Add(_capture);
 
             _winModifier = new CheckBox();
@@ -171,6 +175,7 @@ namespace RectangleWindows
             _gap.Maximum = 100;
             _gap.Value = Math.Max(0, Math.Min(100, _config.Gap));
             _gap.BorderStyle = BorderStyle.FixedSingle;
+            _gap.AccessibleName = "창 사이 여백";
             Controls.Add(_gap);
 
             Button save = MakeButton("저장", S(346), S(552), S(90));

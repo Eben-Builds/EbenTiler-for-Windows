@@ -135,6 +135,10 @@ function Send-Key {
     Start-Sleep -Milliseconds 120
 }
 
+# 상주 중이던 앱을 검사 때문에 잠깐 끄더라도, 끝나면 원래대로 다시 띄운다.
+$installedExe = "$env:LOCALAPPDATA\Programs\Rectangle\Rectangle.exe"
+$wasResident = $null -ne (Get-Process Rectangle -ErrorAction SilentlyContinue)
+
 $settings = $null
 try {
     Get-Process Rectangle -ErrorAction SilentlyContinue | Stop-Process -Force
@@ -232,6 +236,14 @@ finally {
         Remove-Item $configPath -Force
     }
     [SetUI.U]::SetCursorPos($cursorX, $cursorY) | Out-Null
+
+    # 검사 전에 상주 중이었으면 다시 띄워 준다.
+    if ($wasResident -and (Test-Path $installedExe) -and -not (Get-Process Rectangle -ErrorAction SilentlyContinue)) {
+        Start-Process -FilePath $installedExe | Out-Null
+        Start-Sleep -Seconds 2
+        Write-Host "상주 중이던 Rectangle 을 다시 띄웠습니다."
+    }
+
     Write-Host ""
     Write-Host "원래 설정 상태와 마우스 위치로 되돌렸습니다."
 }

@@ -155,7 +155,16 @@ $originalStartup = Get-Startup
 
 try {
     if (-not (Get-Process Rectangle -ErrorAction SilentlyContinue)) {
-        throw "Rectangle 이 실행 중이 아닙니다. install.ps1 로 설치하거나 실행하세요."
+        $installedExe = "$env:LOCALAPPDATA\Programs\Rectangle\Rectangle.exe"
+        if (-not (Test-Path $installedExe)) {
+            throw "Rectangle 이 실행 중이 아니고 설치본도 없습니다. install.ps1 로 설치하세요."
+        }
+        Start-Process -FilePath $installedExe | Out-Null
+        Start-Sleep -Seconds 3
+        if (-not (Get-Process Rectangle -ErrorAction SilentlyContinue)) {
+            throw "Rectangle 을 띄우지 못했습니다."
+        }
+        Write-Host "Rectangle 이 꺼져 있어 설치본을 실행했습니다."
     }
 
     # 1) 아이콘 클릭 -> 메뉴 열림

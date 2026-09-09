@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Reflection;
 using System.Windows.Forms;
 
@@ -56,7 +55,7 @@ namespace RectangleWindows
             _menu = menu;
 
             _tray = new NotifyIcon();
-            _tray.Icon = LoadIcon();
+            _tray.Icon = AppIcon.LoadSmall();
             _tray.Text = "Rectangle for Windows";
             _tray.ContextMenuStrip = menu;
             _tray.Visible = true;
@@ -188,43 +187,6 @@ namespace RectangleWindows
             _tray.Dispose();
             _hotkeys.Dispose();
             ExitThread();
-        }
-
-        /// <summary>실행 파일에 박힌 아이콘을 쓰고, 없으면 직접 그린다.</summary>
-        private static Icon LoadIcon()
-        {
-            try
-            {
-                Icon icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-                if (icon != null)
-                {
-                    return icon;
-                }
-            }
-            catch (Exception)
-            {
-            }
-
-            Bitmap bitmap = new Bitmap(32, 32);
-            using (Graphics g = Graphics.FromImage(bitmap))
-            {
-                g.SmoothingMode = SmoothingMode.None;
-                g.Clear(Color.Transparent);
-                using (SolidBrush fill = new SolidBrush(Color.FromArgb(230, 240, 240, 240)))
-                {
-                    g.FillRectangle(fill, 3, 5, 26, 22);
-                }
-                using (Pen pen = new Pen(Color.FromArgb(255, 40, 40, 40), 2f))
-                {
-                    g.DrawRectangle(pen, 3, 5, 26, 22);
-                    g.DrawLine(pen, 16, 5, 16, 27);
-                }
-                using (SolidBrush accent = new SolidBrush(Color.FromArgb(255, 40, 40, 40)))
-                {
-                    g.FillRectangle(accent, 4, 6, 12, 20);
-                }
-            }
-            return Icon.FromHandle(bitmap.GetHicon());
         }
     }
 }

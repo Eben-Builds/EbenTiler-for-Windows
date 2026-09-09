@@ -141,6 +141,13 @@ namespace RectangleWindows
         [DllImport("dwmapi.dll")]
         public static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
 
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        public static extern uint ExtractIconEx(string file, int index,
+            IntPtr[] largeIcons, IntPtr[] smallIcons, uint count);
+
+        [DllImport("user32.dll")]
+        public static extern bool DestroyIcon(IntPtr handle);
+
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetProcessDpiAwarenessContext(IntPtr value);
 

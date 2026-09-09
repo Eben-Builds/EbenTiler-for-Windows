@@ -11,7 +11,14 @@ $root      = Split-Path -Parent $MyInvocation.MyCommand.Path
 $srcDir    = Join-Path $root 'src'
 $outDir    = Join-Path $root 'build'
 $exePath   = Join-Path $outDir 'Rectangle.exe'
-$iconPath  = Join-Path $outDir 'app.ico'
+
+# 정식 아이콘이 있으면 그것을 쓴다. 없으면 아래에서 임시 아이콘을 그려 만든다.
+$assetIcon = Join-Path $root 'assets\app.ico'
+if (Test-Path $assetIcon) {
+    $iconPath = $assetIcon
+} else {
+    $iconPath = Join-Path $outDir 'app.ico'
+}
 
 $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) {

@@ -154,7 +154,8 @@ namespace RectangleWindows
             map[SnapAction.BottomRight] = "Ctrl+Alt+K";
             map[SnapAction.FirstThird] = "Ctrl+Alt+D";
             map[SnapAction.CenterThird] = "Ctrl+Alt+F";
-            map[SnapAction.LastThird] = "Ctrl+Alt+G";
+            // Ctrl+Alt+G 는 다른 프로그램(게임 오버레이 등)이 선점하는 경우가 잦아 H 를 쓴다.
+            map[SnapAction.LastThird] = "Ctrl+Alt+H";
             map[SnapAction.FirstTwoThirds] = "Ctrl+Alt+E";
             map[SnapAction.LastTwoThirds] = "Ctrl+Alt+T";
             map[SnapAction.Maximize] = "Ctrl+Alt+Enter";

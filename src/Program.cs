@@ -93,6 +93,17 @@ namespace RectangleWindows
             IntPtr hwnd = IntPtr.Zero;
             bool infoOnly = false;
 
+            // --out 은 인수 순서와 상관없이 먹혀야 하므로 먼저 훑는다.
+            // (--check 처럼 바로 끝나는 인수가 앞에 와도 결과 파일이 남도록)
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i] == "--out")
+                {
+                    _outputPath = args[i + 1];
+                    break;
+                }
+            }
+
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
@@ -122,6 +133,34 @@ namespace RectangleWindows
                 if (arg == "--settings")
                 {
                     return ShowSettingsOnly();
+                }
+
+                if (arg == "--check")
+                {
+                    return CheckHotkeys();
+                }
+
+                if (arg == "--startup" && i + 1 < args.Length)
+                {
+                    string mode = args[i + 1];
+                    i++;
+
+                    if (string.Equals(mode, "on", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Startup.SetEnabled(true);
+                    }
+                    else if (string.Equals(mode, "off", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Startup.SetEnabled(false);
+                    }
+                    else if (!string.Equals(mode, "status", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Emit("--startup 에는 on, off, status 중 하나를 적어 주세요.");
+                        return 2;
+                    }
+
+                    Emit("startup=" + (Startup.IsEnabled() ? "on" : "off"));
+                    return 0;
                 }
 
                 if (arg == "--out" && i + 1 < args.Length)
@@ -227,6 +266,43 @@ namespace RectangleWindows
             return 0;
         }
 
+        /// <summary>
+        /// 설정에 있는 단축키를 실제로 등록해 보고, 다른 프로그램이 이미 쓰고 있어
+        /// 실패하는 것이 있는지 알려 준다. 등록해 본 뒤 곧바로 해제한다.
+        /// </summary>
+        private static int CheckHotkeys()
+        {
+            Config config = Config.Load();
+            using (HotkeyManager manager = new HotkeyManager())
+            {
+                System.Collections.Generic.List<string> failed = manager.RegisterAll(config);
+
+                SnapAction[] ordered = SnapActions.Ordered;
+                int registered = 0;
+                int empty = 0;
+                for (int i = 0; i < ordered.Length; i++)
+                {
+                    Hotkey hotkey = config.Get(ordered[i]);
+                    if (hotkey.IsEmpty || !hotkey.HasModifier)
+                    {
+                        empty++;
+                        continue;
+                    }
+                    registered++;
+                }
+
+                Emit("total=" + ordered.Length);
+                Emit("assigned=" + registered);
+                Emit("unassigned=" + empty);
+                Emit("failed=" + failed.Count);
+                for (int i = 0; i < failed.Count; i++)
+                {
+                    Emit("conflict=" + failed[i]);
+                }
+            }
+            return 0;
+        }
+
         /// <summary>상주 중인 본체 없이 설정 창만 연다. 저장하면 설정 파일에 바로 반영된다.</summary>
         private static int ShowSettingsOnly()
         {
@@ -260,6 +336,8 @@ namespace RectangleWindows
             Emit("  --info               대상 창의 현재 위치와 화면 작업 영역 출력");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");
+            Emit("  --check              단축키가 다른 프로그램과 겹치는지 확인");
+            Emit("  --startup on|off|status   Windows 시작 시 자동 실행 등록/해제/확인");
             Emit("  --list               쓸 수 있는 명령 목록 출력");
             Emit("  --help               이 도움말");
         }

@@ -114,6 +114,26 @@ conflict=오른쪽 1/3 (Ctrl + Alt + H)
 `Rectangle.exe` 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않을 때가 있다.
 스크립트에서 결과를 읽어야 하면 `--out <파일>` 을 함께 쓰면 된다.
 
+## 설정 창
+
+알림 영역 아이콘을 눌러 `단축키 설정...` 을 고르면 열린다.
+
+- 왼쪽 목록에서 기능을 고르고, 아래 입력칸에 원하는 키 조합을 **실제로 눌러** 지정한다.
+- 오른쪽 **미리보기**에 고른 기능이 창을 화면 어디에 놓는지 그림으로 나온다.
+  크기 조절이나 모니터 이동처럼 자리만으로 설명이 안 되는 것은 점선(바뀌기 전)과 화살표로 함께 보여 준다.
+- 같은 조합을 이미 다른 기능이 쓰고 있으면 물어보고 그쪽을 비운다.
+- 보조키(Ctrl/Alt/Shift/Win) 없는 조합은 막는다. 그렇게 등록하면 다른 프로그램에서 그 키를 아예 못 쓰게 된다.
+
+## 아이콘
+
+`assets\app.ico` 를 빌드 때 실행 파일에 박는다. 16 / 24 / 32 / 48 / 64 / 128 / 256 픽셀이 한 파일에 들어 있고,
+**크기마다 따로 그렸다.** 큰 그림 하나를 줄여 쓰면 알림 영역(16픽셀)에서 뭉개지기 때문이다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\make-appicon.ps1   # 아이콘 다시 만들기
+powershell -ExecutionPolicy Bypass -File tools\make-icons.ps1     # 다른 시안들 비교표 만들기
+```
+
 ## 설정 파일
 
 `%APPDATA%\RectangleWindows\config.ini` 에 저장된다. 직접 편집해도 된다.
@@ -150,6 +170,9 @@ powershell -ExecutionPolicy Bypass -File tools\verify-settings.ps1
 
 # 알림 영역 아이콘을 눌러 메뉴를 띄우고 체크 표시와 토글 동작 확인
 powershell -ExecutionPolicy Bypass -File tools\verify-tray-menu.ps1
+
+# 설정 창 미리보기가 기능마다 제대로 그려지는지 캡처
+powershell -ExecutionPolicy Bypass -File tools\capture-preview.ps1
 
 # 설정 창과 알림 영역 화면 캡처
 powershell -ExecutionPolicy Bypass -File tools\capture-ui.ps1

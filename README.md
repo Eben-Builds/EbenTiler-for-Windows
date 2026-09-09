@@ -19,7 +19,7 @@ macOS 의 [Rectangle](https://rectangleapp.com/) 이 하는 일을 Windows 에�
 | `Ctrl + Alt + I` | 오른쪽 위 1/4 |
 | `Ctrl + Alt + J` | 왼쪽 아래 1/4 |
 | `Ctrl + Alt + K` | 오른쪽 아래 1/4 |
-| `Ctrl + Alt + D` / `F` / `G` | 왼쪽 / 가운데 / 오른쪽 1/3 |
+| `Ctrl + Alt + D` / `F` / `H` | 왼쪽 / 가운데 / 오른쪽 1/3 |
 | `Ctrl + Alt + E` / `T` | 왼쪽 2/3 / 오른쪽 2/3 |
 | `Ctrl + Alt + Enter` | 전체 화면(최대화) |
 | `Ctrl + Alt + Shift + ↑` | 세로만 최대 (가로 폭 유지) |
@@ -70,7 +70,19 @@ Rectangle.exe --apply TopRight --hwnd 0x3B078E # 창을 직접 지정
 Rectangle.exe --info                           # 활성 창 위치와 화면 작업 영역 확인
 Rectangle.exe --list                           # 쓸 수 있는 명령 목록
 Rectangle.exe --settings                       # 설정 창만 열기
+Rectangle.exe --check                          # 단축키가 다른 프로그램과 겹치는지 확인
+Rectangle.exe --startup on|off|status          # 윈도우 시작 시 자동 실행 등록/해제/확인
 Rectangle.exe --out result.txt --info          # 결과를 파일로도 저장
+```
+
+`--check` 는 이런 식으로 알려 준다. 단축키가 안 먹을 때 제일 먼저 확인하면 된다.
+
+```
+total=21
+assigned=21
+unassigned=0
+failed=1
+conflict=오른쪽 1/3 (Ctrl + Alt + H)
 ```
 
 `Rectangle.exe` 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않을 때가 있다.
@@ -104,6 +116,12 @@ powershell -ExecutionPolicy Bypass -File tools\verify.ps1
 # 전역 단축키를 실제 키 입력으로 눌러 보고 확인
 powershell -ExecutionPolicy Bypass -File tools\verify-hotkeys.ps1
 
+# 설정 파일 반영, 여백, 세로만 최대, 모니터 이동, 중복 실행 방지, 자동 실행 등록
+powershell -ExecutionPolicy Bypass -File tools\verify-more.ps1
+
+# 설정 창을 실제 마우스 클릭과 키 입력으로 조작해서 저장까지 확인
+powershell -ExecutionPolicy Bypass -File tools\verify-settings.ps1
+
 # 설정 창과 알림 영역 화면 캡처
 powershell -ExecutionPolicy Bypass -File tools\capture-ui.ps1
 
@@ -115,7 +133,9 @@ powershell -ExecutionPolicy Bypass -File tools\capture-demo.ps1
 
 - **관리자 권한으로 실행 중인 창은 옮길 수 없다.** Windows 가 낮은 권한 프로그램이 높은 권한 창을 조작하는 것을 막기 때문이다.
   그런 창까지 배치하려면 `Rectangle.exe` 도 관리자 권한으로 실행해야 한다.
-- 다른 프로그램이 이미 선점한 단축키는 등록에 실패한다. 이때는 시작 직후 알림으로 어떤 것이 실패했는지 알려 준다.
+- 다른 프로그램이 이미 선점한 단축키는 등록에 실패한다. 이때는 시작 직후 알림으로 어떤 것이 실패했는지 알려 주고,
+  `Rectangle.exe --check` 로 언제든 다시 확인할 수 있다. 설정 창에서 다른 조합으로 바꾸면 된다.
+  게임 런처나 독(dock) 프로그램이 `Ctrl+Alt+숫자`, `Ctrl+Alt+G` 같은 조합을 자주 가져간다.
 - 창 위치는 DWM 이 알려 주는 **실제로 보이는 테두리** 기준으로 맞춘다. Windows 10/11 창 바깥의 투명한 여백만큼 어긋나 보이는 문제가 없다.
 - 모니터마다 배율이 다른 환경을 위해 per-monitor DPI 인식으로 동작한다.
 

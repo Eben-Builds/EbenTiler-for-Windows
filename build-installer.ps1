@@ -103,7 +103,7 @@ $signTool = $null
 if ($signingEnabled) {
     $certThumbprint = ($certThumbprint -replace '\s', '').ToUpperInvariant()
     if ([string]::IsNullOrWhiteSpace($timestampUrl)) {
-        $timestampUrl = 'http://timestamp.digicert.com'
+        $timestampUrl = 'https://timestamp.digicert.com'
     }
 
     $signTool = Find-SignTool

@@ -32,6 +32,29 @@ function Find-Iscc {
     return $null
 }
 
+function Find-SignTool {
+    $command = Get-Command signtool.exe -ErrorAction SilentlyContinue
+    if ($command) { return $command.Source }
+
+    $roots = @(
+        (Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'),
+        (Join-Path $env:ProgramFiles 'Windows Kits\10\bin')
+    )
+
+    foreach ($kitsRoot in $roots) {
+        if (-not $kitsRoot -or -not (Test-Path $kitsRoot)) { continue }
+
+        $versions = Get-ChildItem -Path $kitsRoot -Directory -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending
+        foreach ($versionDir in $versions) {
+            $candidate = Join-Path $versionDir.FullName 'x64\signtool.exe'
+            if (Test-Path $candidate) { return $candidate }
+        }
+    }
+
+    return $null
+}
+
 if (-not $SkipBuild) {
     & powershell -ExecutionPolicy Bypass -File $buildScript
     if ($LASTEXITCODE -ne 0) { throw 'EbenTiler build failed.' }
@@ -72,19 +95,59 @@ powershell -ExecutionPolicy Bypass -File build-installer.ps1 -InstallTools
 "@
 }
 
+$certThumbprint = $env:EBENTILER_SIGNING_CERT_SHA1
+$timestampUrl = $env:EBENTILER_TIMESTAMP_URL
+$signingEnabled = -not [string]::IsNullOrWhiteSpace($certThumbprint)
+$signTool = $null
+
+if ($signingEnabled) {
+    $certThumbprint = ($certThumbprint -replace '\s', '').ToUpperInvariant()
+    if ([string]::IsNullOrWhiteSpace($timestampUrl)) {
+        $timestampUrl = 'http://timestamp.digicert.com'
+    }
+
+    $signTool = Find-SignTool
+    if (-not $signTool) {
+        throw 'signtool.exe was not found. Install the Windows SDK before signed builds.'
+    }
+
+    Write-Host ''
+    Write-Host 'Signing EbenTiler.exe...'
+    & $signTool sign /sha1 $certThumbprint /fd SHA256 /tr $timestampUrl /td SHA256 /d 'EbenTiler for Windows' $exePath
+    if ($LASTEXITCODE -ne 0) { throw "EbenTiler.exe signing failed (exit $LASTEXITCODE)." }
+
+    & $signTool verify /pa /v $exePath
+    if ($LASTEXITCODE -ne 0) { throw "EbenTiler.exe signature verification failed (exit $LASTEXITCODE)." }
+}
+
 if (-not (Test-Path $distDir)) {
     New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 }
 Remove-Item $setupPath -Force -ErrorAction SilentlyContinue
 Remove-Item $hashPath -Force -ErrorAction SilentlyContinue
 
+$isccArgs = @("/DAppVersion=$version")
+if ($signingEnabled) {
+    $signCommand = '"' + $signTool + '" sign /sha1 ' + $certThumbprint + ' /fd SHA256 /tr "' + $timestampUrl + '" /td SHA256 /d "EbenTiler for Windows" $f'
+    $isccArgs += '/DEnableSigning=1'
+    $isccArgs += "-sebentiler=$signCommand"
+}
+$isccArgs += $issPath
+
 Write-Host ''
 Write-Host "Compiling installer... (EbenTiler $version)"
-& $iscc "/DAppVersion=$version" $issPath
+& $iscc @isccArgs
 if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed (exit $LASTEXITCODE)." }
 
 if (-not (Test-Path $setupPath)) {
     throw "Installer was not created: $setupPath"
+}
+
+if ($signingEnabled) {
+    Write-Host ''
+    Write-Host 'Verifying EbenTiler-Setup.exe signature...'
+    & $signTool verify /pa /v $setupPath
+    if ($LASTEXITCODE -ne 0) { throw "Installer signature verification failed (exit $LASTEXITCODE)." }
 }
 
 $hash = Get-FileHash -Algorithm SHA256 $setupPath
@@ -94,4 +157,9 @@ $size = [Math]::Round((Get-Item $setupPath).Length / 1MB, 2)
 Write-Host ''
 Write-Host "Done: $setupPath ($size MB)"
 Write-Host "SHA256: $($hash.Hash.ToLowerInvariant())"
+if ($signingEnabled) {
+    Write-Host 'Authenticode: signed and verified.'
+} else {
+    Write-Host 'Authenticode: unsigned (no signing certificate configured).'
+}
 Write-Host 'Share EbenTiler-Setup.exe with end users.'

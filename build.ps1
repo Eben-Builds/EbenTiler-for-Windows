@@ -1,16 +1,16 @@
-﻿# Rectangle for Windows 빌드 스크립트
+﻿# SnapDeck for Windows 빌드 스크립트
 # .NET SDK 없이 Windows 에 기본 포함된 .NET Framework 4.8 컴파일러로 바로 빌드한다.
 #
 #   powershell -ExecutionPolicy Bypass -File build.ps1
 #
-# 결과물: build\Rectangle.exe (단일 실행 파일, 별도 런타임 설치 불필요)
+# 결과물: build\SnapDeck.exe (단일 실행 파일, 별도 런타임 설치 불필요)
 
 $ErrorActionPreference = 'Stop'
 
 $root      = Split-Path -Parent $MyInvocation.MyCommand.Path
 $srcDir    = Join-Path $root 'src'
 $outDir    = Join-Path $root 'build'
-$exePath   = Join-Path $outDir 'Rectangle.exe'
+$exePath   = Join-Path $outDir 'SnapDeck.exe'
 
 # 정식 아이콘이 있으면 그것을 쓴다. 없으면 아래에서 임시 아이콘을 그려 만든다.
 $assetIcon = Join-Path $root 'assets\app.ico'

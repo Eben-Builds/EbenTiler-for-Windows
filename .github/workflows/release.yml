@@ -1,0 +1,100 @@
+name: Publish Signed Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    env:
+      SIGNING_PFX_BASE64: ${{ secrets.EBENTILER_SIGNING_PFX_BASE64 }}
+      SIGNING_PFX_PASSWORD: ${{ secrets.EBENTILER_SIGNING_PFX_PASSWORD }}
+      EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Require code-signing secrets
+        shell: powershell
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_BASE64)) {
+            throw 'Public releases require EBENTILER_SIGNING_PFX_BASE64.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_PASSWORD)) {
+            throw 'Public releases require EBENTILER_SIGNING_PFX_PASSWORD.'
+          }
+
+      - name: Verify tag matches app version
+        shell: powershell
+        run: |
+          if ($env:GITHUB_REF_NAME -notmatch '^v(\d+\.\d+\.\d+)$') {
+            throw "Release tag must use vMAJOR.MINOR.PATCH: $env:GITHUB_REF_NAME"
+          }
+          $tagVersion = $Matches[1]
+          $assemblyInfo = Get-Content '.\src\AssemblyInfo.cs' -Raw
+          if ($assemblyInfo -notmatch 'AssemblyFileVersion\("(\d+)\.(\d+)\.(\d+)\.\d+"\)') {
+            throw 'AssemblyFileVersion was not found.'
+          }
+          $appVersion = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
+          if ($tagVersion -ne $appVersion) {
+            throw "Tag version $tagVersion does not match app version $appVersion."
+          }
+          "EBENTILER_RELEASE_VERSION=$appVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install pinned Inno Setup
+        shell: powershell
+        run: choco install innosetup --version=6.7.1 -y --no-progress
+
+      - name: Import code-signing certificate
+        shell: powershell
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'ebentiler-signing.pfx'
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGNING_PFX_BASE64))
+          try {
+            $password = ConvertTo-SecureString $env:SIGNING_PFX_PASSWORD -AsPlainText -Force
+            $certificate = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation 'Cert:\CurrentUser\My' -Password $password -Exportable:$false
+            if (-not $certificate -or [string]::IsNullOrWhiteSpace($certificate.Thumbprint)) {
+              throw 'The code-signing certificate could not be imported.'
+            }
+            "EBENTILER_SIGNING_CERT_SHA1=$($certificate.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+          finally {
+            Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Build signed installer
+        shell: powershell
+        run: .\build-installer.ps1
+
+      - name: Verify install and uninstall
+        shell: powershell
+        run: .\tools\verify-installer.ps1
+
+      - name: Verify signed release artifacts
+        shell: powershell
+        run: .\tools\verify-release.ps1 -RequireCodeSigning
+
+      - name: Publish GitHub Release
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$env:GITHUB_REF_NAME" `
+            '.\dist\EbenTiler-Setup.exe' `
+            '.\dist\EbenTiler-Setup.exe.sha256' `
+            --verify-tag `
+            --title "EbenTiler $env:EBENTILER_RELEASE_VERSION" `
+            --generate-notes

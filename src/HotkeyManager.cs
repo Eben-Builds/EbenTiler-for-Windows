@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
     /// <summary>전역 단축키를 등록하고, 눌렸을 때 알려 주는 숨은 창.</summary>
     public sealed class HotkeyManager : NativeWindow, IDisposable

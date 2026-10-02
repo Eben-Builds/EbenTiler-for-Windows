@@ -30,6 +30,44 @@ jobs:
       - name: 저장소 받기
         uses: actions/checkout@v4
 
+      - name: 히어로 이미지 바이너리 복구 및 검증
+        shell: powershell
+        run: |
+          $parts = Get-ChildItem '.\website\hero-parts\*.txt' | Sort-Object Name
+          if ($parts.Count -ne 9) {
+            throw "히어로 이미지 조각 수가 올바르지 않습니다: $($parts.Count)"
+          }
+
+          $base64 = ($parts | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
+          $bytes = [Convert]::FromBase64String($base64)
+
+          if ($bytes.Length -ne 36574) {
+            throw "히어로 이미지 크기가 예상과 다릅니다: $($bytes.Length)"
+          }
+
+          $heroPath = '.\website\hero-ebentiler.webp'
+          [IO.File]::WriteAllBytes($heroPath, $bytes)
+
+          $hash = (Get-FileHash $heroPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne 'e0a65ef90842bbd5821696ad553d4ed2b4ef5bf7c5c8642111f27c8537080528') {
+            throw "히어로 이미지 SHA256 검증 실패: $hash"
+          }
+
+          $header = [Text.Encoding]::ASCII.GetString($bytes, 0, 12)
+          if (-not ($header.StartsWith('RIFF') -and $header.Substring(8, 4) -eq 'WEBP')) {
+            throw '히어로 이미지가 정상 WebP 형식이 아닙니다.'
+          }
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add website/hero-ebentiler.webp
+          git rm -r website/hero-parts
+          if (Test-Path '.\website\hero-ebentiler-fixed.webp') {
+            git rm website/hero-ebentiler-fixed.webp
+          }
+          git commit -m 'Repair hero image binary [skip ci]'
+          git push origin HEAD:main
+
       - name: 설치 도구 준비
         shell: powershell
         run: choco install innosetup -y --no-progress

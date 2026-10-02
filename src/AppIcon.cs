@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace RectangleWindows
+namespace RumiFlowWindows
 {
     /// <summary>
     /// 실행 파일에 박아 둔 아이콘을 꺼내 쓴다.

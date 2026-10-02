@@ -8,7 +8,7 @@ namespace RectangleWindows
     public static class Startup
     {
         private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string ValueName = "RectangleWindows";
+        private const string ValueName = "SnapDeck";
 
         public static bool IsEnabled()
         {
@@ -16,10 +16,7 @@ namespace RectangleWindows
             {
                 using (RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, false))
                 {
-                    if (key == null)
-                    {
-                        return false;
-                    }
+                    if (key == null) return false;
                     object value = key.GetValue(ValueName);
                     return value != null;
                 }
@@ -36,19 +33,12 @@ namespace RectangleWindows
             {
                 using (RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true))
                 {
-                    if (key == null)
-                    {
-                        return;
-                    }
+                    if (key == null) return;
 
                     if (enabled)
-                    {
                         key.SetValue(ValueName, "\"" + Application.ExecutablePath + "\"");
-                    }
                     else
-                    {
                         key.DeleteValue(ValueName, false);
-                    }
                 }
             }
             catch (Exception)

@@ -1,0 +1,40 @@
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'installer/**'
+      - 'build.ps1'
+      - 'build-installer.ps1'
+      - 'LICENSE'
+      - '.github/workflows/build-installer.yml'
+
+jobs:
+  build-installer:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup -y --no-progress
+
+      - name: Build EbenTiler installer
+        shell: powershell
+        run: .\build-installer.ps1
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: EbenTiler-Setup
+          path: |
+            dist\EbenTiler-Setup.exe
+            dist\EbenTiler-Setup.exe.sha256
+          if-no-files-found: error

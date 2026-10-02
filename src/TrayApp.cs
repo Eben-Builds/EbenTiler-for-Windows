@@ -51,7 +51,7 @@ namespace RectangleWindows
 
             _tray = new NotifyIcon();
             _tray.Icon = AppIcon.LoadSmall();
-            _tray.Text = "SnapDeck for Windows";
+            _tray.Text = "SnapFlow for Windows";
             _tray.ContextMenuStrip = menu;
             _tray.Visible = true;
             _tray.MouseUp += OnTrayMouseUp;
@@ -65,7 +65,7 @@ namespace RectangleWindows
 
             if (firstRun && failedCount == 0)
             {
-                _tray.BalloonTipTitle = "SnapDeck for Windows 실행 중";
+                _tray.BalloonTipTitle = "SnapFlow for Windows 실행 중";
                 _tray.BalloonTipText =
                     "Ctrl+Alt+방향키로 창을 절반씩 배치하고, Ctrl+Alt+U/I/J/K로 사분면에 붙입니다.\n" +
                     "아이콘은 작업표시줄 오른쪽 숨김(∧) 안에 있을 수 있습니다.";

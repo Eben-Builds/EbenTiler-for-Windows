@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
     /// <summary>
     /// 고른 기능이 창을 화면 어디에 놓는지 그림으로 보여 준다.

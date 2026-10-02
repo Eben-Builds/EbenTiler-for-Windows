@@ -1,4 +1,4 @@
-# Rectangle for Windows
+# SnapDeck for Windows
 
 단축키로 창을 화면 절반·사분면·3분할에 순식간에 붙여 주는 Windows 상주 프로그램.
 macOS 의 [Rectangle](https://rectangleapp.com/) 이 하는 일을 Windows 에서 그대로 한다.

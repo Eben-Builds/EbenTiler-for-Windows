@@ -6,11 +6,11 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
     internal static class Program
     {
-        private const string MutexName = "Global\\RumiFlow.SingleInstance";
+        private const string MutexName = "Global\\EbenTiler.SingleInstance";
 
         [DllImport("kernel32.dll")]
         private static extern bool AttachConsole(int processId);
@@ -39,8 +39,8 @@ namespace RumiFlowWindows
                 if (!createdNew)
                 {
                     MessageBox.Show(
-                        "RumiFlow for Windows 는 이미 실행 중입니다.\n알림 영역(작업표시줄 오른쪽) 아이콘을 확인하세요.",
-                        "RumiFlow for Windows", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        "EbenTiler for Windows 는 이미 실행 중입니다.\n알림 영역(작업표시줄 오른쪽) 아이콘을 확인하세요.",
+                        "EbenTiler for Windows", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return 0;
                 }
 
@@ -210,7 +210,7 @@ namespace RumiFlowWindows
 
         private static void PrintHelp()
         {
-            Emit("RumiFlow for Windows");
+            Emit("EbenTiler for Windows");
             Emit("  인수 없이 실행하면 알림 영역에 상주하며 전역 단축키를 받는다.");
             Emit("");
             Emit("  --apply <명령>       현재 활성 창에 배치 명령을 한 번 적용");

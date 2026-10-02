@@ -77,8 +77,8 @@ jobs:
           if-no-files-found: error
 
       # When no production signing identity is configured, exercise the same
-      # SignTool/Inno Setup path with an ephemeral non-exportable test key.
-      # The self-signed output is never uploaded or published.
+      # SignTool/Inno Setup path with a short-lived local test certificate.
+      # This output is never uploaded or published.
       - name: Create ephemeral CI code-signing identity
         if: env.EBENTILER_SIGNING_CERT_SHA1 == '' && env.SIGNING_PFX_BASE64 == ''
         shell: powershell
@@ -88,10 +88,9 @@ jobs:
             -Subject 'CN=EbenTiler CI Test Signing' `
             -CertStoreLocation 'Cert:\CurrentUser\My' `
             -KeyAlgorithm RSA `
-            -KeyLength 3072 `
+            -KeyLength 2048 `
             -HashAlgorithm SHA256 `
-            -KeyExportPolicy NonExportable `
-            -NotAfter (Get-Date).AddDays(2)
+            -NotAfter (Get-Date).AddDays(1)
 
           $rootStore = New-Object System.Security.Cryptography.X509Certificates.X509Store('Root', 'CurrentUser')
           $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)

@@ -14,6 +14,19 @@ $sentinelFile = Join-Path $configDir 'user-file-must-survive.txt'
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $outputPath = Join-Path $env:TEMP ('ebentiler-smoke-' + [Guid]::NewGuid().ToString('N') + '.txt')
 
+function Get-StartupValue {
+    if (-not (Test-Path $runKey)) {
+        return $null
+    }
+
+    $properties = Get-ItemProperty -Path $runKey -ErrorAction Stop
+    $property = $properties.PSObject.Properties['EbenTiler']
+    if ($null -eq $property) {
+        return $null
+    }
+    return [string]$property.Value
+}
+
 if (-not (Test-Path $installerPath)) {
     throw "Installer not found: $installerPath"
 }
@@ -51,7 +64,7 @@ try {
         throw 'CLI smoke test did not return the expected action list.'
     }
 
-    $startupValue = Get-ItemPropertyValue -Path $runKey -Name 'EbenTiler' -ErrorAction SilentlyContinue
+    $startupValue = Get-StartupValue
     if ($null -ne $startupValue) {
         throw 'Silent test install unexpectedly registered Windows startup.'
     }
@@ -60,7 +73,7 @@ try {
     if ($startupOn.ExitCode -ne 0) {
         throw "Startup enable test exited with code $($startupOn.ExitCode)."
     }
-    $startupValue = Get-ItemPropertyValue -Path $runKey -Name 'EbenTiler' -ErrorAction SilentlyContinue
+    $startupValue = Get-StartupValue
     $expectedStartupValue = '"' + $installedExe + '"'
     if ($startupValue -ne $expectedStartupValue) {
         throw "Windows startup value is unexpected. Expected $expectedStartupValue but got $startupValue"
@@ -70,7 +83,7 @@ try {
     if ($startupOff.ExitCode -ne 0) {
         throw "Startup disable test exited with code $($startupOff.ExitCode)."
     }
-    $startupAfterOff = Get-ItemPropertyValue -Path $runKey -Name 'EbenTiler' -ErrorAction SilentlyContinue
+    $startupAfterOff = Get-StartupValue
     if ($null -ne $startupAfterOff) {
         throw 'Windows startup registry value remains after --startup off.'
     }
@@ -97,7 +110,7 @@ try {
         throw 'Installed executable remains after uninstall.'
     }
 
-    $startupAfter = Get-ItemPropertyValue -Path $runKey -Name 'EbenTiler' -ErrorAction SilentlyContinue
+    $startupAfter = Get-StartupValue
     if ($null -ne $startupAfter) {
         throw 'Windows startup registry value remains after uninstall.'
     }

@@ -35,14 +35,14 @@ jobs:
         run: |
           $parts = Get-ChildItem '.\website\hero-parts\*.txt' | Sort-Object Name
           if ($parts.Count -ne 9) {
-            throw "히어로 이미지 조각 수가 올바르지 않습니다: $($parts.Count)"
+            throw "Unexpected hero part count: $($parts.Count)"
           }
 
           $base64 = ($parts | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
           $bytes = [Convert]::FromBase64String($base64)
 
           if ($bytes.Length -ne 36574) {
-            throw "히어로 이미지 크기가 예상과 다릅니다: $($bytes.Length)"
+            throw "Unexpected hero byte length: $($bytes.Length)"
           }
 
           $heroPath = '.\website\hero-ebentiler.webp'
@@ -50,12 +50,12 @@ jobs:
 
           $hash = (Get-FileHash $heroPath -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($hash -ne 'e0a65ef90842bbd5821696ad553d4ed2b4ef5bf7c5c8642111f27c8537080528') {
-            throw "히어로 이미지 SHA256 검증 실패: $hash"
+            throw "Hero SHA256 mismatch: $hash"
           }
 
           $header = [Text.Encoding]::ASCII.GetString($bytes, 0, 12)
           if (-not ($header.StartsWith('RIFF') -and $header.Substring(8, 4) -eq 'WEBP')) {
-            throw '히어로 이미지가 정상 WebP 형식이 아닙니다.'
+            throw 'Hero asset is not a valid WebP container.'
           }
 
           git config user.name 'github-actions[bot]'
@@ -77,7 +77,7 @@ jobs:
         shell: powershell
         run: |
           if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_PASSWORD)) {
-            throw '서명 인증서가 설정되어 있지만 비밀번호가 없습니다.'
+            throw 'Signing certificate is configured but password is missing.'
           }
           $pfxPath = Join-Path $env:RUNNER_TEMP 'ebentiler-signing.pfx'
           [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGNING_PFX_BASE64))
@@ -85,7 +85,7 @@ jobs:
             $password = ConvertTo-SecureString $env:SIGNING_PFX_PASSWORD -AsPlainText -Force
             $certificate = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation 'Cert:\CurrentUser\My' -Password $password -Exportable:$false
             if (-not $certificate -or [string]::IsNullOrWhiteSpace($certificate.Thumbprint)) {
-              throw '코드 서명 인증서를 불러오지 못했습니다.'
+              throw 'Failed to import the code-signing certificate.'
             }
             "EBENTILER_SIGNING_CERT_SHA1=$($certificate.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           }

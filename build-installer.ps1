@@ -130,7 +130,7 @@ $isccArgs = @("/DAppVersion=$version")
 if ($signingEnabled) {
     $signCommand = '"' + $signTool + '" sign /sha1 ' + $certThumbprint + ' /fd SHA256 /tr "' + $timestampUrl + '" /td SHA256 /d "EbenTiler for Windows" $f'
     $isccArgs += '/DEnableSigning=1'
-    $isccArgs += "-sebentiler=$signCommand"
+    $isccArgs += "/Sebentiler=$signCommand"
 }
 $isccArgs += $issPath
 

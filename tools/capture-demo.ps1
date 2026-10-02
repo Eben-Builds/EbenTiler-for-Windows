@@ -5,7 +5,7 @@
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$exe  = Join-Path $root 'build\RumiFlow.exe'
+$exe  = Join-Path $root 'build\EbenTiler.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 $outDir = Join-Path $root 'build\screenshots'
@@ -23,7 +23,7 @@ $procs = @()
 $handles = @()
 
 foreach ($i in 1..2) {
-    $file = Join-Path $env:TEMP ("rumiflow-demo-$i-" + [Guid]::NewGuid().ToString('N') + ".txt")
+    $file = Join-Path $env:TEMP ("ebentiler-demo-$i-" + [Guid]::NewGuid().ToString('N') + ".txt")
     $p = Start-Process powershell -PassThru -ArgumentList @('-ExecutionPolicy','Bypass','-NoProfile','-File',$hostScript,$file)
     $procs += $p
 

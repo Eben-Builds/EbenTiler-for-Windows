@@ -1,0 +1,73 @@
+name: 랜딩페이지 배포 묶음 만들기
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'website/**'
+      - 'src/**'
+      - 'assets/**'
+      - 'installer/**'
+      - 'build.ps1'
+      - 'build-installer.ps1'
+      - '.github/workflows/build-website.yml'
+
+jobs:
+  build-site:
+    runs-on: windows-latest
+    env:
+      SIGNING_PFX_BASE64: ${{ secrets.EBENTILER_SIGNING_PFX_BASE64 }}
+      SIGNING_PFX_PASSWORD: ${{ secrets.EBENTILER_SIGNING_PFX_PASSWORD }}
+      EBENTILER_TIMESTAMP_URL: http://timestamp.digicert.com
+
+    steps:
+      - name: 저장소 받기
+        uses: actions/checkout@v4
+
+      - name: 설치 도구 준비
+        shell: powershell
+        run: choco install innosetup -y --no-progress
+
+      - name: 코드 서명 인증서 준비
+        if: env.SIGNING_PFX_BASE64 != ''
+        shell: powershell
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_PASSWORD)) {
+            throw '서명 인증서가 설정되어 있지만 비밀번호가 없습니다.'
+          }
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'ebentiler-signing.pfx'
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGNING_PFX_BASE64))
+          try {
+            $password = ConvertTo-SecureString $env:SIGNING_PFX_PASSWORD -AsPlainText -Force
+            $certificate = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation 'Cert:\CurrentUser\My' -Password $password -Exportable:$false
+            if (-not $certificate -or [string]::IsNullOrWhiteSpace($certificate.Thumbprint)) {
+              throw '코드 서명 인증서를 불러오지 못했습니다.'
+            }
+            "EBENTILER_SIGNING_CERT_SHA1=$($certificate.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+          finally {
+            Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: 최신 설치 파일 만들기
+        shell: powershell
+        run: .\build-installer.ps1
+
+      - name: 랜딩페이지와 설치 파일 묶기
+        shell: powershell
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP 'ebentiler-site'
+          New-Item -ItemType Directory -Path $target -Force | Out-Null
+          Copy-Item '.\website\*' $target -Recurse -Force
+          Copy-Item '.\dist\EbenTiler-Setup.exe' (Join-Path $target 'EbenTiler-Setup.exe') -Force
+          Copy-Item '.\dist\EbenTiler-Setup.exe.sha256' (Join-Path $target 'EbenTiler-Setup.exe.sha256') -Force
+          "EBENTILER_SITE_DIR=$target" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: 배포용 사이트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: EbenTiler-Website
+          path: ${{ env.EBENTILER_SITE_DIR }}
+          if-no-files-found: error

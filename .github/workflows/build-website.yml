@@ -1,6 +1,5 @@
 name: 랜딩페이지 배포 묶음 만들기
 
-# Rebuilds and verifies the website hero asset before publishing.
 on:
   workflow_dispatch:
   push:
@@ -8,7 +7,6 @@ on:
       - main
     paths:
       - 'website/**'
-      - '!website/hero-parts/**'
       - 'src/**'
       - 'assets/**'
       - 'installer/**'
@@ -21,60 +19,38 @@ permissions:
 
 jobs:
   build-site:
-    runs-on: windows-latest
+    runs-on: windows-2025
+    timeout-minutes: 15
     env:
       SIGNING_PFX_BASE64: ${{ secrets.EBENTILER_SIGNING_PFX_BASE64 }}
       SIGNING_PFX_PASSWORD: ${{ secrets.EBENTILER_SIGNING_PFX_PASSWORD }}
-      EBENTILER_TIMESTAMP_URL: http://timestamp.digicert.com
+      EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
 
     steps:
       - name: 저장소 받기
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: 히어로 이미지 바이너리 복구 및 검증
+      - name: 웹 자산 무결성 확인
         shell: powershell
         run: |
-          $partNames = @(
-            '00.txt', '01.txt', '02.txt', '03.txt', '04.txt',
-            '05a.txt', '05b.txt', '05c.txt', '05d.txt', '05e.txt', '05f.txt',
-            '06.txt', '07.txt', '08.txt'
-          )
-
-          $base64 = ($partNames | ForEach-Object {
-            Get-Content (Join-Path '.\website\hero-parts' $_) -Raw
-          }) -join ''
-          $bytes = [Convert]::FromBase64String($base64)
-
-          if ($bytes.Length -ne 36574) {
-            throw "Unexpected hero byte length: $($bytes.Length)"
-          }
-
           $heroPath = '.\website\hero-ebentiler.webp'
-          [IO.File]::WriteAllBytes($heroPath, $bytes)
+          if (-not (Test-Path $heroPath)) { throw 'Hero asset is missing.' }
 
-          $hash = (Get-FileHash $heroPath -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($hash -ne 'e0a65ef90842bbd5821696ad553d4ed2b4ef5bf7c5c8642111f27c8537080528') {
-            throw "Hero SHA256 mismatch: $hash"
-          }
+          $bytes = [IO.File]::ReadAllBytes($heroPath)
+          if ($bytes.Length -lt 1024) { throw "Hero asset is unexpectedly small: $($bytes.Length)" }
 
           $header = [Text.Encoding]::ASCII.GetString($bytes, 0, 12)
           if (-not ($header.StartsWith('RIFF') -and $header.Substring(8, 4) -eq 'WEBP')) {
             throw 'Hero asset is not a valid WebP container.'
           }
 
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add website/hero-ebentiler.webp
-          git rm -r website/hero-parts
-          if (Test-Path '.\website\hero-ebentiler-fixed.webp') {
-            git rm website/hero-ebentiler-fixed.webp
-          }
-          git commit -m 'Repair hero image binary [skip ci]'
-          git push origin HEAD:main
+          $index = Get-Content '.\website\index.html' -Raw
+          if ($index -notmatch 'hero-ebentiler\.webp') { throw 'Landing page does not reference the hero asset.' }
+          if ($index -notmatch 'EbenTiler-Setup\.exe') { throw 'Landing page does not reference the installer.' }
 
       - name: 설치 도구 준비
         shell: powershell
-        run: choco install innosetup -y --no-progress
+        run: choco install innosetup --version=6.7.1 -y --no-progress
 
       - name: 코드 서명 인증서 준비
         if: env.SIGNING_PFX_BASE64 != ''
@@ -101,6 +77,13 @@ jobs:
         shell: powershell
         run: .\build-installer.ps1
 
+      - name: 설치 파일 SHA256 확인
+        shell: powershell
+        run: |
+          $expected = ((Get-Content '.\dist\EbenTiler-Setup.exe.sha256' -Raw).Split()[0]).Trim().ToLowerInvariant()
+          $actual = (Get-FileHash '.\dist\EbenTiler-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($expected -ne $actual) { throw "Installer SHA256 mismatch: $actual" }
+
       - name: 랜딩페이지와 설치 파일 묶기
         shell: powershell
         run: |
@@ -112,7 +95,7 @@ jobs:
           "EBENTILER_SITE_DIR=$target" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 배포용 사이트 업로드
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: EbenTiler-Website
           path: ${{ env.EBENTILER_SITE_DIR }}

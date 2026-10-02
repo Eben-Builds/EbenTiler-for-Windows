@@ -26,15 +26,15 @@ namespace EbenTilerWindows
             _hotkeys = new HotkeyManager();
             _hotkeys.HotkeyPressed += OnHotkeyPressed;
 
-            ContextMenuStrip menu = new ContextMenuStrip();
-            menu.ShowImageMargin = true;
-            menu.ShowCheckMargin = false;
+            RoundedContextMenuStrip menu = new RoundedContextMenuStrip();
+            menu.MinimumSize = new Size(220, 0);
 
-            ToolStripMenuItem settingsItem = new ToolStripMenuItem("단축키 설정...");
+            ToolStripMenuItem settingsItem = MakeMenuItem("단축키 설정...");
+            settingsItem.Font = new Font(menu.Font, FontStyle.Bold);
             settingsItem.Click += delegate { ShowSettings(); };
             menu.Items.Add(settingsItem);
 
-            _startupItem = new ToolStripMenuItem("Windows 시작할 때 함께 실행");
+            _startupItem = MakeMenuItem("Windows 시작할 때 함께 실행");
             _startupItem.CheckOnClick = true;
             _startupItem.Checked = Startup.IsEnabled();
             _startupItem.Click += delegate { Startup.SetEnabled(_startupItem.Checked); };
@@ -42,7 +42,7 @@ namespace EbenTilerWindows
 
             menu.Items.Add(new ToolStripSeparator());
 
-            ToolStripMenuItem exitItem = new ToolStripMenuItem("종료");
+            ToolStripMenuItem exitItem = MakeMenuItem("종료");
             exitItem.Click += delegate { ExitApp(); };
             menu.Items.Add(exitItem);
 
@@ -72,6 +72,15 @@ namespace EbenTilerWindows
                 _tray.BalloonTipIcon = ToolTipIcon.Info;
                 _tray.ShowBalloonTip(7000);
             }
+        }
+
+        private static ToolStripMenuItem MakeMenuItem(string text)
+        {
+            ToolStripMenuItem item = new ToolStripMenuItem(text);
+            item.ForeColor = UiPalette.Text;
+            item.Padding = new Padding(8, 5, 8, 5);
+            item.AutoToolTip = false;
+            return item;
         }
 
         private void OnTrayMouseUp(object sender, MouseEventArgs e)
@@ -146,6 +155,7 @@ namespace EbenTilerWindows
         {
             _tray.Visible = false;
             _tray.Dispose();
+            if (_menu != null) _menu.Dispose();
             _hotkeys.Dispose();
             ExitThread();
         }

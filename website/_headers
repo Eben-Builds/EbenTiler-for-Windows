@@ -1,11 +1,21 @@
 /*
   X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
-  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Permitted-Cross-Domain-Policies: none
+  Referrer-Policy: no-referrer
+  Permissions-Policy: accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), microphone=(), payment=(), publickey-credentials-get=(), serial=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; media-src 'none'; worker-src 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 /EbenTiler-Setup.exe
   Content-Type: application/vnd.microsoft.portable-executable
   Content-Disposition: attachment; filename="EbenTiler-Setup.exe"
   X-Content-Type-Options: nosniff
+  Cache-Control: no-store
+
+/EbenTiler-Setup.exe.sha256
+  Content-Type: text/plain; charset=utf-8
+  X-Content-Type-Options: nosniff
+  Cache-Control: no-store

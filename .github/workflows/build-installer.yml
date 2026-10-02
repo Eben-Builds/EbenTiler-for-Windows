@@ -14,21 +14,25 @@ on:
       - 'LICENSE'
       - '.github/workflows/build-installer.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build-installer:
-    runs-on: windows-latest
+    runs-on: windows-2025
+    timeout-minutes: 15
     env:
       SIGNING_PFX_BASE64: ${{ secrets.EBENTILER_SIGNING_PFX_BASE64 }}
       SIGNING_PFX_PASSWORD: ${{ secrets.EBENTILER_SIGNING_PFX_PASSWORD }}
-      EBENTILER_TIMESTAMP_URL: http://timestamp.digicert.com
+      EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Install Inno Setup
+      - name: Install pinned Inno Setup
         shell: powershell
-        run: choco install innosetup -y --no-progress
+        run: choco install innosetup --version=6.7.1 -y --no-progress
 
       - name: Import code-signing certificate
         if: env.SIGNING_PFX_BASE64 != ''
@@ -57,8 +61,18 @@ jobs:
         shell: powershell
         run: .\build-installer.ps1
 
+      - name: Verify installer outputs
+        shell: powershell
+        run: |
+          if (-not (Test-Path '.\dist\EbenTiler-Setup.exe')) { throw 'Installer output is missing.' }
+          if (-not (Test-Path '.\dist\EbenTiler-Setup.exe.sha256')) { throw 'SHA256 output is missing.' }
+
+          $expected = ((Get-Content '.\dist\EbenTiler-Setup.exe.sha256' -Raw).Split()[0]).Trim().ToLowerInvariant()
+          $actual = (Get-FileHash '.\dist\EbenTiler-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($expected -ne $actual) { throw "Installer SHA256 mismatch: $actual" }
+
       - name: Upload installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: EbenTiler-Setup
           path: |

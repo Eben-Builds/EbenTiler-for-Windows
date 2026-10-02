@@ -7,8 +7,7 @@ namespace EbenTilerWindows
 {
     /// <summary>
     /// 실행 파일에 박아 둔 아이콘을 꺼내 쓴다.
-    /// 알림 영역은 16픽셀, 창 제목 표시줄은 32픽셀을 쓰는데,
-    /// 큰 그림 하나를 줄여 쓰면 흐려지므로 크기에 맞는 그림을 직접 꺼낸다.
+    /// 알림 영역은 작은 아이콘, 설정 창은 큰 아이콘을 사용한다.
     /// </summary>
     public static class AppIcon
     {
@@ -31,7 +30,7 @@ namespace EbenTilerWindows
             {
                 return icon;
             }
-            return Fallback(32);
+            return Fallback(64);
         }
 
         private static Icon Extract(bool small)
@@ -75,47 +74,56 @@ namespace EbenTilerWindows
             }
         }
 
-        /// <summary>실행 파일에서 아이콘을 못 꺼냈을 때 쓸 대체 그림. 겹친 두 창 모양이다.</summary>
+        /// <summary>
+        /// 실행 파일에서 아이콘을 못 꺼냈을 때 쓸 대체 그림.
+        /// 랜딩페이지 파비콘과 같은 '큰 창 + 오른쪽 두 영역 + 화살표' 형태를 사용한다.
+        /// </summary>
         private static Icon Fallback(int size)
         {
             Bitmap bitmap = new Bitmap(size, size);
             using (Graphics g = Graphics.FromImage(bitmap))
             {
-                g.SmoothingMode = SmoothingMode.None;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                Color blue = Color.FromArgb(255, 37, 99, 235);
-                int pen = Math.Max(2, (int)Math.Round(size * 0.07));
-                int edge = (int)Math.Round(size * 0.03);
-                int back = (int)Math.Round(size * 0.58);
-                int front = (int)Math.Round(size * 0.64);
-                int fx = size - edge - front;
+                float scale = size / 64f;
+                RectangleF main = new RectangleF(5f * scale, 8f * scale, 34f * scale, 48f * scale);
+                RectangleF top = new RectangleF(42f * scale, 14f * scale, 17f * scale, 19f * scale);
+                RectangleF bottom = new RectangleF(42f * scale, 37f * scale, 17f * scale, 19f * scale);
 
-                using (Pen p = new Pen(blue, pen))
+                using (LinearGradientBrush gradient = new LinearGradientBrush(
+                    main,
+                    Color.FromArgb(10, 133, 255),
+                    Color.FromArgb(0, 90, 216),
+                    LinearGradientMode.ForwardDiagonal))
+                using (GraphicsPath mainPath = UiDrawing.RoundedRectangle(main, 9f * scale))
                 {
-                    p.Alignment = PenAlignment.Inset;
-                    g.DrawRectangle(p, edge, edge, back - 1, back - 1);
-                }
-                using (SolidBrush clear = new SolidBrush(Color.Transparent))
-                {
-                    g.CompositingMode = CompositingMode.SourceCopy;
-                    g.FillRectangle(clear, fx - 2, fx - 2, front + 4, front + 4);
-                    g.CompositingMode = CompositingMode.SourceOver;
+                    g.FillPath(gradient, mainPath);
                 }
 
-                int half = front / 2;
-                using (SolidBrush b = new SolidBrush(blue))
+                using (SolidBrush brush = new SolidBrush(Color.FromArgb(102, 181, 255)))
+                using (GraphicsPath path = UiDrawing.RoundedRectangle(top, 6f * scale))
                 {
-                    g.FillRectangle(b, fx, fx, half, front);
+                    g.FillPath(brush, path);
                 }
-                using (SolidBrush w = new SolidBrush(Color.White))
+
+                using (SolidBrush brush = new SolidBrush(Color.FromArgb(32, 139, 244)))
+                using (GraphicsPath path = UiDrawing.RoundedRectangle(bottom, 6f * scale))
                 {
-                    g.FillRectangle(w, fx + half, fx, front - half, front);
+                    g.FillPath(brush, path);
                 }
-                using (Pen p = new Pen(blue, pen))
+
+                float stroke = Math.Max(2f, 5f * scale);
+                using (Pen arrow = new Pen(Color.White, stroke))
                 {
-                    p.Alignment = PenAlignment.Inset;
-                    g.DrawRectangle(p, fx, fx, front - 1, front - 1);
+                    arrow.StartCap = LineCap.Round;
+                    arrow.EndCap = LineCap.Round;
+                    arrow.LineJoin = LineJoin.Round;
+                    g.DrawLines(arrow, new PointF[] {
+                        new PointF(25f * scale, 24f * scale),
+                        new PointF(34f * scale, 32f * scale),
+                        new PointF(25f * scale, 40f * scale)
+                    });
                 }
             }
 

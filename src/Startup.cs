@@ -10,6 +10,11 @@ namespace EbenTilerWindows
         private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string ValueName = "EbenTiler";
 
+        private static string ExpectedValue
+        {
+            get { return "\"" + Application.ExecutablePath + "\""; }
+        }
+
         public static bool IsEnabled()
         {
             try
@@ -18,7 +23,9 @@ namespace EbenTilerWindows
                 {
                     if (key == null) return false;
                     object value = key.GetValue(ValueName);
-                    return value != null;
+                    string stored = value as string;
+                    return !string.IsNullOrEmpty(stored)
+                        && string.Equals(stored, ExpectedValue, StringComparison.OrdinalIgnoreCase);
                 }
             }
             catch (Exception)
@@ -36,7 +43,7 @@ namespace EbenTilerWindows
                     if (key == null) return;
 
                     if (enabled)
-                        key.SetValue(ValueName, "\"" + Application.ExecutablePath + "\"");
+                        key.SetValue(ValueName, ExpectedValue, RegistryValueKind.String);
                     else
                         key.DeleteValue(ValueName, false);
                 }

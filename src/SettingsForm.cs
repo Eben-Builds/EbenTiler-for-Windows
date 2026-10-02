@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace EbenTilerWindows
@@ -18,6 +19,8 @@ namespace EbenTilerWindows
             BorderStyle = BorderStyle.FixedSingle;
             TextAlign = HorizontalAlignment.Center;
             Cursor = Cursors.Hand;
+            BackColor = UiPalette.Surface;
+            ForeColor = UiPalette.Text;
             Text = "여기를 누른 뒤 원하는 키 조합을 누르세요";
         }
 
@@ -60,6 +63,7 @@ namespace EbenTilerWindows
     {
         private readonly Config _config;
         private readonly float _scale;
+        private Bitmap _headerIcon;
 
         private ListView _list;
         private HotkeyCaptureBox _capture;
@@ -89,140 +93,234 @@ namespace EbenTilerWindows
             return (int)Math.Round(value * _scale);
         }
 
+        private Font MakeFont(float size, FontStyle style)
+        {
+            return new Font("Malgun Gothic", size * _scale, style, GraphicsUnit.Point);
+        }
+
+        private Label MakeLabel(string text, int x, int y, int width, int height, float size, FontStyle style, Color color)
+        {
+            Label label = new Label();
+            label.Text = text;
+            label.Location = new Point(S(x), S(y));
+            label.Size = new Size(S(width), S(height));
+            label.Font = MakeFont(size, style);
+            label.ForeColor = color;
+            label.BackColor = Color.Transparent;
+            label.AutoEllipsis = true;
+            return label;
+        }
+
         private void BuildUi()
         {
             Text = "EbenTiler for Windows - 단축키 설정";
             ShowIcon = true;
             Icon = AppIcon.LoadLarge();
-            // FixedDialog 로 두면 제목 표시줄에 아이콘이 나오지 않는다.
-            // 크기 조절은 막으면서 아이콘은 보이는 FixedSingle 을 쓴다.
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
-            BackColor = Color.White;
-            Font = new Font("Malgun Gothic", 9f * _scale, GraphicsUnit.Point);
-            ClientSize = new Size(S(660), S(560));
+            BackColor = UiPalette.Canvas;
+            ForeColor = UiPalette.Text;
+            Font = MakeFont(9f, FontStyle.Regular);
+            ClientSize = new Size(S(800), S(620));
             KeyPreview = true;
+            DoubleBuffered = true;
 
-            Label listLabel = new Label();
-            listLabel.Text = "기능을 고른 뒤 아래에서 새 단축키를 눌러 지정하세요.";
-            listLabel.Location = new Point(S(14), S(12));
-            listLabel.Size = new Size(S(392), S(20));
+            Icon visibleIcon = AppIcon.LoadLarge();
+            _headerIcon = visibleIcon.ToBitmap();
+            visibleIcon.Dispose();
+
+            PictureBox iconBox = new PictureBox();
+            iconBox.Location = new Point(S(22), S(20));
+            iconBox.Size = new Size(S(44), S(44));
+            iconBox.SizeMode = PictureBoxSizeMode.Zoom;
+            iconBox.Image = _headerIcon;
+            iconBox.AccessibleName = "EbenTiler 앱 아이콘";
+            Controls.Add(iconBox);
+
+            Label title = MakeLabel("EbenTiler 단축키 설정", 82, 17, 450, 30, 16f, FontStyle.Bold, UiPalette.Text);
+            Controls.Add(title);
+
+            Label subtitle = MakeLabel(
+                "기능을 고르고 원하는 키 조합을 지정하세요. 변경 내용은 저장할 때 적용됩니다.",
+                82, 48, 540, 24, 9f, FontStyle.Regular, UiPalette.TextMuted);
+            Controls.Add(subtitle);
+
+            Label platformBadge = MakeLabel("Windows 10 · 11", 650, 25, 124, 24, 8.5f, FontStyle.Bold, UiPalette.Primary);
+            platformBadge.TextAlign = ContentAlignment.MiddleCenter;
+            platformBadge.BackColor = UiPalette.PrimarySoft;
+            platformBadge.AccessibleName = "지원 운영체제";
+            Controls.Add(platformBadge);
+
+            Label listTitle = MakeLabel("배치 기능", 34, 108, 180, 24, 11f, FontStyle.Bold, UiPalette.Text);
+            Controls.Add(listTitle);
+
+            Label listLabel = MakeLabel(
+                "기능을 선택하면 오른쪽에서 배치 결과를 미리 볼 수 있습니다.",
+                34, 132, 430, 20, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
             Controls.Add(listLabel);
 
             _list = new ListView();
-            _list.Location = new Point(S(14), S(36));
-            _list.Size = new Size(S(392), S(404));
+            _list.Location = new Point(S(34), S(158));
+            _list.Size = new Size(S(444), S(310));
             _list.View = View.Details;
             _list.FullRowSelect = true;
             _list.MultiSelect = false;
             _list.HideSelection = false;
-            _list.BorderStyle = BorderStyle.FixedSingle;
+            _list.BorderStyle = BorderStyle.None;
+            _list.BackColor = UiPalette.Surface;
+            _list.ForeColor = UiPalette.Text;
+            _list.HeaderStyle = ColumnHeaderStyle.Nonclickable;
             _list.AccessibleName = "기능 목록";
             _list.TabIndex = 0;
-            _list.Columns.Add("기능", S(160));
-            _list.Columns.Add("단축키", S(150));
-            _list.Columns.Add("분류", S(58));
+            _list.Columns.Add("기능", S(190));
+            _list.Columns.Add("단축키", S(165));
+            _list.Columns.Add("분류", S(74));
             _list.SelectedIndexChanged += OnSelectionChanged;
             Controls.Add(_list);
 
-            Label previewLabel = new Label();
-            previewLabel.Text = "미리보기";
-            previewLabel.Location = new Point(S(418), S(12));
-            previewLabel.Size = new Size(S(228), S(20));
-            Controls.Add(previewLabel);
-
-            _preview = new PreviewPanel();
-            _preview.Location = new Point(S(418), S(36));
-            _preview.Size = new Size(S(228), S(178));
-            _preview.AccessibleName = "배치 미리보기";
-            Controls.Add(_preview);
-
-            _previewNote = new Label();
-            _previewNote.Location = new Point(S(418), S(222));
-            _previewNote.Size = new Size(S(228), S(96));
-            _previewNote.ForeColor = Color.FromArgb(90, 100, 115);
-            Controls.Add(_previewNote);
-
-            _cycleHalves = new CheckBox();
-            _cycleHalves.Text = "같은 단축키를 연달아 누르면 1/2 → 1/3 → 2/3 으로 폭 바꾸기";
-            _cycleHalves.Location = new Point(S(418), S(326));
-            _cycleHalves.Size = new Size(S(228), S(48));
-            _cycleHalves.FlatStyle = FlatStyle.Flat;
-            _cycleHalves.Checked = _config.CycleHalves;
-            Controls.Add(_cycleHalves);
-
-            Label gapLabel = new Label();
-            gapLabel.Text = "창 사이 여백(픽셀)";
-            gapLabel.Location = new Point(S(418), S(382));
-            gapLabel.Size = new Size(S(140), S(22));
-            Controls.Add(gapLabel);
-
-            _gap = new NumericUpDown();
-            _gap.Location = new Point(S(418), S(406));
-            _gap.Size = new Size(S(70), S(24));
-            _gap.Minimum = 0;
-            _gap.Maximum = 100;
-            _gap.Value = Math.Max(0, Math.Min(100, _config.Gap));
-            _gap.BorderStyle = BorderStyle.FixedSingle;
-            _gap.AccessibleName = "창 사이 여백";
-            _gap.ValueChanged += delegate { _preview.Invalidate(); };
-            Controls.Add(_gap);
-
-            Label captureLabel = new Label();
-            captureLabel.Text = "새 단축키";
-            captureLabel.Location = new Point(S(14), S(452));
-            captureLabel.Size = new Size(S(70), S(22));
+            Label captureLabel = MakeLabel("새 단축키", 34, 486, 76, 26, 9f, FontStyle.Bold, UiPalette.Text);
+            captureLabel.TextAlign = ContentAlignment.MiddleLeft;
             Controls.Add(captureLabel);
 
             _capture = new HotkeyCaptureBox();
-            _capture.Location = new Point(S(84), S(449));
-            _capture.Size = new Size(S(230), S(26));
+            _capture.Location = new Point(S(112), S(484));
+            _capture.Size = new Size(S(244), S(28));
             _capture.AccessibleName = "새 단축키 입력";
             _capture.TabIndex = 1;
             Controls.Add(_capture);
 
             _winModifier = new CheckBox();
             _winModifier.Text = "Win 포함";
-            _winModifier.Location = new Point(S(322), S(451));
-            _winModifier.Size = new Size(S(84), S(22));
-            _winModifier.FlatStyle = FlatStyle.Flat;
+            _winModifier.Location = new Point(S(366), S(486));
+            _winModifier.Size = new Size(S(100), S(24));
+            _winModifier.FlatStyle = FlatStyle.System;
+            _winModifier.ForeColor = UiPalette.Text;
             Controls.Add(_winModifier);
 
-            Button assign = MakeButton("이 단축키로 지정", S(14), S(484), S(130));
+            Button assign = MakeButton("이 단축키로 지정", 34, 522, 146, true);
             assign.Click += OnAssign;
             Controls.Add(assign);
 
-            Button clear = MakeButton("단축키 지우기", S(152), S(484), S(110));
+            Button clear = MakeButton("단축키 지우기", 190, 522, 126, false);
             clear.Click += OnClear;
             Controls.Add(clear);
 
-            Button reset = MakeButton("전체 기본값 복원", S(270), S(484), S(136));
+            Button reset = MakeButton("전체 기본값 복원", 326, 522, 152, false);
             reset.Click += OnResetDefaults;
             Controls.Add(reset);
 
-            Button save = MakeButton("저장", S(446), S(484), S(90));
+            Label previewTitle = MakeLabel("배치 미리보기", 526, 108, 160, 24, 11f, FontStyle.Bold, UiPalette.Text);
+            Controls.Add(previewTitle);
+
+            Label previewHelp = MakeLabel(
+                "선택한 기능이 실제 화면에 어떻게 배치되는지 보여 줍니다.",
+                526, 132, 242, 40, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
+            Controls.Add(previewHelp);
+
+            _preview = new PreviewPanel();
+            _preview.Location = new Point(S(526), S(176));
+            _preview.Size = new Size(S(242), S(176));
+            _preview.AccessibleName = "배치 미리보기";
+            Controls.Add(_preview);
+
+            _previewNote = MakeLabel("", 526, 362, 242, 64, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
+            _previewNote.AccessibleName = "배치 설명";
+            Controls.Add(_previewNote);
+
+            _cycleHalves = new CheckBox();
+            _cycleHalves.Text = "같은 단축키를 연달아 누르면\r\n1/2 → 1/3 → 2/3 으로 폭 바꾸기";
+            _cycleHalves.Location = new Point(S(526), S(432));
+            _cycleHalves.Size = new Size(S(242), S(48));
+            _cycleHalves.FlatStyle = FlatStyle.System;
+            _cycleHalves.ForeColor = UiPalette.Text;
+            _cycleHalves.Checked = _config.CycleHalves;
+            Controls.Add(_cycleHalves);
+
+            Label gapLabel = MakeLabel("창 사이 여백", 526, 494, 110, 24, 9f, FontStyle.Bold, UiPalette.Text);
+            gapLabel.TextAlign = ContentAlignment.MiddleLeft;
+            Controls.Add(gapLabel);
+
+            Label gapUnit = MakeLabel("픽셀", 718, 494, 44, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
+            gapUnit.TextAlign = ContentAlignment.MiddleLeft;
+            Controls.Add(gapUnit);
+
+            _gap = new NumericUpDown();
+            _gap.Location = new Point(S(642), S(492));
+            _gap.Size = new Size(S(70), S(26));
+            _gap.Minimum = 0;
+            _gap.Maximum = 100;
+            _gap.Value = Math.Max(0, Math.Min(100, _config.Gap));
+            _gap.BorderStyle = BorderStyle.FixedSingle;
+            _gap.BackColor = UiPalette.Surface;
+            _gap.ForeColor = UiPalette.Text;
+            _gap.AccessibleName = "창 사이 여백";
+            _gap.ValueChanged += delegate { _preview.Invalidate(); };
+            Controls.Add(_gap);
+
+            Button save = MakeButton("저장", 594, 574, 90, true);
             save.Click += OnSave;
             Controls.Add(save);
 
-            Button cancel = MakeButton("취소", S(546), S(484), S(90));
+            Button cancel = MakeButton("취소", 694, 574, 84, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
             Controls.Add(cancel);
 
             CancelButton = cancel;
         }
 
-        private Button MakeButton(string text, int x, int y, int width)
+        protected override void Dispose(bool disposing)
         {
-            Button button = new Button();
+            if (disposing && _headerIcon != null)
+            {
+                _headerIcon.Dispose();
+                _headerIcon = null;
+            }
+            base.Dispose(disposing);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            DrawCard(e.Graphics, new RectangleF(S(16), S(92), S(480), S(466)), 14f * _scale);
+            DrawCard(e.Graphics, new RectangleF(S(508), S(92), S(276), S(466)), 14f * _scale);
+
+            using (Pen accent = new Pen(UiPalette.Primary, Math.Max(2f, 2f * _scale)))
+            {
+                e.Graphics.DrawLine(accent, S(34), S(151), S(478), S(151));
+                e.Graphics.DrawLine(accent, S(526), S(169), S(768), S(169));
+            }
+        }
+
+        private void DrawCard(Graphics g, RectangleF rect, float radius)
+        {
+            RectangleF shadow = rect;
+            shadow.Offset(0f, Math.Max(1f, 2f * _scale));
+
+            using (SolidBrush shadowBrush = new SolidBrush(Color.FromArgb(12, 30, 73, 120)))
+            {
+                UiDrawing.FillRoundedRectangle(g, shadowBrush, shadow, radius);
+            }
+            using (SolidBrush fill = new SolidBrush(UiPalette.Surface))
+            using (Pen border = new Pen(UiPalette.Border, 1f))
+            {
+                UiDrawing.FillRoundedRectangle(g, fill, rect, radius);
+                UiDrawing.DrawRoundedRectangle(g, border, rect, radius);
+            }
+        }
+
+        private Button MakeButton(string text, int x, int y, int width, bool primary)
+        {
+            RoundedButton button = new RoundedButton();
             button.Text = text;
-            button.Location = new Point(x, y);
-            button.Size = new Size(width, S(30));
-            button.FlatStyle = FlatStyle.Flat;
-            button.FlatAppearance.BorderColor = Color.FromArgb(180, 180, 180);
-            button.BackColor = Color.White;
-            button.UseVisualStyleBackColor = false;
+            button.Location = new Point(S(x), S(y));
+            button.Size = new Size(S(width), S(34));
+            button.PrimaryStyle = primary;
+            button.CornerRadius = S(8);
+            button.Font = MakeFont(9f, FontStyle.Bold);
             return button;
         }
 

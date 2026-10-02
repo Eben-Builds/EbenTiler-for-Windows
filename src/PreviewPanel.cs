@@ -11,13 +11,14 @@ namespace EbenTilerWindows
     /// </summary>
     public sealed class PreviewPanel : Control
     {
-        private static readonly Color ScreenFill   = Color.FromArgb(255, 244, 246, 248);
-        private static readonly Color ScreenEdge   = Color.FromArgb(255, 197, 203, 211);
-        private static readonly Color TaskbarFill  = Color.FromArgb(255, 222, 227, 233);
-        private static readonly Color WindowFill   = Color.FromArgb(255,  37,  99, 235);
-        private static readonly Color WindowEdge   = Color.FromArgb(255,  29,  78, 216);
-        private static readonly Color GhostEdge    = Color.FromArgb(255, 148, 163, 184);
-        private static readonly Color ArrowColor   = Color.FromArgb(255,  30,  41,  59);
+        private static readonly Color ScreenFill = Color.FromArgb(248, 251, 255);
+        private static readonly Color ScreenEdge = Color.FromArgb(198, 216, 236);
+        private static readonly Color TaskbarFill = Color.FromArgb(229, 237, 246);
+        private static readonly Color WindowFill = Color.FromArgb(92, 171, 255);
+        private static readonly Color WindowFill2 = Color.FromArgb(10, 124, 245);
+        private static readonly Color WindowEdge = Color.FromArgb(0, 94, 214);
+        private static readonly Color GhostEdge = Color.FromArgb(132, 151, 174);
+        private static readonly Color ArrowColor = Color.FromArgb(36, 55, 82);
 
         private SnapAction _action = SnapAction.LeftHalf;
 
@@ -25,7 +26,7 @@ namespace EbenTilerWindows
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
                 | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-            BackColor = Color.White;
+            BackColor = UiPalette.Surface;
         }
 
         public void SetAction(SnapAction action)
@@ -103,13 +104,21 @@ namespace EbenTilerWindows
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.Clear(BackColor);
 
+            RectangleF canvas = new RectangleF(1f, 1f, Math.Max(1, Width - 3), Math.Max(1, Height - 3));
+            using (SolidBrush soft = new SolidBrush(UiPalette.SurfaceSoft))
+            using (Pen edge = new Pen(UiPalette.Border, 1f))
+            {
+                UiDrawing.FillRoundedRectangle(g, soft, canvas, 12f);
+                UiDrawing.DrawRoundedRectangle(g, edge, canvas, 12f);
+            }
+
             if (_action == SnapAction.NextDisplay || _action == SnapAction.PreviousDisplay)
             {
                 PaintTwoScreens(g, _action == SnapAction.NextDisplay);
                 return;
             }
 
-            Rectangle screen = ScreenBox(ClientRectangle, 1);
+            Rectangle screen = ScreenBox(Rectangle.Inflate(ClientRectangle, -8, -8), 1);
             DrawScreen(g, screen);
 
             RectangleF f = TargetFraction(_action);
@@ -148,7 +157,7 @@ namespace EbenTilerWindows
 
         private void PaintTwoScreens(Graphics g, bool forward)
         {
-            Rectangle full = ClientRectangle;
+            Rectangle full = Rectangle.Inflate(ClientRectangle, -6, -6);
             int gap = Math.Max(6, full.Width / 22);
             int halfW = (full.Width - gap) / 2;
 
@@ -201,7 +210,7 @@ namespace EbenTilerWindows
         private static Rectangle WorkArea(Rectangle screen)
         {
             int taskbar = Math.Max(4, (int)(screen.Height * 0.10f));
-            return new Rectangle(screen.Left + 1, screen.Top + 1, screen.Width - 2, screen.Height - taskbar - 1);
+            return new Rectangle(screen.Left + 2, screen.Top + 2, screen.Width - 4, screen.Height - taskbar - 3);
         }
 
         private static Rectangle Scale(Rectangle area, RectangleF f)
@@ -217,39 +226,58 @@ namespace EbenTilerWindows
 
         private static void DrawScreen(Graphics g, Rectangle screen)
         {
+            RectangleF rect = new RectangleF(screen.X, screen.Y, screen.Width - 1, screen.Height - 1);
+            using (SolidBrush shadow = new SolidBrush(Color.FromArgb(18, 39, 84, 130)))
+            {
+                RectangleF shadowRect = rect;
+                shadowRect.Offset(0f, 2f);
+                UiDrawing.FillRoundedRectangle(g, shadow, shadowRect, 9f);
+            }
             using (SolidBrush fill = new SolidBrush(ScreenFill))
-            {
-                g.FillRectangle(fill, screen);
-            }
-            int taskbar = Math.Max(4, (int)(screen.Height * 0.10f));
-            using (SolidBrush bar = new SolidBrush(TaskbarFill))
-            {
-                g.FillRectangle(bar, screen.Left, screen.Bottom - taskbar, screen.Width, taskbar);
-            }
             using (Pen edge = new Pen(ScreenEdge, 1f))
             {
-                g.DrawRectangle(edge, screen.Left, screen.Top, screen.Width - 1, screen.Height - 1);
+                UiDrawing.FillRoundedRectangle(g, fill, rect, 9f);
+                UiDrawing.DrawRoundedRectangle(g, edge, rect, 9f);
+            }
+
+            int taskbar = Math.Max(4, (int)(screen.Height * 0.10f));
+            RectangleF bar = new RectangleF(
+                screen.Left + 2, screen.Bottom - taskbar - 2,
+                Math.Max(1, screen.Width - 4), Math.Max(1, taskbar));
+            using (SolidBrush barBrush = new SolidBrush(TaskbarFill))
+            {
+                UiDrawing.FillRoundedRectangle(g, barBrush, bar, 3f);
             }
         }
 
         private static void DrawWindow(Graphics g, Rectangle rect)
         {
-            using (SolidBrush fill = new SolidBrush(WindowFill))
-            {
-                g.FillRectangle(fill, rect);
-            }
+            RectangleF box = new RectangleF(rect.X + 1, rect.Y + 1, Math.Max(1, rect.Width - 2), Math.Max(1, rect.Height - 2));
+            using (LinearGradientBrush fill = new LinearGradientBrush(
+                box, WindowFill, WindowFill2, LinearGradientMode.Vertical))
             using (Pen edge = new Pen(WindowEdge, 1f))
             {
-                g.DrawRectangle(edge, rect.Left, rect.Top, rect.Width - 1, rect.Height - 1);
+                UiDrawing.FillRoundedRectangle(g, fill, box, 5f);
+                UiDrawing.DrawRoundedRectangle(g, edge, box, 5f);
+            }
+
+            if (box.Width > 24 && box.Height > 18)
+            {
+                using (Pen shine = new Pen(Color.FromArgb(145, 255, 255, 255), 1f))
+                {
+                    g.DrawLine(shine, box.Left + 7, box.Top + 7, box.Right - 7, box.Top + 7);
+                }
             }
         }
 
         private static void DrawGhost(Graphics g, Rectangle rect)
         {
+            RectangleF box = new RectangleF(rect.X + 1, rect.Y + 1, Math.Max(1, rect.Width - 2), Math.Max(1, rect.Height - 2));
             using (Pen ghost = new Pen(GhostEdge, 1.4f))
+            using (GraphicsPath path = UiDrawing.RoundedRectangle(box, 5f))
             {
                 ghost.DashStyle = DashStyle.Dash;
-                g.DrawRectangle(ghost, rect);
+                g.DrawPath(ghost, path);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿# EbenTiler for Windows 빌드 스크립트
+# EbenTiler for Windows 빌드 스크립트
 # .NET SDK 없이 Windows 에 기본 포함된 .NET Framework 4.8 컴파일러로 바로 빌드한다.
 #
 #   powershell -ExecutionPolicy Bypass -File build.ps1
@@ -7,18 +7,12 @@
 
 $ErrorActionPreference = 'Stop'
 
-$root      = Split-Path -Parent $MyInvocation.MyCommand.Path
-$srcDir    = Join-Path $root 'src'
-$outDir    = Join-Path $root 'build'
-$exePath   = Join-Path $outDir 'EbenTiler.exe'
-
-# 정식 아이콘이 있으면 그것을 쓴다. 없으면 아래에서 임시 아이콘을 그려 만든다.
-$assetIcon = Join-Path $root 'assets\app.ico'
-if (Test-Path $assetIcon) {
-    $iconPath = $assetIcon
-} else {
-    $iconPath = Join-Path $outDir 'app.ico'
-}
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$srcDir = Join-Path $root 'src'
+$outDir = Join-Path $root 'build'
+$exePath = Join-Path $outDir 'EbenTiler.exe'
+$iconPath = Join-Path $root 'assets\app.ico'
+$iconScript = Join-Path $root 'tools\make-appicon.ps1'
 
 $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) {
@@ -32,31 +26,13 @@ if (-not (Test-Path $outDir)) {
     New-Item -ItemType Directory -Path $outDir | Out-Null
 }
 
-# 실행 파일 아이콘을 그려서 만든다 (별도 이미지 파일이 필요 없도록).
-if (-not (Test-Path $iconPath)) {
-    Add-Type -AssemblyName System.Drawing
-    $bmp = New-Object System.Drawing.Bitmap 32, 32
-    $g   = [System.Drawing.Graphics]::FromImage($bmp)
-    $g.Clear([System.Drawing.Color]::Transparent)
-
-    $fill   = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 245, 245, 245))
-    $accent = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 35, 35, 35))
-    $pen    = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255, 35, 35, 35)), 2
-
-    $g.FillRectangle($fill, 3, 5, 26, 22)
-    $g.FillRectangle($accent, 4, 6, 12, 20)
-    $g.DrawRectangle($pen, 3, 5, 26, 22)
-    $g.DrawLine($pen, 16, 5, 16, 27)
-
-    $g.Dispose()
-    $hicon = $bmp.GetHicon()
-    $icon  = [System.Drawing.Icon]::FromHandle($hicon)
-    $fs    = [System.IO.File]::Create($iconPath)
-    $icon.Save($fs)
-    $fs.Close()
-    $icon.Dispose()
-    $bmp.Dispose()
-    Write-Host "아이콘 생성: $iconPath"
+# 웹 파비콘과 동일한 디자인을 단일 소스로 유지하기 위해 빌드 때 앱 아이콘을 재생성한다.
+if (-not (Test-Path $iconScript)) {
+    throw "앱 아이콘 생성 스크립트를 찾지 못했습니다: $iconScript"
+}
+& powershell -NoProfile -ExecutionPolicy Bypass -File $iconScript -NoPreview
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path $iconPath)) {
+    throw "앱 아이콘 생성에 실패했습니다."
 }
 
 $sources = Get-ChildItem -Path $srcDir -Filter *.cs | ForEach-Object { $_.FullName }
@@ -69,6 +45,7 @@ $cscArgs = @(
     '/target:winexe'
     '/platform:x64'
     '/optimize+'
+    '/warn:4'
     '/warnaserror-'
     "/out:$exePath"
     "/win32icon:$iconPath"

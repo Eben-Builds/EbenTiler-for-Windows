@@ -1,9 +1,6 @@
 # EbenTiler for Windows
 
 단축키로 창을 화면 절반·사분면·3분할에 순식간에 붙여 주는 Windows 상주 프로그램.
-macOS의 [Rectangle](https://rectangleapp.com/)에서 익숙한 키보드 중심 창 배치 경험을 Windows에서 제공하는 독립적인 프로젝트다.
-
-> EbenTiler는 Rectangle 또는 Rectangle Pro의 공식 Windows 버전이 아니다.
 
 - 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
 - 실행 파일 하나, 약 40KB

@@ -8,7 +8,7 @@ namespace RectangleWindows
     public static class Startup
     {
         private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string ValueName = "SnapDeck";
+        private const string ValueName = "SnapFlow";
 
         public static bool IsEnabled()
         {

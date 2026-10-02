@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $toolsDir
-$exe  = Join-Path $root 'build\Rectangle.exe'
+$exe  = Join-Path $root 'build\SnapFlow.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 Add-Type -AssemblyName UIAutomationClient
@@ -27,8 +27,8 @@ Add-Type -Namespace SetUI -Name U -MemberDefinition @'
 '@
 try { [SetUI.U]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null } catch { }
 
-$configPath = Join-Path (Join-Path $env:APPDATA 'RectangleWindows') 'config.ini'
-$backupPath = Join-Path $env:TEMP ('rect-set-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
+$configPath = Join-Path (Join-Path $env:APPDATA 'SnapFlow') 'config.ini'
+$backupPath = Join-Path $env:TEMP ('snapflow-set-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
 $hadConfig  = Test-Path $configPath
 if ($hadConfig) { Copy-Item $configPath $backupPath -Force }
 
@@ -49,8 +49,6 @@ function Find-Element {
     return $Window.FindFirst($scope, $c)
 }
 
-# WinForms 컨트롤은 UI Automation 에 전부 Pane 으로만 보이고 이름도 컨트롤 글자 그대로다.
-# 그래서 목록과 입력 상자는 이름 대신 위치와 크기로 찾는다.
 function Get-AllElements {
     param($Window)
     return $Window.FindAll($scope, [System.Windows.Automation.Condition]::TrueCondition)
@@ -82,12 +80,10 @@ function Find-CaptureBox {
     return $null
 }
 
-# 설정 창이 다른 창에 가려져 있으면 클릭이 엉뚱한 창으로 간다.
-# 잠시 항상 위로 올려 두고, 활성 창으로 만든 뒤에 조작한다.
 function Bring-ToFront {
     param([IntPtr]$Handle)
     $HWND_TOPMOST = [IntPtr](-1)
-    $SWP = 0x0001 -bor 0x0002   # NOSIZE | NOMOVE
+    $SWP = 0x0001 -bor 0x0002
     [SetUI.U]::SetWindowPos($Handle, $HWND_TOPMOST, 0, 0, 0, 0, $SWP) | Out-Null
 
     for ($try = 0; $try -lt 5; $try++) {
@@ -135,13 +131,12 @@ function Send-Key {
     Start-Sleep -Milliseconds 120
 }
 
-# 상주 중이던 앱을 검사 때문에 잠깐 끄더라도, 끝나면 원래대로 다시 띄운다.
-$installedExe = "$env:LOCALAPPDATA\Programs\Rectangle\Rectangle.exe"
-$wasResident = $null -ne (Get-Process Rectangle -ErrorAction SilentlyContinue)
+$installedExe = "$env:LOCALAPPDATA\Programs\SnapFlow\SnapFlow.exe"
+$wasResident = $null -ne (Get-Process SnapFlow -ErrorAction SilentlyContinue)
 
 $settings = $null
 try {
-    Get-Process Rectangle -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
     if (Test-Path $configPath) { Remove-Item $configPath -Force }
 
     $settings = Start-Process -FilePath $exe -ArgumentList '--settings' -PassThru
@@ -159,15 +154,13 @@ try {
     $window = $auto::FromHandle($hwnd)
     Ok ("설정 창 열림: " + $window.Current.Name)
 
-    # 1) 기능 목록에서 '오른쪽 1/3'(위에서 11번째) 선택
     $list = Find-ListView $window
     if ($null -eq $list) { throw "기능 목록을 찾지 못했습니다." }
-    Click-Element $list 30 45           # 목록 안을 클릭해 포커스를 준다
-    Send-Key 0x24                        # Home: 첫 항목으로
-    for ($k = 0; $k -lt 10; $k++) { Send-Key 0x28 }   # Down x10 -> 오른쪽 1/3
+    Click-Element $list 30 45
+    Send-Key 0x24
+    for ($k = 0; $k -lt 10; $k++) { Send-Key 0x28 }
     Start-Sleep -Milliseconds 300
 
-    # 선택이 실제로 옮겨졌는지, 입력 상자에 그 기능의 현재 단축키가 뜨는지로 확인한다.
     $current = (Find-CaptureBox $window).Current.Name
     if ($current -like '*H*' -and $current -notlike '*←*') {
         Ok "목록에서 '오른쪽 1/3' 선택됨 (현재 단축키 표시: $current)"
@@ -175,11 +168,10 @@ try {
         Bad "목록 선택이 옮겨지지 않음 (입력 상자 표시값 '$current')"
     }
 
-    # 2) 단축키 입력 상자를 클릭하고 실제로 키 조합을 누른다
     $capture = Find-CaptureBox $window
     if ($null -eq $capture) { throw "단축키 입력 상자를 찾지 못했습니다." }
     Click-Element $capture
-    Send-Key 0x42 -Ctrl -Alt -Shift      # Ctrl+Alt+Shift+B
+    Send-Key 0x42 -Ctrl -Alt -Shift
     Start-Sleep -Milliseconds 300
 
     $shown = (Find-CaptureBox $window).Current.Name
@@ -189,13 +181,11 @@ try {
         Bad "입력 상자에 조합이 표시되지 않음 (표시값 '$shown')"
     }
 
-    # 3) '이 단축키로 지정' 버튼 클릭
     $assign = Find-Element $window '이 단축키로 지정'
     if ($null -eq $assign) { throw "'이 단축키로 지정' 버튼을 찾지 못했습니다." }
     Click-Element $assign
     Ok "'이 단축키로 지정' 버튼 클릭"
 
-    # 4) '저장' 버튼 클릭
     $save = Find-Element $window '저장'
     if ($null -eq $save) { throw "'저장' 버튼을 찾지 못했습니다." }
     Click-Element $save
@@ -213,7 +203,6 @@ try {
         }
     }
 
-    # 5) 바뀐 설정으로 단축키가 실제 등록되는지
     $tmp = [System.IO.Path]::GetTempFileName()
     Start-Process -FilePath $exe -ArgumentList @('--check', '--out', $tmp) -Wait -WindowStyle Hidden | Out-Null
     $check = [System.IO.File]::ReadAllText($tmp, [System.Text.Encoding]::UTF8)
@@ -227,7 +216,7 @@ try {
 }
 finally {
     if ($null -ne $settings) { $settings | Stop-Process -Force -ErrorAction SilentlyContinue }
-    Get-Process Rectangle -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
 
     if ($hadConfig) {
         Copy-Item $backupPath $configPath -Force
@@ -237,11 +226,10 @@ finally {
     }
     [SetUI.U]::SetCursorPos($cursorX, $cursorY) | Out-Null
 
-    # 검사 전에 상주 중이었으면 다시 띄워 준다.
-    if ($wasResident -and (Test-Path $installedExe) -and -not (Get-Process Rectangle -ErrorAction SilentlyContinue)) {
+    if ($wasResident -and (Test-Path $installedExe) -and -not (Get-Process SnapFlow -ErrorAction SilentlyContinue)) {
         Start-Process -FilePath $installedExe | Out-Null
         Start-Sleep -Seconds 2
-        Write-Host "상주 중이던 Rectangle 을 다시 띄웠습니다."
+        Write-Host "상주 중이던 SnapFlow 을 다시 띄웠습니다."
     }
 
     Write-Host ""

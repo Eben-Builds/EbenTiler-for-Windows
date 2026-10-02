@@ -1,12 +1,12 @@
 ﻿# 전역 단축키가 실제로 먹히는지 확인한다.
-# RumiFlow.exe 를 상주 모드로 띄우고, 검증용 창을 활성화한 뒤 키 입력을 실제로 보낸다.
+# EbenTiler.exe 를 상주 모드로 띄우고, 검증용 창을 활성화한 뒤 키 입력을 실제로 보낸다.
 #
 #   powershell -ExecutionPolicy Bypass -File tools\verify-hotkeys.ps1
 
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$exe  = Join-Path $root 'build\RumiFlow.exe'
+$exe  = Join-Path $root 'build\EbenTiler.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 Add-Type -Namespace HK -Name U -MemberDefinition @'
@@ -26,7 +26,7 @@ $VK_CONTROL = 0x11
 $VK_MENU    = 0x12
 $KEYUP      = 0x0002
 
-# --info 를 부를 때마다 RumiFlow.exe 가 잠깐 떠서 활성 창이 바뀔 수 있다.
+# --info 를 부를 때마다 EbenTiler.exe 가 잠깐 떠서 활성 창이 바뀔 수 있다.
 # 키를 보내기 직전에 매번 대상 창을 다시 활성화한다.
 function Activate-Target {
     param([IntPtr]$Handle)
@@ -95,13 +95,13 @@ function Parse-Xywh {
     return [PSCustomObject]@{ X = [int]$n[0]; Y = [int]$n[1]; Width = [int]$n[2]; Height = [int]$n[3] }
 }
 
-Get-Process RumiFlow -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process EbenTiler -ErrorAction SilentlyContinue | Stop-Process -Force
 $app = Start-Process -FilePath $exe -PassThru
 Start-Sleep -Seconds 2
-if ($app.HasExited) { throw "RumiFlow.exe 가 바로 종료되었습니다." }
-Write-Host "RumiFlow.exe 상주 실행 중 (PID $($app.Id))"
+if ($app.HasExited) { throw "EbenTiler.exe 가 바로 종료되었습니다." }
+Write-Host "EbenTiler.exe 상주 실행 중 (PID $($app.Id))"
 
-$handleFile = Join-Path $env:TEMP ("rumiflow-hk-" + [Guid]::NewGuid().ToString('N') + ".txt")
+$handleFile = Join-Path $env:TEMP ("ebentiler-hk-" + [Guid]::NewGuid().ToString('N') + ".txt")
 $hostScript = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) '_testwindow.ps1'
 $win = Start-Process powershell -PassThru -ArgumentList @('-ExecutionPolicy','Bypass','-NoProfile','-File',$hostScript,$handleFile)
 
@@ -206,6 +206,6 @@ Write-Host ("결과: 통과 {0} / 실패 {1}" -f $pass, $fail)
 $win | Stop-Process -Force -ErrorAction SilentlyContinue
 $app | Stop-Process -Force -ErrorAction SilentlyContinue
 Remove-Item $handleFile -Force -ErrorAction SilentlyContinue
-Write-Host "정리 완료 (검증용 창과 RumiFlow.exe 종료)"
+Write-Host "정리 완료 (검증용 창과 EbenTiler.exe 종료)"
 
 if ($fail -gt 0) { exit 1 } else { exit 0 }

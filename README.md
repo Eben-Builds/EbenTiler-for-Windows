@@ -3,7 +3,7 @@
 단축키로 창을 화면 절반·사분면·3분할에 순식간에 붙여 주는 Windows 상주 프로그램.
 
 - 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
-- 실행 파일 하나, 약 40KB
+- 실행 파일 하나, 약 80KB
 - 알림 영역에 상주, 설정 창에서 단축키 자유롭게 변경
 
 ## 기본 단축키
@@ -36,6 +36,28 @@
 2초 안에 다시 누를 때만 순환하고, 그 뒤에는 다시 1/2 부터 시작한다.
 설정 창에서 끌 수 있다.
 
+## 설치
+
+일반 사용자는 `EbenTiler-Setup.exe`를 더블클릭하면 된다.
+관리자 권한이 필요하지 않고 현재 사용자 계정에만 설치된다.
+
+- 프로그램: `%LOCALAPPDATA%\Programs\EbenTiler\EbenTiler.exe`
+- 시작 메뉴 바로 가기 등록
+- 설치 화면에서 Windows 시작 시 자동 실행 여부 선택
+- 설치 후 바로 실행 가능
+- 제거: Windows **설정 > 앱 > 설치된 앱 > EbenTiler for Windows > 제거**
+
+자세한 설치/인스톨러 빌드/코드 서명 안내는 [`INSTALL.md`](INSTALL.md)를 참고한다.
+
+개발 중 직접 설치 스크립트를 써야 한다면 기존 PowerShell 방식도 사용할 수 있다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1
+powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
+```
+
+설정까지 남기고 제거하려면 `-KeepConfig`, 자동 시작을 등록하지 않으려면 설치 시 `-NoStartup`을 붙인다.
+
 ## 빌드
 
 .NET SDK 를 설치할 필요 없다. Windows 에 기본으로 들어 있는 .NET Framework 4.8 컴파일러로 바로 빌드한다.
@@ -46,24 +68,17 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 
 결과물은 `build\EbenTiler.exe` 하나다. 원하는 곳에 두고 실행하면 된다.
 
-## 설치
+정식 설치 프로그램은 다음 명령으로 만든다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File install.ps1
+powershell -ExecutionPolicy Bypass -File build-installer.ps1
 ```
 
-관리자 권한이 필요 없다. 현재 사용자 계정에만 설치된다.
+결과물:
 
-- 프로그램: `%LOCALAPPDATA%\Programs\EbenTiler\EbenTiler.exe`
-- 시작 메뉴 바로 가기 등록
-- 윈도우 시작 시 자동 실행 등록 (`-NoStartup` 을 붙이면 등록하지 않는다)
-- 단축키 충돌이 있으면 어떤 것이 겹치는지 알려 준다
-- 설치 후 바로 실행된다
-
-제거는 이렇게 한다. 설정까지 남기고 싶으면 `-KeepConfig` 를 붙인다.
-
-```powershell
-powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
+```text
+dist\EbenTiler-Setup.exe
+dist\EbenTiler-Setup.exe.sha256
 ```
 
 ## 실행
@@ -181,6 +196,26 @@ powershell -ExecutionPolicy Bypass -File tools\capture-ui.ps1
 # 창 두 개를 좌우로 붙인 화면 캡처
 powershell -ExecutionPolicy Bypass -File tools\capture-demo.ps1
 ```
+
+인스톨러 릴리스 검증:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\verify-installer.ps1
+powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1
+```
+
+정식 공개 릴리스는 코드 서명까지 반드시 검증한다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSigning
+```
+
+## 코드 서명 정책
+
+정식 공개 릴리스는 유효한 Authenticode 서명 없이는 게시하지 않는다.
+2026년 공개 코드서명 인증서는 개인키가 하드웨어/HSM/클라우드 서명 서비스에 보관되는 형태를 기본으로 보고 있으며, 새 인증서 구매를 export 가능한 PFX 전제로 설계하지 않는다.
+
+상세 정책과 공급자 선택 기준은 [`docs/CODE_SIGNING.md`](docs/CODE_SIGNING.md)를 참고한다.
 
 ## 알아 둘 점
 

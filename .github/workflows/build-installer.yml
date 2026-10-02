@@ -11,6 +11,7 @@ on:
       - 'installer/**'
       - 'tools/make-appicon.ps1'
       - 'tools/verify-installer.ps1'
+      - 'tools/verify-release.ps1'
       - 'build.ps1'
       - 'build-installer.ps1'
       - 'LICENSE'
@@ -31,6 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Install pinned Inno Setup
         shell: powershell
@@ -72,6 +75,10 @@ jobs:
           $expected = ((Get-Content '.\dist\EbenTiler-Setup.exe.sha256' -Raw).Split()[0]).Trim().ToLowerInvariant()
           $actual = (Get-FileHash '.\dist\EbenTiler-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($expected -ne $actual) { throw "Installer SHA256 mismatch: $actual" }
+
+      - name: Exercise release verification
+        shell: powershell
+        run: .\tools\verify-release.ps1
 
       - name: Smoke test install and uninstall
         shell: powershell

@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
     /// <summary>실제로 창을 찾아 옮기고 크기를 바꾸는 부분.</summary>
     public sealed class WindowManager

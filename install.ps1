@@ -1,4 +1,4 @@
-﻿# RumiFlow for Windows 설치 / 제거
+﻿# EbenTiler for Windows 설치 / 제거
 #
 #   powershell -ExecutionPolicy Bypass -File install.ps1              설치
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -NoStartup   설치하되 자동 실행은 끄기
@@ -15,31 +15,31 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root       = Split-Path -Parent $MyInvocation.MyCommand.Path
-$builtExe   = Join-Path $root 'build\RumiFlow.exe'
-$installDir = Join-Path $env:LOCALAPPDATA 'Programs\RumiFlow'
-$installExe = Join-Path $installDir 'RumiFlow.exe'
+$builtExe   = Join-Path $root 'build\EbenTiler.exe'
+$installDir = Join-Path $env:LOCALAPPDATA 'Programs\EbenTiler'
+$installExe = Join-Path $installDir 'EbenTiler.exe'
 $startMenu  = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
-$shortcut   = Join-Path $startMenu 'RumiFlow for Windows.lnk'
-$configDir  = Join-Path $env:APPDATA 'RumiFlow'
+$shortcut   = Join-Path $startMenu 'EbenTiler for Windows.lnk'
+$configDir  = Join-Path $env:APPDATA 'EbenTiler'
 
 function Stop-Running {
-    $running = Get-Process RumiFlow -ErrorAction SilentlyContinue
+    $running = Get-Process EbenTiler -ErrorAction SilentlyContinue
     if ($running) {
         $running | Stop-Process -Force
         Start-Sleep -Milliseconds 700
-        Write-Host "실행 중이던 RumiFlow 을 종료했습니다."
+        Write-Host "실행 중이던 EbenTiler 을 종료했습니다."
     }
 }
 
 if ($Uninstall) {
-    Write-Host "RumiFlow for Windows 를 제거합니다."
+    Write-Host "EbenTiler for Windows 를 제거합니다."
     Stop-Running
 
     if (Test-Path $installExe) {
         # 자동 실행 등록은 프로그램 자신이 지우게 한다.
         Start-Process -FilePath $installExe -ArgumentList @('--startup', 'off') -Wait -WindowStyle Hidden | Out-Null
     }
-    Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name RumiFlow -ErrorAction SilentlyContinue
+    Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name EbenTiler -ErrorAction SilentlyContinue
 
     if (Test-Path $shortcut)   { Remove-Item $shortcut -Force;            Write-Host "시작 메뉴 바로 가기 삭제" }
     if (Test-Path $installDir) { Remove-Item $installDir -Recurse -Force; Write-Host "프로그램 폴더 삭제: $installDir" }
@@ -108,7 +108,7 @@ if ($conflicts) {
 # 실행
 Start-Process -FilePath $installExe | Out-Null
 Start-Sleep -Seconds 2
-if (Get-Process RumiFlow -ErrorAction SilentlyContinue) {
+if (Get-Process EbenTiler -ErrorAction SilentlyContinue) {
     Write-Host ""
     Write-Host "설치 완료. 지금 실행 중입니다."
     Write-Host "알림 영역(작업표시줄 오른쪽 ∧) 안에 아이콘이 있습니다."

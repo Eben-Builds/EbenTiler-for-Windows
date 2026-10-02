@@ -10,7 +10,7 @@ namespace RectangleWindows
 {
     internal static class Program
     {
-        private const string MutexName = "Global\\RectangleWindows.SingleInstance";
+        private const string MutexName = "Global\\SnapDeck.SingleInstance";
 
         [DllImport("kernel32.dll")]
         private static extern bool AttachConsole(int processId);
@@ -23,7 +23,6 @@ namespace RectangleWindows
         [STAThread]
         private static int Main(string[] args)
         {
-            // 창 좌표를 실제 픽셀로 다루려면 DPI 인식을 가장 먼저 켜야 한다.
             Native.EnableDpiAwareness();
 
             if (args != null && args.Length > 0)
@@ -40,8 +39,8 @@ namespace RectangleWindows
                 if (!createdNew)
                 {
                     MessageBox.Show(
-                        "Rectangle for Windows 는 이미 실행 중입니다.\n알림 영역(작업표시줄 오른쪽) 아이콘을 확인하세요.",
-                        "Rectangle for Windows", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        "SnapDeck for Windows 는 이미 실행 중입니다.\n알림 영역(작업표시줄 오른쪽) 아이콘을 확인하세요.",
+                        "SnapDeck for Windows", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return 0;
                 }
 
@@ -52,49 +51,26 @@ namespace RectangleWindows
             }
         }
 
-        /// <summary>
-        /// 화면 표시용 출력. 창 프로그램이라 콘솔로 파이프 연결이 안 되는 경우가 있어,
-        /// --out 으로 파일에도 남길 수 있게 해 두었다.
-        /// </summary>
         private static void Emit(string line)
         {
             _output.AppendLine(line);
-            try
-            {
-                Console.WriteLine(line);
-            }
-            catch (IOException)
-            {
-            }
+            try { Console.WriteLine(line); } catch (IOException) { }
         }
 
         private static void FlushOutput()
         {
-            if (string.IsNullOrEmpty(_outputPath))
-            {
-                return;
-            }
-            try
-            {
-                File.WriteAllText(_outputPath, _output.ToString(), new UTF8Encoding(false));
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+            if (string.IsNullOrEmpty(_outputPath)) return;
+            try { File.WriteAllText(_outputPath, _output.ToString(), new UTF8Encoding(false)); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
-        /// <summary>명령줄로 배치 명령 하나만 실행하는 모드. 스크립트와 자동 검증에 쓴다.</summary>
         private static int RunCommandLine(string[] args)
         {
             string actionName = null;
             IntPtr hwnd = IntPtr.Zero;
             bool infoOnly = false;
 
-            // --out 은 인수 순서와 상관없이 먹혀야 하므로 먼저 훑는다.
-            // (--check 처럼 바로 끝나는 인수가 앞에 와도 결과 파일이 남도록)
             for (int i = 0; i < args.Length - 1; i++)
             {
                 if (args[i] == "--out")
@@ -108,93 +84,41 @@ namespace RectangleWindows
             {
                 string arg = args[i];
 
-                if (arg == "--help" || arg == "-h" || arg == "/?")
-                {
-                    PrintHelp();
-                    return 0;
-                }
-
+                if (arg == "--help" || arg == "-h" || arg == "/?") { PrintHelp(); return 0; }
                 if (arg == "--list")
                 {
                     SnapAction[] ordered = SnapActions.Ordered;
-                    for (int k = 0; k < ordered.Length; k++)
-                    {
-                        Emit(ordered[k].ToString() + "\t" + SnapActions.Label(ordered[k]));
-                    }
+                    for (int k = 0; k < ordered.Length; k++) Emit(ordered[k].ToString() + "\t" + SnapActions.Label(ordered[k]));
                     return 0;
                 }
-
-                if (arg == "--info")
-                {
-                    infoOnly = true;
-                    continue;
-                }
-
-                if (arg == "--settings")
-                {
-                    return ShowSettingsOnly();
-                }
-
-                if (arg == "--check")
-                {
-                    return CheckHotkeys();
-                }
+                if (arg == "--info") { infoOnly = true; continue; }
+                if (arg == "--settings") return ShowSettingsOnly();
+                if (arg == "--check") return CheckHotkeys();
 
                 if (arg == "--startup" && i + 1 < args.Length)
                 {
-                    string mode = args[i + 1];
-                    i++;
-
-                    if (string.Equals(mode, "on", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Startup.SetEnabled(true);
-                    }
-                    else if (string.Equals(mode, "off", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Startup.SetEnabled(false);
-                    }
+                    string mode = args[i + 1]; i++;
+                    if (string.Equals(mode, "on", StringComparison.OrdinalIgnoreCase)) Startup.SetEnabled(true);
+                    else if (string.Equals(mode, "off", StringComparison.OrdinalIgnoreCase)) Startup.SetEnabled(false);
                     else if (!string.Equals(mode, "status", StringComparison.OrdinalIgnoreCase))
                     {
                         Emit("--startup 에는 on, off, status 중 하나를 적어 주세요.");
                         return 2;
                     }
-
                     Emit("startup=" + (Startup.IsEnabled() ? "on" : "off"));
                     return 0;
                 }
 
-                if (arg == "--out" && i + 1 < args.Length)
-                {
-                    _outputPath = args[i + 1];
-                    i++;
-                    continue;
-                }
-
-                if (arg == "--apply" && i + 1 < args.Length)
-                {
-                    actionName = args[i + 1];
-                    i++;
-                    continue;
-                }
+                if (arg == "--out" && i + 1 < args.Length) { _outputPath = args[i + 1]; i++; continue; }
+                if (arg == "--apply" && i + 1 < args.Length) { actionName = args[i + 1]; i++; continue; }
 
                 if (arg == "--hwnd" && i + 1 < args.Length)
                 {
-                    string value = args[i + 1];
-                    i++;
-
+                    string value = args[i + 1]; i++;
                     long parsed;
-                    bool ok;
-                    if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-                    {
-                        ok = long.TryParse(value.Substring(2), NumberStyles.HexNumber,
-                            CultureInfo.InvariantCulture, out parsed);
-                    }
-                    else
-                    {
-                        ok = long.TryParse(value, NumberStyles.Integer,
-                            CultureInfo.InvariantCulture, out parsed);
-                    }
-
+                    bool ok = value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                        ? long.TryParse(value.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out parsed)
+                        : long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed);
                     if (!ok)
                     {
                         Emit("창 핸들 값을 읽지 못했습니다: " + value);
@@ -207,31 +131,18 @@ namespace RectangleWindows
 
             if (infoOnly)
             {
-                if (hwnd == IntPtr.Zero)
-                {
-                    hwnd = WindowManager.GetTargetWindow();
-                }
-                if (hwnd == IntPtr.Zero)
-                {
-                    Emit("창을 찾지 못했습니다.");
-                    return 1;
-                }
+                if (hwnd == IntPtr.Zero) hwnd = WindowManager.GetTargetWindow();
+                if (hwnd == IntPtr.Zero) { Emit("창을 찾지 못했습니다."); return 1; }
 
                 System.Drawing.Rectangle workArea = Screen.FromHandle(hwnd).WorkingArea;
                 System.Drawing.Rectangle visual = WindowManager.GetVisualRect(hwnd);
-                Emit("work=" + workArea.Left + "," + workArea.Top + "," +
-                    workArea.Width + "," + workArea.Height);
-                Emit("window=" + visual.Left + "," + visual.Top + "," +
-                    visual.Width + "," + visual.Height);
+                Emit("work=" + workArea.Left + "," + workArea.Top + "," + workArea.Width + "," + workArea.Height);
+                Emit("window=" + visual.Left + "," + visual.Top + "," + visual.Width + "," + visual.Height);
                 Emit("maximized=" + (Native.IsZoomed(hwnd) ? "1" : "0"));
                 return 0;
             }
 
-            if (actionName == null)
-            {
-                PrintHelp();
-                return 2;
-            }
+            if (actionName == null) { PrintHelp(); return 2; }
 
             SnapAction action;
             if (!SnapActions.TryParse(actionName, out action))
@@ -240,54 +151,32 @@ namespace RectangleWindows
                 return 2;
             }
 
-            if (hwnd == IntPtr.Zero)
-            {
-                hwnd = WindowManager.GetTargetWindow();
-            }
-
-            if (hwnd == IntPtr.Zero)
-            {
-                Emit("배치할 창을 찾지 못했습니다.");
-                return 1;
-            }
+            if (hwnd == IntPtr.Zero) hwnd = WindowManager.GetTargetWindow();
+            if (hwnd == IntPtr.Zero) { Emit("배치할 창을 찾지 못했습니다."); return 1; }
 
             Config config = Config.Load();
             WindowManager windows = new WindowManager(config);
             bool applied = windows.ApplyTo(action, hwnd);
-
-            if (!applied)
-            {
-                Emit("배치하지 못했습니다: " + action.ToString());
-                return 1;
-            }
+            if (!applied) { Emit("배치하지 못했습니다: " + action.ToString()); return 1; }
 
             System.Drawing.Rectangle rect = WindowManager.GetVisualRect(hwnd);
             Emit("window=" + rect.Left + "," + rect.Top + "," + rect.Width + "," + rect.Height);
             return 0;
         }
 
-        /// <summary>
-        /// 설정에 있는 단축키를 실제로 등록해 보고, 다른 프로그램이 이미 쓰고 있어
-        /// 실패하는 것이 있는지 알려 준다. 등록해 본 뒤 곧바로 해제한다.
-        /// </summary>
         private static int CheckHotkeys()
         {
             Config config = Config.Load();
             using (HotkeyManager manager = new HotkeyManager())
             {
                 System.Collections.Generic.List<string> failed = manager.RegisterAll(config);
-
                 SnapAction[] ordered = SnapActions.Ordered;
                 int registered = 0;
                 int empty = 0;
                 for (int i = 0; i < ordered.Length; i++)
                 {
                     Hotkey hotkey = config.Get(ordered[i]);
-                    if (hotkey.IsEmpty || !hotkey.HasModifier)
-                    {
-                        empty++;
-                        continue;
-                    }
+                    if (hotkey.IsEmpty || !hotkey.HasModifier) { empty++; continue; }
                     registered++;
                 }
 
@@ -295,15 +184,11 @@ namespace RectangleWindows
                 Emit("assigned=" + registered);
                 Emit("unassigned=" + empty);
                 Emit("failed=" + failed.Count);
-                for (int i = 0; i < failed.Count; i++)
-                {
-                    Emit("conflict=" + failed[i]);
-                }
+                for (int i = 0; i < failed.Count; i++) Emit("conflict=" + failed[i]);
             }
             return 0;
         }
 
-        /// <summary>상주 중인 본체 없이 설정 창만 연다. 저장하면 설정 파일에 바로 반영된다.</summary>
         private static int ShowSettingsOnly()
         {
             Application.EnableVisualStyles();
@@ -318,17 +203,14 @@ namespace RectangleWindows
                     config.Save();
                     Emit("설정을 저장했습니다: " + Config.FilePath);
                 }
-                else
-                {
-                    Emit("설정을 저장하지 않고 닫았습니다.");
-                }
+                else Emit("설정을 저장하지 않고 닫았습니다.");
             }
             return 0;
         }
 
         private static void PrintHelp()
         {
-            Emit("Rectangle for Windows");
+            Emit("SnapDeck for Windows");
             Emit("  인수 없이 실행하면 알림 영역에 상주하며 전역 단축키를 받는다.");
             Emit("");
             Emit("  --apply <명령>       현재 활성 창에 배치 명령을 한 번 적용");

@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
     /// <summary>알림 영역 아이콘으로 계속 떠 있으면서 단축키를 받아 처리한다.</summary>
     public sealed class TrayApp : ApplicationContext
@@ -51,7 +51,7 @@ namespace RumiFlowWindows
 
             _tray = new NotifyIcon();
             _tray.Icon = AppIcon.LoadSmall();
-            _tray.Text = "RumiFlow for Windows";
+            _tray.Text = "EbenTiler for Windows";
             _tray.ContextMenuStrip = menu;
             _tray.Visible = true;
             _tray.MouseUp += OnTrayMouseUp;
@@ -65,7 +65,7 @@ namespace RumiFlowWindows
 
             if (firstRun && failedCount == 0)
             {
-                _tray.BalloonTipTitle = "RumiFlow for Windows 실행 중";
+                _tray.BalloonTipTitle = "EbenTiler for Windows 실행 중";
                 _tray.BalloonTipText =
                     "Ctrl+Alt+방향키로 창을 절반씩 배치하고, Ctrl+Alt+U/I/J/K로 사분면에 붙입니다.\n" +
                     "아이콘은 작업표시줄 오른쪽 숨김(∧) 안에 있을 수 있습니다.";

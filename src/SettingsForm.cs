@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace RectangleWindows
+namespace RumiFlowWindows
 {
     /// <summary>누른 키 조합을 그대로 받아 적는 입력 상자.</summary>
     public sealed class HotkeyCaptureBox : TextBox
@@ -35,7 +35,6 @@ namespace RectangleWindows
         {
             Keys code = keyData & Keys.KeyCode;
 
-            // Esc 는 창을 닫는 데 쓰이므로 가로채지 않는다.
             if (code == Keys.Escape)
             {
                 return base.ProcessCmdKey(ref msg, keyData);
@@ -92,7 +91,7 @@ namespace RectangleWindows
 
         private void BuildUi()
         {
-            Text = "Rectangle for Windows - 단축키 설정";
+            Text = "RumiFlow for Windows - 단축키 설정";
             ShowIcon = true;
             Icon = AppIcon.LoadLarge();
             // FixedDialog 로 두면 제목 표시줄에 아이콘이 나오지 않는다.
@@ -128,7 +127,6 @@ namespace RectangleWindows
             _list.SelectedIndexChanged += OnSelectionChanged;
             Controls.Add(_list);
 
-            // ── 오른쪽 칸: 고른 기능이 창을 어디에 놓는지 그림으로 보여 준다 ──
             Label previewLabel = new Label();
             previewLabel.Text = "미리보기";
             previewLabel.Location = new Point(S(418), S(12));
@@ -172,7 +170,6 @@ namespace RectangleWindows
             _gap.ValueChanged += delegate { _preview.Invalidate(); };
             Controls.Add(_gap);
 
-            // ── 아래쪽: 단축키 지정 ──
             Label captureLabel = new Label();
             captureLabel.Text = "새 단축키";
             captureLabel.Location = new Point(S(14), S(452));
@@ -295,7 +292,7 @@ namespace RectangleWindows
             SnapAction action;
             if (!TryGetSelectedAction(out action))
             {
-                MessageBox.Show(this, "먼저 위 목록에서 기능을 하나 고르세요.", "Rectangle for Windows",
+                MessageBox.Show(this, "먼저 위 목록에서 기능을 하나 고르세요.", "RumiFlow for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -303,12 +300,11 @@ namespace RectangleWindows
             Hotkey source = _capture.Captured;
             if (source.IsEmpty)
             {
-                MessageBox.Show(this, "입력 상자를 누른 뒤 원하는 키 조합을 눌러 주세요.", "Rectangle for Windows",
+                MessageBox.Show(this, "입력 상자를 누른 뒤 원하는 키 조합을 눌러 주세요.", "RumiFlow for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            // 설정에 들어 있는 원본을 건드리지 않도록 복사해서 쓴다.
             Hotkey hotkey = new Hotkey();
             hotkey.Ctrl = source.Ctrl;
             hotkey.Alt = source.Alt;
@@ -321,11 +317,10 @@ namespace RectangleWindows
                 MessageBox.Show(this,
                     "Ctrl, Alt, Shift, Win 중 하나 이상을 함께 눌러야 합니다.\n" +
                     "보조키 없이 등록하면 다른 프로그램에서 그 키를 아예 쓸 수 없게 됩니다.",
-                    "Rectangle for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    "RumiFlow for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // 이미 다른 기능이 같은 조합을 쓰고 있으면 확인 후 그쪽을 비운다.
             List<SnapAction> conflicts = new List<SnapAction>();
             foreach (KeyValuePair<SnapAction, Hotkey> pair in _config.Hotkeys)
             {
@@ -347,7 +342,7 @@ namespace RectangleWindows
                 DialogResult answer = MessageBox.Show(this,
                     hotkey.ToDisplayString() + " 는 이미 " + names + " 에 쓰이고 있습니다.\n" +
                     "그쪽 단축키를 비우고 이 기능에 지정할까요?",
-                    "Rectangle for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    "RumiFlow for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (answer != DialogResult.Yes)
                 {
                     return;
@@ -379,7 +374,7 @@ namespace RectangleWindows
         private void OnResetDefaults(object sender, EventArgs e)
         {
             DialogResult answer = MessageBox.Show(this,
-                "모든 단축키를 처음 상태로 되돌릴까요?", "Rectangle for Windows",
+                "모든 단축키를 처음 상태로 되돌릴까요?", "RumiFlow for Windows",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (answer != DialogResult.Yes)
             {

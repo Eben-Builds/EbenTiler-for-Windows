@@ -1,4 +1,4 @@
-﻿# Rectangle for Windows 설치 / 제거
+﻿# SnapDeck for Windows 설치 / 제거
 #
 #   powershell -ExecutionPolicy Bypass -File install.ps1              설치
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -NoStartup   설치하되 자동 실행은 끄기
@@ -14,32 +14,32 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$root      = Split-Path -Parent $MyInvocation.MyCommand.Path
-$builtExe  = Join-Path $root 'build\Rectangle.exe'
-$installDir = Join-Path $env:LOCALAPPDATA 'Programs\Rectangle'
-$installExe = Join-Path $installDir 'Rectangle.exe'
+$root       = Split-Path -Parent $MyInvocation.MyCommand.Path
+$builtExe   = Join-Path $root 'build\SnapDeck.exe'
+$installDir = Join-Path $env:LOCALAPPDATA 'Programs\SnapDeck'
+$installExe = Join-Path $installDir 'SnapDeck.exe'
 $startMenu  = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
-$shortcut   = Join-Path $startMenu 'Rectangle for Windows.lnk'
-$configDir  = Join-Path $env:APPDATA 'RectangleWindows'
+$shortcut   = Join-Path $startMenu 'SnapDeck for Windows.lnk'
+$configDir  = Join-Path $env:APPDATA 'SnapDeck'
 
 function Stop-Running {
-    $running = Get-Process Rectangle -ErrorAction SilentlyContinue
+    $running = Get-Process SnapDeck -ErrorAction SilentlyContinue
     if ($running) {
         $running | Stop-Process -Force
         Start-Sleep -Milliseconds 700
-        Write-Host "실행 중이던 Rectangle 을 종료했습니다."
+        Write-Host "실행 중이던 SnapDeck 을 종료했습니다."
     }
 }
 
 if ($Uninstall) {
-    Write-Host "Rectangle for Windows 를 제거합니다."
+    Write-Host "SnapDeck for Windows 를 제거합니다."
     Stop-Running
 
     if (Test-Path $installExe) {
         # 자동 실행 등록은 프로그램 자신이 지우게 한다.
         Start-Process -FilePath $installExe -ArgumentList @('--startup', 'off') -Wait -WindowStyle Hidden | Out-Null
     }
-    Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name RectangleWindows -ErrorAction SilentlyContinue
+    Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name SnapDeck -ErrorAction SilentlyContinue
 
     if (Test-Path $shortcut)   { Remove-Item $shortcut -Force;            Write-Host "시작 메뉴 바로 가기 삭제" }
     if (Test-Path $installDir) { Remove-Item $installDir -Recurse -Force; Write-Host "프로그램 폴더 삭제: $installDir" }
@@ -108,7 +108,7 @@ if ($conflicts) {
 # 실행
 Start-Process -FilePath $installExe | Out-Null
 Start-Sleep -Seconds 2
-if (Get-Process Rectangle -ErrorAction SilentlyContinue) {
+if (Get-Process SnapDeck -ErrorAction SilentlyContinue) {
     Write-Host ""
     Write-Host "설치 완료. 지금 실행 중입니다."
     Write-Host "알림 영역(작업표시줄 오른쪽 ∧) 안에 아이콘이 있습니다."

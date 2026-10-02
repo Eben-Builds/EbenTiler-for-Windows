@@ -317,6 +317,7 @@ namespace RumiFlowWindows
 
             Rectangle current = GetVisualRect(hwnd);
 
+            // 원래 모니터에서 차지하던 비율을 그대로 새 모니터에 옮긴다.
             double relX = from.Width > 0 ? (double)(current.Left - from.Left) / from.Width : 0;
             double relY = from.Height > 0 ? (double)(current.Top - from.Top) / from.Height : 0;
             double relW = from.Width > 0 ? (double)current.Width / from.Width : 0.5;
@@ -330,6 +331,7 @@ namespace RumiFlowWindows
 
             target = Clamp(target, to);
 
+            // 모니터 배율이 다르면 첫 호출 뒤 Windows가 크기를 다시 조정하므로 두 번 적용한다.
             MoveTo(hwnd, target);
             MoveTo(hwnd, target);
 
@@ -353,6 +355,8 @@ namespace RumiFlowWindows
             });
             return screens;
         }
+
+        // 원래 크기 기억과 복원
 
         private void RememberOriginal(IntPtr hwnd)
         {
@@ -390,6 +394,7 @@ namespace RumiFlowWindows
                 return Native.SetWindowPlacement(hwnd, ref placement);
             }
 
+            // 기억해 둔 크기가 없으면 최대화만 해제한다.
             if (Native.IsZoomed(hwnd))
             {
                 Native.ShowWindow(hwnd, Native.SW_RESTORE);
@@ -419,6 +424,9 @@ namespace RumiFlowWindows
             }
         }
 
+        // 창 좌표 계산
+
+        /// <summary>눈에 보이는 창 테두리 기준 사각형. Windows의 투명한 여백을 뺀 값이다.</summary>
         public static Rectangle GetVisualRect(IntPtr hwnd)
         {
             Native.RECT rect;
@@ -434,6 +442,7 @@ namespace RumiFlowWindows
             return new Rectangle(rect.Left, rect.Top, rect.Width, rect.Height);
         }
 
+        /// <summary>보이는 테두리가 목표 사각형에 딱 맞도록 투명 여백만큼 보정해서 옮긴다.</summary>
         public static void MoveTo(IntPtr hwnd, Rectangle target)
         {
             Native.RECT outer;
@@ -462,6 +471,9 @@ namespace RumiFlowWindows
                 Native.SWP_NOZORDER | Native.SWP_NOACTIVATE);
         }
 
+        // 대상 창 고르기
+
+        /// <summary>배치 대상이 될 만한 활성 창을 고른다. 바탕화면이나 작업표시줄 등은 제외한다.</summary>
         public static IntPtr GetTargetWindow()
         {
             IntPtr hwnd = Native.GetForegroundWindow();
@@ -476,6 +488,7 @@ namespace RumiFlowWindows
                 return IntPtr.Zero;
             }
 
+            // 제목 표시줄도 크기 조절 테두리도 없으면 배치할 수 없는 창으로 본다.
             if ((style & Native.WS_CAPTION) == 0 && (style & Native.WS_THICKFRAME) == 0)
             {
                 return IntPtr.Zero;

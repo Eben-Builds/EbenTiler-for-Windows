@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace RectangleWindows
+namespace RumiFlowWindows
 {
     /// <summary>Win32 상호운용 선언 모음.</summary>
     internal static class Native

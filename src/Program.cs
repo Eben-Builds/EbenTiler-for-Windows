@@ -6,11 +6,11 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace RectangleWindows
+namespace RumiFlowWindows
 {
     internal static class Program
     {
-        private const string MutexName = "Global\\SnapFlow.SingleInstance";
+        private const string MutexName = "Global\\RumiFlow.SingleInstance";
 
         [DllImport("kernel32.dll")]
         private static extern bool AttachConsole(int processId);
@@ -39,8 +39,8 @@ namespace RectangleWindows
                 if (!createdNew)
                 {
                     MessageBox.Show(
-                        "SnapFlow for Windows 는 이미 실행 중입니다.\n알림 영역(작업표시줄 오른쪽) 아이콘을 확인하세요.",
-                        "SnapFlow for Windows", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        "RumiFlow for Windows 는 이미 실행 중입니다.\n알림 영역(작업표시줄 오른쪽) 아이콘을 확인하세요.",
+                        "RumiFlow for Windows", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return 0;
                 }
 
@@ -210,7 +210,7 @@ namespace RectangleWindows
 
         private static void PrintHelp()
         {
-            Emit("SnapFlow for Windows");
+            Emit("RumiFlow for Windows");
             Emit("  인수 없이 실행하면 알림 영역에 상주하며 전역 단축키를 받는다.");
             Emit("");
             Emit("  --apply <명령>       현재 활성 창에 배치 명령을 한 번 적용");

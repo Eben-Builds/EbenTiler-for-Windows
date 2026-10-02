@@ -7,7 +7,7 @@ param([string]$OutDir)
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$exe  = Join-Path $root 'build\RumiFlow.exe'
+$exe  = Join-Path $root 'build\EbenTiler.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 if ([string]::IsNullOrEmpty($OutDir)) { $OutDir = Join-Path $root 'build\screenshots' }

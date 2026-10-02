@@ -11,7 +11,7 @@
 - 설치가 끝나면 바로 EbenTiler를 실행할 수 있습니다.
 - 제거는 Windows **설정 > 앱 > 설치된 앱 > EbenTiler for Windows > 제거**에서 할 수 있습니다.
 
-> 코드 서명 인증서로 서명하지 않은 배포본은 Windows SmartScreen에서 게시자를 확인할 수 없다는 경고가 표시될 수 있습니다.
+> 코드 서명 인증서로 서명하지 않은 개발/테스트 빌드는 Windows SmartScreen에서 게시자를 확인할 수 없다는 경고가 표시될 수 있습니다. 정식 공개 릴리스는 유효한 Authenticode 서명을 요구합니다.
 
 ## 인스톨러 만들기
 
@@ -40,24 +40,41 @@ dist\EbenTiler-Setup.exe
 dist\EbenTiler-Setup.exe.sha256
 ```
 
-지인에게는 `EbenTiler-Setup.exe` 파일만 전달하면 됩니다.
+지인에게 테스트용으로 전달하려면 `EbenTiler-Setup.exe`를 사용할 수 있습니다. 공개 배포는 코드 서명이 완료된 정식 Release를 사용합니다.
 
 ## 코드 서명
 
-코드 서명 인증서가 없으면 기존처럼 unsigned 인스톨러가 정상 생성됩니다.
-인증서를 준비한 뒤에는 GitHub Actions가 `EbenTiler.exe`, 설치 프로그램, 제거 프로그램을 자동으로 Authenticode 서명합니다.
+2026년의 공개 신뢰 코드서명 인증서는 새로 발급받을 때 **PFX 파일을 전제로 잡지 않습니다.**
+공개 신뢰 인증서의 개인키는 일반적으로 하드웨어 토큰, HSM, 클라우드 HSM 또는 서명 서비스에서 보호됩니다.
 
-GitHub 저장소의 **Settings > Secrets and variables > Actions**에서 다음 Repository secrets 두 개를 등록합니다.
+EbenTiler는 서명 공급자와 빌드 로직을 분리합니다.
+서명 공급자가 Windows 인증서 저장소/KSP를 통해 인증서를 사용할 수 있게 한 뒤 아래 환경변수에 thumbprint를 제공하면 됩니다.
 
-- `EBENTILER_SIGNING_PFX_BASE64`: PFX 인증서 파일을 Base64 문자열로 변환한 값
-- `EBENTILER_SIGNING_PFX_PASSWORD`: PFX 비밀번호
-
-PowerShell에서 PFX를 Base64로 변환하는 예:
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\to\certificate.pfx")) | Set-Clipboard
+```text
+EBENTILER_SIGNING_CERT_SHA1
 ```
 
-PFX 파일 자체는 저장소에 커밋하지 마세요. `.gitignore`에서 `*.pfx`, `*.p12`를 차단합니다.
+정식 릴리스에서는 `.github/workflows/release.yml`이 `tools\prepare-code-signing.ps1 -RequireSigning`을 실행합니다.
+유효한 서명 신원이 준비되지 않으면 릴리스는 게시되지 않습니다.
 
-인증서 secrets가 설정되면 GitHub Actions 빌드에서 SHA-256 Authenticode 서명과 RFC 3161 타임스탬프를 적용하고 서명을 검증합니다.
+기존에 보유한 export 가능한 PFX가 있을 경우에만 호환 경로로 다음 GitHub Repository secrets를 사용할 수 있습니다.
+
+- `EBENTILER_SIGNING_PFX_BASE64`
+- `EBENTILER_SIGNING_PFX_PASSWORD`
+
+이 PFX 방식은 **새 공개 인증서 구매의 권장 기준이 아닙니다.**
+PFX/P12 파일 자체는 저장소에 커밋하지 마세요. `.gitignore`에서 `*.pfx`, `*.p12`를 차단합니다.
+
+코드 서명 공급자 선택, SmartScreen 동작, OV/EV 차이, SignPath 및 Store 경로는 다음 문서를 먼저 확인하세요.
+
+```text
+docs\CODE_SIGNING.md
+```
+
+정식 릴리스 검증:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSigning
+```
+
+정식 릴리스는 `EbenTiler.exe`, 설치 프로그램과 제거 프로그램을 Authenticode 서명하고, 설치 파일 SHA-256까지 다시 확인한 뒤 게시합니다.

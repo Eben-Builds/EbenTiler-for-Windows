@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace RectangleWindows
+namespace RumiFlowWindows
 {
     /// <summary>
     /// 고른 기능이 창을 화면 어디에 놓는지 그림으로 보여 준다.
@@ -118,8 +118,6 @@ namespace RectangleWindows
 
             if (_action == SnapAction.Restore)
             {
-                // 되돌리기 전 자리(점선)와 되돌아갈 자리(칠한 사각형)를 함께 보여 준다.
-                // 점선이 칠한 사각형에 가리지 않도록 나중에 그린다.
                 Rectangle from = Scale(work, new RectangleF(0f, 0f, 0.5f, 1f));
                 DrawWindow(g, target);
                 DrawGhost(g, from);
@@ -140,7 +138,6 @@ namespace RectangleWindows
                 DrawWindow(g, target);
                 DrawGhost(g, baseRect);
 
-                // 화살표가 파란 창 위에 놓이면 흰색으로, 바깥 배경 위면 짙은 색으로 그린다.
                 Color arrow = grow ? Color.White : ArrowColor;
                 DrawResizeArrows(g, baseRect, target, grow, arrow);
                 return;
@@ -182,7 +179,6 @@ namespace RectangleWindows
             }
         }
 
-        /// <summary>화면(모니터) 그림이 들어갈 자리를 16:10 비율로 잡는다.</summary>
         private static Rectangle ScreenBox(Rectangle area, int inset)
         {
             int pad = 8 + inset;
@@ -202,7 +198,6 @@ namespace RectangleWindows
             return new Rectangle(x, y, boxW, boxH);
         }
 
-        /// <summary>작업표시줄을 뺀 영역. 실제 동작과 같게 아래쪽을 비워 둔다.</summary>
         private static Rectangle WorkArea(Rectangle screen)
         {
             int taskbar = Math.Max(4, (int)(screen.Height * 0.10f));
@@ -249,7 +244,6 @@ namespace RectangleWindows
             }
         }
 
-        /// <summary>바뀌기 전 자리를 점선으로 표시한다.</summary>
         private static void DrawGhost(Graphics g, Rectangle rect)
         {
             using (Pen ghost = new Pen(GhostEdge, 1.4f))

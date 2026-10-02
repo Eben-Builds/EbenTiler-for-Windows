@@ -9,6 +9,8 @@ on:
       - 'src/**'
       - 'assets/**'
       - 'installer/**'
+      - 'tools/make-appicon.ps1'
+      - 'tools/verify-installer.ps1'
       - 'build.ps1'
       - 'build-installer.ps1'
       - 'LICENSE'
@@ -70,6 +72,10 @@ jobs:
           $expected = ((Get-Content '.\dist\EbenTiler-Setup.exe.sha256' -Raw).Split()[0]).Trim().ToLowerInvariant()
           $actual = (Get-FileHash '.\dist\EbenTiler-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($expected -ne $actual) { throw "Installer SHA256 mismatch: $actual" }
+
+      - name: Smoke test install and uninstall
+        shell: powershell
+        run: .\tools\verify-installer.ps1
 
       - name: Upload installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

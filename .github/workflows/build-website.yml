@@ -10,6 +10,8 @@ on:
       - 'src/**'
       - 'assets/**'
       - 'installer/**'
+      - 'tools/make-appicon.ps1'
+      - 'tools/verify-installer.ps1'
       - 'build.ps1'
       - 'build-installer.ps1'
       - '.github/workflows/build-website.yml'
@@ -83,6 +85,10 @@ jobs:
           $expected = ((Get-Content '.\dist\EbenTiler-Setup.exe.sha256' -Raw).Split()[0]).Trim().ToLowerInvariant()
           $actual = (Get-FileHash '.\dist\EbenTiler-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($expected -ne $actual) { throw "Installer SHA256 mismatch: $actual" }
+
+      - name: 설치와 제거 스모크 테스트
+        shell: powershell
+        run: .\tools\verify-installer.ps1
 
       - name: 랜딩페이지와 설치 파일 묶기
         shell: powershell

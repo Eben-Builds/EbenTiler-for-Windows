@@ -58,10 +58,9 @@ function Click-Point {
     Start-Sleep -Milliseconds 800
 }
 
-# Rectangle 프로세스가 띄운 보이는 팝업 창(= 트레이 메뉴)을 Win32 로 찾는다.
-# WinForms 팝업 메뉴는 UI Automation 트리에 잡히지 않는다.
+# SnapFlow 프로세스가 띄운 보이는 팝업 창(= 트레이 메뉴)을 Win32 로 찾는다.
 function Find-MenuWindow {
-    $target = (Get-Process Rectangle -ErrorAction SilentlyContinue).Id
+    $target = (Get-Process SnapFlow -ErrorAction SilentlyContinue).Id
     if (-not $target) { return $null }
     $script:found = $null
     $cb = [Tray.U+EnumProc]{
@@ -86,12 +85,9 @@ function Find-MenuWindow {
     return $script:found
 }
 
-# 아이콘을 찾아 누르고, 열린 메뉴 창을 돌려준다.
-# 아이콘이 숨김 목록에 들어가 있으면 먼저 펼친다.
 function Open-TrayMenu {
-    $icon = Find-Button 'Rectangle for Windows'
+    $icon = Find-Button 'SnapFlow for Windows'
     if ($null -eq $icon) {
-        # 펼치기 단추는 상태에 따라 이름이 바뀐다.
         $chevron = Find-Button '숨겨진 아이콘 표시'
         if ($null -eq $chevron) { $chevron = Find-Button '숨겨진 아이콘 표시 숨기기' }
         if ($null -eq $chevron) {
@@ -102,15 +98,14 @@ function Open-TrayMenu {
         Click-Point ([int]($cr.X + $cr.Width / 2)) ([int]($cr.Y + $cr.Height / 2))
         for ($i = 0; $i -lt 10; $i++) {
             Start-Sleep -Milliseconds 500
-            $icon = Find-Button 'Rectangle for Windows'
+            $icon = Find-Button 'SnapFlow for Windows'
             if ($null -ne $icon) { break }
         }
-        # 이미 열려 있어서 방금 클릭으로 닫혔을 수 있다. 한 번 더 눌러 본다.
         if ($null -eq $icon) {
             Click-Point ([int]($cr.X + $cr.Width / 2)) ([int]($cr.Y + $cr.Height / 2))
             for ($i = 0; $i -lt 10; $i++) {
                 Start-Sleep -Milliseconds 500
-                $icon = Find-Button 'Rectangle for Windows'
+                $icon = Find-Button 'SnapFlow for Windows'
                 if ($null -ne $icon) { break }
             }
         }
@@ -128,7 +123,6 @@ function Open-TrayMenu {
 
 function Save-Menu {
     param($Menu, [string]$Path)
-    # 마우스가 항목 위에 있으면 툴팁이 메뉴를 가리므로 옆으로 치운다.
     [Tray.U]::SetCursorPos($Menu.X - 60, $Menu.Y + $Menu.H + 40) | Out-Null
     Start-Sleep -Milliseconds 700
     $w = $Menu.W + 8
@@ -148,38 +142,35 @@ function Close-Menu {
 }
 
 function Get-Startup {
-    return ($null -ne (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).RectangleWindows)
+    return ($null -ne (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).SnapFlow)
 }
 
 $originalStartup = Get-Startup
 
 try {
-    if (-not (Get-Process Rectangle -ErrorAction SilentlyContinue)) {
-        $installedExe = "$env:LOCALAPPDATA\Programs\Rectangle\Rectangle.exe"
+    if (-not (Get-Process SnapFlow -ErrorAction SilentlyContinue)) {
+        $installedExe = "$env:LOCALAPPDATA\Programs\SnapFlow\SnapFlow.exe"
         if (-not (Test-Path $installedExe)) {
-            throw "Rectangle 이 실행 중이 아니고 설치본도 없습니다. install.ps1 로 설치하세요."
+            throw "SnapFlow 이 실행 중이 아니고 설치본도 없습니다. install.ps1 로 설치하세요."
         }
         Start-Process -FilePath $installedExe | Out-Null
         Start-Sleep -Seconds 3
-        if (-not (Get-Process Rectangle -ErrorAction SilentlyContinue)) {
-            throw "Rectangle 을 띄우지 못했습니다."
+        if (-not (Get-Process SnapFlow -ErrorAction SilentlyContinue)) {
+            throw "SnapFlow 을 띄우지 못했습니다."
         }
-        Write-Host "Rectangle 이 꺼져 있어 설치본을 실행했습니다."
+        Write-Host "SnapFlow 이 꺼져 있어 설치본을 실행했습니다."
     }
 
-    # 1) 아이콘 클릭 -> 메뉴 열림
     $menu = Open-TrayMenu
     if ($null -eq $menu) {
         Bad "왼쪽 클릭으로 메뉴가 뜨지 않음"
     } else {
         Ok ("왼쪽 클릭으로 메뉴 열림: {0},{1} {2}x{3}" -f $menu.X, $menu.Y, $menu.W, $menu.H)
 
-        # 2) 체크 표시가 보이는지 캡처로 남긴다
         $checkedPng = Join-Path $outDir 'tray-menu.png'
         Save-Menu $menu $checkedPng
         Ok "체크된 상태 캡처: $checkedPng"
 
-        # 3) 체크 항목을 눌러 실제 설정이 바뀌는지
         $before = Get-Startup
         Click-Point ([int]($menu.X + $menu.W / 2)) ([int]($menu.Y + 37))
         $after = Get-Startup
@@ -189,7 +180,6 @@ try {
             Bad "체크 항목을 눌러도 자동 실행 설정이 그대로임"
         }
 
-        # 4) 다시 열었을 때 체크가 바뀐 상태를 따라오는지
         $menu2 = Open-TrayMenu
         if ($null -eq $menu2) {
             Bad "메뉴를 다시 열지 못함"
@@ -198,7 +188,6 @@ try {
             Save-Menu $menu2 $uncheckedPng
             Ok "체크 해제 상태 캡처: $uncheckedPng"
 
-            # 원래대로 되돌린다
             Click-Point ([int]($menu2.X + $menu2.W / 2)) ([int]($menu2.Y + 37))
             if ((Get-Startup) -eq $before) {
                 Ok ("다시 눌러 원래 상태로 복구됨 (자동 실행 {0})" -f $before)
@@ -211,8 +200,7 @@ try {
 }
 finally {
     Close-Menu
-    # 자동 실행 상태를 검사 전으로 확실히 맞춰 둔다.
-    $exe = "$env:LOCALAPPDATA\Programs\Rectangle\Rectangle.exe"
+    $exe = "$env:LOCALAPPDATA\Programs\SnapFlow\SnapFlow.exe"
     if ((Test-Path $exe) -and ((Get-Startup) -ne $originalStartup)) {
         $want = 'off'
         if ($originalStartup) { $want = 'on' }

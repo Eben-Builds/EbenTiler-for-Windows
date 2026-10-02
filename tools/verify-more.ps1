@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $toolsDir
-$exe  = Join-Path $root 'build\SnapFlow.exe'
+$exe  = Join-Path $root 'build\RumiFlow.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -19,14 +19,14 @@ Add-Type -Namespace More -Name U -MemberDefinition @'
 '@
 try { [More.U]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null } catch { }
 
-$configDir  = Join-Path $env:APPDATA 'SnapFlow'
+$configDir  = Join-Path $env:APPDATA 'RumiFlow'
 $configPath = Join-Path $configDir 'config.ini'
-$backupPath = Join-Path $env:TEMP ('snapflow-config-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
+$backupPath = Join-Path $env:TEMP ('rumiflow-config-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
 $hadConfig  = Test-Path $configPath
 if ($hadConfig) { Copy-Item $configPath $backupPath -Force }
 
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-$hadStartup = $null -ne (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).SnapFlow
+$hadStartup = $null -ne (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).RumiFlow
 
 $pass = 0
 $fail = 0
@@ -34,7 +34,7 @@ function Ok   { param([string]$m) Write-Host "[통과] $m" -ForegroundColor Gree
 function Bad  { param([string]$m) Write-Host "[실패] $m" -ForegroundColor Red;   $script:fail++ }
 function Skip { param([string]$m) Write-Host "[생략] $m" -ForegroundColor Yellow }
 
-function Invoke-SnapFlow {
+function Invoke-RumiFlow {
     param([string[]]$Arguments)
     $tmp = [System.IO.Path]::GetTempFileName()
     try {
@@ -59,7 +59,7 @@ function Parse-Xywh {
 }
 
 function New-TestWindow {
-    $file = Join-Path $env:TEMP ("snapflow-more-" + [Guid]::NewGuid().ToString('N') + ".txt")
+    $file = Join-Path $env:TEMP ("rumiflow-more-" + [Guid]::NewGuid().ToString('N') + ".txt")
     $hostScript = Join-Path $script:toolsDir '_testwindow.ps1'
     $p = Start-Process powershell -PassThru -ArgumentList @('-ExecutionPolicy','Bypass','-NoProfile','-File',$hostScript,$file)
     $h = [IntPtr]::Zero
@@ -77,7 +77,7 @@ function New-TestWindow {
 
 try {
     # ── 1. 첫 실행 시 설정 파일이 만들어지는지 ──────────────────────
-    Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process RumiFlow -ErrorAction SilentlyContinue | Stop-Process -Force
     if (Test-Path $configPath) { Remove-Item $configPath -Force }
 
     $app = Start-Process -FilePath $exe -PassThru
@@ -100,18 +100,18 @@ try {
     # ── 2. 창 사이 여백(Gap) 옵션이 실제 배치에 반영되는지 ──────────
     $win = New-TestWindow
     try {
-        $info = Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)
+        $info = Invoke-RumiFlow @('--info', '--hwnd', $win.Arg)
         $work = Parse-Xywh (Get-Field $info 'work')
 
         (Get-Content $configPath -Raw) -replace 'Gap=\d+', 'Gap=0' | Set-Content $configPath -Encoding UTF8
-        Invoke-SnapFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
+        Invoke-RumiFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
         Start-Sleep -Milliseconds 200
-        $noGap = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
+        $noGap = Parse-Xywh (Get-Field (Invoke-RumiFlow @('--info', '--hwnd', $win.Arg)) 'window')
 
         (Get-Content $configPath -Raw) -replace 'Gap=\d+', 'Gap=20' | Set-Content $configPath -Encoding UTF8
-        Invoke-SnapFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
+        Invoke-RumiFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
         Start-Sleep -Milliseconds 200
-        $gapped = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
+        $gapped = Parse-Xywh (Get-Field (Invoke-RumiFlow @('--info', '--hwnd', $win.Arg)) 'window')
 
         if ($gapped.X -eq ($noGap.X + 20) -and $gapped.Y -eq ($noGap.Y + 20) -and
             $gapped.Width -lt $noGap.Width -and $gapped.Height -lt $noGap.Height) {
@@ -125,12 +125,12 @@ try {
         (Get-Content $configPath -Raw) -replace 'Gap=\d+', 'Gap=0' | Set-Content $configPath -Encoding UTF8
 
         # ── 3. 세로만 최대 ──────────────────────────────────────────
-        Invoke-SnapFlow @('--apply', 'Center', '--hwnd', $win.Arg) | Out-Null
+        Invoke-RumiFlow @('--apply', 'Center', '--hwnd', $win.Arg) | Out-Null
         Start-Sleep -Milliseconds 200
-        $before = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
-        Invoke-SnapFlow @('--apply', 'MaximizeHeight', '--hwnd', $win.Arg) | Out-Null
+        $before = Parse-Xywh (Get-Field (Invoke-RumiFlow @('--info', '--hwnd', $win.Arg)) 'window')
+        Invoke-RumiFlow @('--apply', 'MaximizeHeight', '--hwnd', $win.Arg) | Out-Null
         Start-Sleep -Milliseconds 200
-        $tall = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
+        $tall = Parse-Xywh (Get-Field (Invoke-RumiFlow @('--info', '--hwnd', $win.Arg)) 'window')
 
         if ($tall.Height -eq $work.Height -and $tall.Y -eq $work.Y -and
             [Math]::Abs($tall.Width - $before.Width) -le 2 -and [Math]::Abs($tall.X - $before.X) -le 2) {
@@ -145,16 +145,16 @@ try {
         if ($screens.Count -lt 2) {
             Skip "모니터가 하나뿐이라 모니터 이동은 확인할 수 없음"
         } else {
-            Invoke-SnapFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
+            Invoke-RumiFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
             Start-Sleep -Milliseconds 200
-            $start = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
+            $start = Parse-Xywh (Get-Field (Invoke-RumiFlow @('--info', '--hwnd', $win.Arg)) 'window')
 
             $visited = @()
             $moveOk = $true
             for ($m = 1; $m -lt $screens.Count; $m++) {
-                Invoke-SnapFlow @('--apply', 'NextDisplay', '--hwnd', $win.Arg) | Out-Null
+                Invoke-RumiFlow @('--apply', 'NextDisplay', '--hwnd', $win.Arg) | Out-Null
                 Start-Sleep -Milliseconds 400
-                $now = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
+                $now = Parse-Xywh (Get-Field (Invoke-RumiFlow @('--info', '--hwnd', $win.Arg)) 'window')
                 $expected = $screens[$m].WorkingArea
                 $inside = ($now.X -ge $expected.X - 4) -and (($now.X + $now.Width) -le ($expected.X + $expected.Width + 4))
                 $visited += ("{0}: {1},{2} {3}x{4}" -f $screens[$m].DeviceName, $now.X, $now.Y, $now.Width, $now.Height)
@@ -167,9 +167,9 @@ try {
                 Bad ("모니터 이동이 대상 화면 범위를 벗어남: {0}" -f ($visited -join '  |  '))
             }
 
-            Invoke-SnapFlow @('--apply', 'PreviousDisplay', '--hwnd', $win.Arg) | Out-Null
+            Invoke-RumiFlow @('--apply', 'PreviousDisplay', '--hwnd', $win.Arg) | Out-Null
             Start-Sleep -Milliseconds 400
-            $back = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
+            $back = Parse-Xywh (Get-Field (Invoke-RumiFlow @('--info', '--hwnd', $win.Arg)) 'window')
             $prevScreen = $screens[$screens.Count - 2].WorkingArea
             if ($back.X -ge $prevScreen.X - 4 -and ($back.X + $back.Width) -le ($prevScreen.X + $prevScreen.Width + 4)) {
                 Ok ("이전 모니터로 이동: {0},{1} {2}x{3}" -f $back.X, $back.Y, $back.Width, $back.Height)
@@ -196,7 +196,7 @@ try {
             $app3 = Start-Process -FilePath $exe -PassThru
             Start-Sleep -Seconds 2
             $app3.Refresh()
-            if (-not $app3.HasExited -and $app3.MainWindowTitle -like '*SnapFlow*') {
+            if (-not $app3.HasExited -and $app3.MainWindowTitle -like '*RumiFlow*') {
                 Ok "두 번째 실행 시 안내 창을 띄우고 중복 상주하지 않음"
             } elseif ($app3.HasExited) {
                 Ok "두 번째 실행이 그대로 종료됨 (중복 상주 없음)"
@@ -214,16 +214,16 @@ try {
     }
 
     # ── 7. Windows 자동 실행 등록 ───────────────────────────────────
-    $on = Get-Field (Invoke-SnapFlow @('--startup', 'on')) 'startup'
-    $regValue = (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).SnapFlow
-    if ($on -eq 'on' -and $regValue -like "*SnapFlow.exe*") {
+    $on = Get-Field (Invoke-RumiFlow @('--startup', 'on')) 'startup'
+    $regValue = (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).RumiFlow
+    if ($on -eq 'on' -and $regValue -like "*RumiFlow.exe*") {
         Ok "자동 실행 등록됨: $regValue"
     } else {
         Bad "자동 실행 등록 실패 (보고값 '$on', 레지스트리 '$regValue')"
     }
 
-    $off = Get-Field (Invoke-SnapFlow @('--startup', 'off')) 'startup'
-    $regValue2 = (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).SnapFlow
+    $off = Get-Field (Invoke-RumiFlow @('--startup', 'off')) 'startup'
+    $regValue2 = (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).RumiFlow
     if ($off -eq 'off' -and $null -eq $regValue2) {
         Ok "자동 실행 해제됨"
     } else {
@@ -231,7 +231,7 @@ try {
     }
 }
 finally {
-    Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process RumiFlow -ErrorAction SilentlyContinue | Stop-Process -Force
 
     if ($hadConfig) {
         Copy-Item $backupPath $configPath -Force
@@ -241,9 +241,9 @@ finally {
     }
 
     if ($hadStartup) {
-        Invoke-SnapFlow @('--startup', 'on') | Out-Null
+        Invoke-RumiFlow @('--startup', 'on') | Out-Null
     } else {
-        Remove-ItemProperty $runKey -Name SnapFlow -ErrorAction SilentlyContinue
+        Remove-ItemProperty $runKey -Name RumiFlow -ErrorAction SilentlyContinue
     }
     Write-Host ""
     Write-Host "원래 설정 상태로 되돌렸습니다."

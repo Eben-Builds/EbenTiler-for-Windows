@@ -85,5 +85,5 @@ jobs:
           git clean -fdx
           Copy-Item "$env:EBENTILER_SITE_DIR\*" . -Recurse -Force
           git add -A
-          git commit -m "랜딩페이지 게시 $env:GITHUB_SHA"
+          git commit -m "Publish landing site $env:GITHUB_SHA"
           git push --force origin site

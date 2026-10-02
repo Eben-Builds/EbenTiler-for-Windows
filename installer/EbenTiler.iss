@@ -37,6 +37,10 @@ VersionInfoCompany={#AppPublisher}
 VersionInfoDescription={#AppName} Setup
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}
+#ifdef EnableSigning
+SignTool=ebentiler
+SignedUninstaller=yes
+#endif
 
 [Tasks]
 Name: "startup"; Description: "Windows 시작 시 EbenTiler 자동 실행"; GroupDescription: "추가 옵션:"; Flags: checkedonce

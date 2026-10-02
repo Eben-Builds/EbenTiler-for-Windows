@@ -1,4 +1,5 @@
 using System;
+using System.Security;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -28,29 +29,42 @@ namespace EbenTilerWindows
                         && string.Equals(stored, ExpectedValue, StringComparison.OrdinalIgnoreCase);
                 }
             }
-            catch (Exception)
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (SecurityException)
             {
                 return false;
             }
         }
 
-        public static void SetEnabled(bool enabled)
+        public static bool SetEnabled(bool enabled)
         {
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true))
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(RunKeyPath))
                 {
-                    if (key == null) return;
+                    if (key == null) return false;
 
                     if (enabled)
+                    {
                         key.SetValue(ValueName, ExpectedValue, RegistryValueKind.String);
-                    else
-                        key.DeleteValue(ValueName, false);
+                        string stored = key.GetValue(ValueName) as string;
+                        return string.Equals(stored, ExpectedValue, StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    key.DeleteValue(ValueName, false);
+                    return key.GetValue(ValueName) == null;
                 }
             }
-            catch (Exception)
+            catch (UnauthorizedAccessException)
             {
-                // 레지스트리 접근이 막혀 있으면 조용히 넘어간다. 기능 자체는 계속 쓸 수 있다.
+                return false;
+            }
+            catch (SecurityException)
+            {
+                return false;
             }
         }
     }

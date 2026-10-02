@@ -1,12 +1,12 @@
 ﻿# 전역 단축키가 실제로 먹히는지 확인한다.
-# Rectangle.exe 를 상주 모드로 띄우고, 검증용 창을 활성화한 뒤 키 입력을 실제로 보낸다.
+# SnapFlow.exe 를 상주 모드로 띄우고, 검증용 창을 활성화한 뒤 키 입력을 실제로 보낸다.
 #
 #   powershell -ExecutionPolicy Bypass -File tools\verify-hotkeys.ps1
 
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$exe  = Join-Path $root 'build\Rectangle.exe'
+$exe  = Join-Path $root 'build\SnapFlow.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 Add-Type -Namespace HK -Name U -MemberDefinition @'
@@ -26,14 +26,12 @@ $VK_CONTROL = 0x11
 $VK_MENU    = 0x12
 $KEYUP      = 0x0002
 
-# --info 를 부를 때마다 Rectangle.exe 가 잠깐 떠서 활성 창이 바뀔 수 있다.
+# --info 를 부를 때마다 SnapFlow.exe 가 잠깐 떠서 활성 창이 바뀔 수 있다.
 # 키를 보내기 직전에 매번 대상 창을 다시 활성화한다.
 function Activate-Target {
     param([IntPtr]$Handle)
 
     for ($try = 0; $try -lt 3; $try++) {
-        # Alt 키를 한 번 눌렀다 떼면 우리 프로세스가 방금 입력을 받은 것으로 취급되어
-        # Windows 의 활성 창 가로채기 제한이 풀린다.
         [HK.U]::keybd_event(0x12, 0, 0, [IntPtr]::Zero)
         [HK.U]::keybd_event(0x12, 0, 2, [IntPtr]::Zero)
 
@@ -49,7 +47,6 @@ function Activate-Target {
         }
     }
 
-    # 그래도 안 되면 창 한가운데를 실제로 클릭해 포커스를 준다.
     $rect = Parse-Xywh (Get-Rect ('0x' + $Handle.ToInt64().ToString('X')))['window']
     $cx = $rect.X + [int]($rect.Width / 2)
     $cy = $rect.Y + [int]($rect.Height / 2)
@@ -98,15 +95,13 @@ function Parse-Xywh {
     return [PSCustomObject]@{ X = [int]$n[0]; Y = [int]$n[1]; Width = [int]$n[2]; Height = [int]$n[3] }
 }
 
-# 1) 상주 모드로 실행
-Get-Process Rectangle -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
 $app = Start-Process -FilePath $exe -PassThru
 Start-Sleep -Seconds 2
-if ($app.HasExited) { throw "Rectangle.exe 가 바로 종료되었습니다." }
-Write-Host "Rectangle.exe 상주 실행 중 (PID $($app.Id))"
+if ($app.HasExited) { throw "SnapFlow.exe 가 바로 종료되었습니다." }
+Write-Host "SnapFlow.exe 상주 실행 중 (PID $($app.Id))"
 
-# 2) 검증용 창 띄우고 활성화
-$handleFile = Join-Path $env:TEMP ("rect-hk-" + [Guid]::NewGuid().ToString('N') + ".txt")
+$handleFile = Join-Path $env:TEMP ("snapflow-hk-" + [Guid]::NewGuid().ToString('N') + ".txt")
 $hostScript = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) '_testwindow.ps1'
 $win = Start-Process powershell -PassThru -ArgumentList @('-ExecutionPolicy','Bypass','-NoProfile','-File',$hostScript,$handleFile)
 
@@ -121,7 +116,6 @@ for ($i = 0; $i -lt 100; $i++) {
 if ($hwnd -eq [IntPtr]::Zero) { throw "검증용 창 핸들을 얻지 못했습니다." }
 $handleArg = '0x' + $hwnd.ToInt64().ToString('X')
 
-# 활성 창으로 만든다. 다른 프로세스라 한 번에 안 될 수 있어 여러 번 시도한다.
 [HK.U]::ShowWindow($hwnd, 9) | Out-Null
 $activated = $false
 for ($i = 0; $i -lt 10; $i++) {
@@ -173,7 +167,6 @@ Check 'Ctrl+Alt+J'     0x4A $work.X ($work.Y + $qh) $qw ($work.Height - $qh)
 Check 'Ctrl+Alt+K'     0x4B ($work.X + $qw) ($work.Y + $qh) ($work.Width - $qw) ($work.Height - $qh)
 Check 'Ctrl+Alt+D'     0x44 $work.X $work.Y $third $work.Height
 
-# 같은 단축키를 이어서 누르면 1/2 -> 1/3 -> 2/3 으로 폭이 바뀌는지
 Send-Hotkey 0x25
 $c1 = (Parse-Xywh (Get-Rect $handleArg)['window']).Width
 Send-Hotkey 0x25
@@ -188,7 +181,6 @@ if ($c1 -gt $c2 -and $c3 -gt $c1) {
     $fail++
 }
 
-# 최대화 / 복원
 Send-Hotkey 0x0D
 if ([HK.U]::IsZoomed($hwnd)) {
     Write-Host "[통과] Ctrl+Alt+Enter          최대화됨" -ForegroundColor Green
@@ -214,6 +206,6 @@ Write-Host ("결과: 통과 {0} / 실패 {1}" -f $pass, $fail)
 $win | Stop-Process -Force -ErrorAction SilentlyContinue
 $app | Stop-Process -Force -ErrorAction SilentlyContinue
 Remove-Item $handleFile -Force -ErrorAction SilentlyContinue
-Write-Host "정리 완료 (검증용 창과 Rectangle.exe 종료)"
+Write-Host "정리 완료 (검증용 창과 SnapFlow.exe 종료)"
 
 if ($fail -gt 0) { exit 1 } else { exit 0 }

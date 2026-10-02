@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $toolsDir
-$exe  = Join-Path $root 'build\SnapFlow.exe'
+$exe  = Join-Path $root 'build\RumiFlow.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 Add-Type -AssemblyName UIAutomationClient
@@ -27,8 +27,8 @@ Add-Type -Namespace SetUI -Name U -MemberDefinition @'
 '@
 try { [SetUI.U]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null } catch { }
 
-$configPath = Join-Path (Join-Path $env:APPDATA 'SnapFlow') 'config.ini'
-$backupPath = Join-Path $env:TEMP ('snapflow-set-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
+$configPath = Join-Path (Join-Path $env:APPDATA 'RumiFlow') 'config.ini'
+$backupPath = Join-Path $env:TEMP ('rumiflow-set-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
 $hadConfig  = Test-Path $configPath
 if ($hadConfig) { Copy-Item $configPath $backupPath -Force }
 
@@ -131,12 +131,12 @@ function Send-Key {
     Start-Sleep -Milliseconds 120
 }
 
-$installedExe = "$env:LOCALAPPDATA\Programs\SnapFlow\SnapFlow.exe"
-$wasResident = $null -ne (Get-Process SnapFlow -ErrorAction SilentlyContinue)
+$installedExe = "$env:LOCALAPPDATA\Programs\RumiFlow\RumiFlow.exe"
+$wasResident = $null -ne (Get-Process RumiFlow -ErrorAction SilentlyContinue)
 
 $settings = $null
 try {
-    Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process RumiFlow -ErrorAction SilentlyContinue | Stop-Process -Force
     if (Test-Path $configPath) { Remove-Item $configPath -Force }
 
     $settings = Start-Process -FilePath $exe -ArgumentList '--settings' -PassThru
@@ -216,7 +216,7 @@ try {
 }
 finally {
     if ($null -ne $settings) { $settings | Stop-Process -Force -ErrorAction SilentlyContinue }
-    Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process RumiFlow -ErrorAction SilentlyContinue | Stop-Process -Force
 
     if ($hadConfig) {
         Copy-Item $backupPath $configPath -Force
@@ -226,10 +226,10 @@ finally {
     }
     [SetUI.U]::SetCursorPos($cursorX, $cursorY) | Out-Null
 
-    if ($wasResident -and (Test-Path $installedExe) -and -not (Get-Process SnapFlow -ErrorAction SilentlyContinue)) {
+    if ($wasResident -and (Test-Path $installedExe) -and -not (Get-Process RumiFlow -ErrorAction SilentlyContinue)) {
         Start-Process -FilePath $installedExe | Out-Null
         Start-Sleep -Seconds 2
-        Write-Host "상주 중이던 SnapFlow 을 다시 띄웠습니다."
+        Write-Host "상주 중이던 RumiFlow 을 다시 띄웠습니다."
     }
 
     Write-Host ""

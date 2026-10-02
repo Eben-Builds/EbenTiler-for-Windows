@@ -11,7 +11,7 @@ Add-Type -Namespace VerifyHost -Name Dpi -MemberDefinition @'
 try { [VerifyHost.Dpi]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null } catch { }
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "RumiFlow 검증용 창"
+$form.Text = "EbenTiler 검증용 창"
 $form.Size = New-Object System.Drawing.Size(700, 480)
 $form.StartPosition = 'Manual'
 $form.Location = New-Object System.Drawing.Point(120, 120)

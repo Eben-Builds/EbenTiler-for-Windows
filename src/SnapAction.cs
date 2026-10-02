@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace RectangleWindows
+namespace RumiFlowWindows
 {
     /// <summary>창을 어떻게 배치할지 나타내는 명령 목록.</summary>
     public enum SnapAction

@@ -41,3 +41,23 @@ dist\EbenTiler-Setup.exe.sha256
 ```
 
 지인에게는 `EbenTiler-Setup.exe` 파일만 전달하면 됩니다.
+
+## 코드 서명
+
+코드 서명 인증서가 없으면 기존처럼 unsigned 인스톨러가 정상 생성됩니다.
+인증서를 준비한 뒤에는 GitHub Actions가 `EbenTiler.exe`, 설치 프로그램, 제거 프로그램을 자동으로 Authenticode 서명합니다.
+
+GitHub 저장소의 **Settings > Secrets and variables > Actions**에서 다음 Repository secrets 두 개를 등록합니다.
+
+- `EBENTILER_SIGNING_PFX_BASE64`: PFX 인증서 파일을 Base64 문자열로 변환한 값
+- `EBENTILER_SIGNING_PFX_PASSWORD`: PFX 비밀번호
+
+PowerShell에서 PFX를 Base64로 변환하는 예:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\to\certificate.pfx")) | Set-Clipboard
+```
+
+PFX 파일 자체는 저장소에 커밋하지 마세요. `.gitignore`에서 `*.pfx`, `*.p12`를 차단합니다.
+
+인증서 secrets가 설정되면 GitHub Actions 빌드에서 SHA-256 Authenticode 서명과 RFC 3161 타임스탬프를 적용하고 서명을 검증합니다.

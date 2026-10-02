@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
     /// <summary>단축키 하나(보조키 조합 + 주 키)를 나타낸다.</summary>
     public sealed class Hotkey

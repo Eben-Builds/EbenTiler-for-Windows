@@ -1,9 +1,9 @@
-# RumiFlow for Windows
+# EbenTiler for Windows
 
 단축키로 창을 화면 절반·사분면·3분할에 순식간에 붙여 주는 Windows 상주 프로그램.
 macOS의 [Rectangle](https://rectangleapp.com/)에서 익숙한 키보드 중심 창 배치 경험을 Windows에서 제공하는 독립적인 프로젝트다.
 
-> RumiFlow는 Rectangle 또는 Rectangle Pro의 공식 Windows 버전이 아니다.
+> EbenTiler는 Rectangle 또는 Rectangle Pro의 공식 Windows 버전이 아니다.
 
 - 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
 - 실행 파일 하나, 약 40KB
@@ -47,7 +47,7 @@ macOS의 [Rectangle](https://rectangleapp.com/)에서 익숙한 키보드 중심
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-결과물은 `build\RumiFlow.exe` 하나다. 원하는 곳에 두고 실행하면 된다.
+결과물은 `build\EbenTiler.exe` 하나다. 원하는 곳에 두고 실행하면 된다.
 
 ## 설치
 
@@ -57,7 +57,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 관리자 권한이 필요 없다. 현재 사용자 계정에만 설치된다.
 
-- 프로그램: `%LOCALAPPDATA%\Programs\RumiFlow\RumiFlow.exe`
+- 프로그램: `%LOCALAPPDATA%\Programs\EbenTiler\EbenTiler.exe`
 - 시작 메뉴 바로 가기 등록
 - 윈도우 시작 시 자동 실행 등록 (`-NoStartup` 을 붙이면 등록하지 않는다)
 - 단축키 충돌이 있으면 어떤 것이 겹치는지 알려 준다
@@ -74,7 +74,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
 설치했다면 이미 실행 중이다. 설치 없이 그냥 써 보려면:
 
 ```powershell
-build\RumiFlow.exe
+build\EbenTiler.exe
 ```
 
 알림 영역(작업표시줄 오른쪽)에 아이콘이 생긴다. **아이콘이 안 보이면 `∧` 를 눌러 숨김 목록을 확인**하면 된다.
@@ -93,14 +93,14 @@ Windows 는 처음 보는 프로그램의 아이콘을 기본으로 숨김 처�
 스크립트나 다른 도구에서 창 배치를 시킬 수도 있다.
 
 ```powershell
-RumiFlow.exe --apply LeftHalf                 # 지금 활성 창을 왼쪽 절반에
-RumiFlow.exe --apply TopRight --hwnd 0x3B078E # 창을 직접 지정
-RumiFlow.exe --info                           # 활성 창 위치와 화면 작업 영역 확인
-RumiFlow.exe --list                           # 쓸 수 있는 명령 목록
-RumiFlow.exe --settings                       # 설정 창만 열기
-RumiFlow.exe --check                          # 단축키가 다른 프로그램과 겹치는지 확인
-RumiFlow.exe --startup on|off|status          # 윈도우 시작 시 자동 실행 등록/해제/확인
-RumiFlow.exe --out result.txt --info          # 결과를 파일로도 저장
+EbenTiler.exe --apply LeftHalf                 # 지금 활성 창을 왼쪽 절반에
+EbenTiler.exe --apply TopRight --hwnd 0x3B078E # 창을 직접 지정
+EbenTiler.exe --info                           # 활성 창 위치와 화면 작업 영역 확인
+EbenTiler.exe --list                           # 쓸 수 있는 명령 목록
+EbenTiler.exe --settings                       # 설정 창만 열기
+EbenTiler.exe --check                          # 단축키가 다른 프로그램과 겹치는지 확인
+EbenTiler.exe --startup on|off|status          # 윈도우 시작 시 자동 실행 등록/해제/확인
+EbenTiler.exe --out result.txt --info          # 결과를 파일로도 저장
 ```
 
 `--check` 는 이런 식으로 알려 준다. 단축키가 안 먹을 때 제일 먼저 확인하면 된다.
@@ -113,7 +113,7 @@ failed=1
 conflict=오른쪽 1/3 (Ctrl + Alt + H)
 ```
 
-`RumiFlow.exe` 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않을 때가 있다.
+`EbenTiler.exe` 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않을 때가 있다.
 스크립트에서 결과를 읽어야 하면 `--out <파일>` 을 함께 쓰면 된다.
 
 ## 설정 창
@@ -140,7 +140,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-appicon.ps1   # 아이콘 �
 
 ## 설정 파일
 
-`%APPDATA%\RumiFlow\config.ini` 에 저장된다. 직접 편집해도 된다.
+`%APPDATA%\EbenTiler\config.ini` 에 저장된다. 직접 편집해도 된다.
 
 ```ini
 [Hotkeys]
@@ -188,9 +188,9 @@ powershell -ExecutionPolicy Bypass -File tools\capture-demo.ps1
 ## 알아 둘 점
 
 - **관리자 권한으로 실행 중인 창은 옮길 수 없다.** Windows 가 낮은 권한 프로그램이 높은 권한 창을 조작하는 것을 막기 때문이다.
-  그런 창까지 배치하려면 `RumiFlow.exe` 도 관리자 권한으로 실행해야 한다.
+  그런 창까지 배치하려면 `EbenTiler.exe` 도 관리자 권한으로 실행해야 한다.
 - 다른 프로그램이 이미 선점한 단축키는 등록에 실패한다. 이때는 시작 직후 알림으로 어떤 것이 실패했는지 알려 주고,
-  `RumiFlow.exe --check` 로 언제든 다시 확인할 수 있다. 설정 창에서 다른 조합으로 바꾸면 된다.
+  `EbenTiler.exe --check` 로 언제든 다시 확인할 수 있다. 설정 창에서 다른 조합으로 바꾸면 된다.
   게임 런처나 독(dock) 프로그램이 `Ctrl+Alt+숫자`, `Ctrl+Alt+G` 같은 조합을 자주 가져간다.
 - 창 위치는 DWM 이 알려 주는 **실제로 보이는 테두리** 기준으로 맞춘다. Windows 10/11 창 바깥의 투명한 여백만큼 어긋나 보이는 문제가 없다.
 - 모니터마다 배율이 다른 환경을 위해 per-monitor DPI 인식으로 동작한다.

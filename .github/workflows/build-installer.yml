@@ -10,6 +10,7 @@ on:
       - 'assets/**'
       - 'installer/**'
       - 'tools/make-appicon.ps1'
+      - 'tools/prepare-code-signing.ps1'
       - 'tools/verify-installer.ps1'
       - 'tools/verify-release.ps1'
       - 'build.ps1'
@@ -25,6 +26,7 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 15
     env:
+      EBENTILER_SIGNING_CERT_SHA1: ${{ secrets.EBENTILER_SIGNING_CERT_SHA1 }}
       SIGNING_PFX_BASE64: ${{ secrets.EBENTILER_SIGNING_PFX_BASE64 }}
       SIGNING_PFX_PASSWORD: ${{ secrets.EBENTILER_SIGNING_PFX_PASSWORD }}
       EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
@@ -39,28 +41,9 @@ jobs:
         shell: powershell
         run: choco install innosetup --version=6.7.1 -y --no-progress
 
-      - name: Import code-signing certificate
-        if: env.SIGNING_PFX_BASE64 != ''
+      - name: Prepare configured code-signing identity
         shell: powershell
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_PASSWORD)) {
-            throw 'EBENTILER_SIGNING_PFX_PASSWORD is required when a signing certificate is configured.'
-          }
-
-          $pfxPath = Join-Path $env:RUNNER_TEMP 'ebentiler-signing.pfx'
-          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGNING_PFX_BASE64))
-
-          try {
-            $password = ConvertTo-SecureString $env:SIGNING_PFX_PASSWORD -AsPlainText -Force
-            $certificate = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation 'Cert:\CurrentUser\My' -Password $password -Exportable:$false
-            if (-not $certificate -or [string]::IsNullOrWhiteSpace($certificate.Thumbprint)) {
-              throw 'The code-signing certificate could not be imported.'
-            }
-            "EBENTILER_SIGNING_CERT_SHA1=$($certificate.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          }
-          finally {
-            Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
-          }
+        run: .\tools\prepare-code-signing.ps1
 
       - name: Build EbenTiler installer
         shell: powershell
@@ -92,3 +75,42 @@ jobs:
             dist\EbenTiler-Setup.exe
             dist\EbenTiler-Setup.exe.sha256
           if-no-files-found: error
+
+      # When no production signing identity is configured, exercise the same
+      # SignTool/Inno Setup path with an ephemeral non-exportable test key.
+      # The self-signed output is never uploaded or published.
+      - name: Create ephemeral CI code-signing identity
+        if: env.EBENTILER_SIGNING_CERT_SHA1 == '' && env.SIGNING_PFX_BASE64 == ''
+        shell: powershell
+        run: |
+          $cert = New-SelfSignedCertificate `
+            -Type CodeSigningCert `
+            -Subject 'CN=EbenTiler CI Test Signing' `
+            -CertStoreLocation 'Cert:\CurrentUser\My' `
+            -KeyAlgorithm RSA `
+            -KeyLength 3072 `
+            -HashAlgorithm SHA256 `
+            -KeyExportPolicy NonExportable `
+            -NotAfter (Get-Date).AddDays(2)
+
+          $rootStore = New-Object System.Security.Cryptography.X509Certificates.X509Store('Root', 'CurrentUser')
+          $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+          try { $rootStore.Add($cert) } finally { $rootStore.Close() }
+
+          "EBENTILER_SIGNING_CERT_SHA1=$($cert.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "EBENTILER_CI_TEST_CERT_SHA1=$($cert.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Smoke test signed build path
+        if: env.EBENTILER_CI_TEST_CERT_SHA1 != ''
+        shell: powershell
+        run: |
+          .\tools\prepare-code-signing.ps1 -RequireSigning
+          .\build-installer.ps1
+          .\tools\verify-release.ps1 -RequireCodeSigning
+
+      - name: Remove ephemeral CI certificate
+        if: always() && env.EBENTILER_CI_TEST_CERT_SHA1 != ''
+        shell: powershell
+        run: |
+          Remove-Item -LiteralPath ("Cert:\CurrentUser\My\" + $env:EBENTILER_CI_TEST_CERT_SHA1) -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath ("Cert:\CurrentUser\Root\" + $env:EBENTILER_CI_TEST_CERT_SHA1) -Force -ErrorAction SilentlyContinue

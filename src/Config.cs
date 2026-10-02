@@ -4,9 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
-    /// <summary>단축키와 옵션을 %APPDATA%\RumiFlow\config.ini 에 읽고 쓴다.</summary>
+    /// <summary>단축키와 옵션을 %APPDATA%\EbenTiler\config.ini 에 읽고 쓴다.</summary>
     public sealed class Config
     {
         public Dictionary<SnapAction, Hotkey> Hotkeys;
@@ -26,7 +26,7 @@ namespace RumiFlowWindows
             {
                 return Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "RumiFlow");
+                    "EbenTiler");
             }
         }
 
@@ -98,7 +98,7 @@ namespace RumiFlowWindows
                 if (!System.IO.Directory.Exists(Directory)) System.IO.Directory.CreateDirectory(Directory);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine("; RumiFlow for Windows 설정 파일");
+                sb.AppendLine("; EbenTiler for Windows 설정 파일");
                 sb.AppendLine("; 단축키 형식 예시: Ctrl+Alt+Left, Ctrl+Alt+Shift+U, Win+Alt+Enter");
                 sb.AppendLine("; 값을 비워 두면 그 기능의 단축키는 등록하지 않는다.");
                 sb.AppendLine();

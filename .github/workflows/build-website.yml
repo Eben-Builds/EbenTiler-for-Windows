@@ -34,12 +34,15 @@ jobs:
       - name: 히어로 이미지 바이너리 복구 및 검증
         shell: powershell
         run: |
-          $parts = Get-ChildItem '.\website\hero-parts\*.txt' | Sort-Object Name
-          if ($parts.Count -ne 9) {
-            throw "Unexpected hero part count: $($parts.Count)"
-          }
+          $partNames = @(
+            '00.txt', '01.txt', '02.txt', '03.txt', '04.txt',
+            '05a.txt', '05b.txt', '05c.txt', '05d.txt', '05e.txt', '05f.txt',
+            '06.txt', '07.txt', '08.txt'
+          )
 
-          $base64 = ($parts | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
+          $base64 = ($partNames | ForEach-Object {
+            Get-Content (Join-Path '.\website\hero-parts' $_) -Raw
+          }) -join ''
           $bytes = [Convert]::FromBase64String($base64)
 
           if ($bytes.Length -ne 36574) {

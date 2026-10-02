@@ -14,6 +14,9 @@ on:
       - 'build-installer.ps1'
       - '.github/workflows/build-website.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build-site:
     runs-on: windows-latest
@@ -71,3 +74,16 @@ jobs:
           name: EbenTiler-Website
           path: ${{ env.EBENTILER_SITE_DIR }}
           if-no-files-found: error
+
+      - name: 완성된 사이트를 site 브랜치에 게시
+        shell: powershell
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout --orphan site
+          git rm -rf .
+          git clean -fdx
+          Copy-Item "$env:EBENTILER_SITE_DIR\*" . -Recurse -Force
+          git add -A
+          git commit -m "랜딩페이지 게시 $env:GITHUB_SHA"
+          git push --force origin site

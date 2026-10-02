@@ -6,15 +6,11 @@ using System.Text;
 
 namespace RectangleWindows
 {
-    /// <summary>단축키와 옵션을 %APPDATA%\RectangleWindows\config.ini 에 읽고 쓴다.</summary>
+    /// <summary>단축키와 옵션을 %APPDATA%\SnapDeck\config.ini 에 읽고 쓴다.</summary>
     public sealed class Config
     {
         public Dictionary<SnapAction, Hotkey> Hotkeys;
-
-        /// <summary>창 사이와 화면 가장자리에 남길 여백(픽셀).</summary>
         public int Gap;
-
-        /// <summary>같은 단축키를 연달아 누르면 1/2 → 1/3 → 2/3 으로 폭이 바뀌게 할지 여부.</summary>
         public bool CycleHalves;
 
         public Config()
@@ -30,7 +26,7 @@ namespace RectangleWindows
             {
                 return Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "RectangleWindows");
+                    "SnapDeck");
             }
         }
 
@@ -54,10 +50,7 @@ namespace RectangleWindows
         {
             Config config = CreateDefault();
             string path = FilePath;
-            if (!File.Exists(path))
-            {
-                return config;
-            }
+            if (!File.Exists(path)) return config;
 
             try
             {
@@ -65,16 +58,10 @@ namespace RectangleWindows
                 for (int i = 0; i < lines.Length; i++)
                 {
                     string line = lines[i].Trim();
-                    if (line.Length == 0 || line.StartsWith(";") || line.StartsWith("#") || line.StartsWith("["))
-                    {
-                        continue;
-                    }
+                    if (line.Length == 0 || line.StartsWith(";") || line.StartsWith("#") || line.StartsWith("[")) continue;
 
                     int eq = line.IndexOf('=');
-                    if (eq <= 0)
-                    {
-                        continue;
-                    }
+                    if (eq <= 0) continue;
 
                     string key = line.Substring(0, eq).Trim();
                     string value = line.Substring(eq + 1).Trim();
@@ -90,24 +77,16 @@ namespace RectangleWindows
                     {
                         int gap;
                         if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out gap))
-                        {
                             config.Gap = Math.Max(0, Math.Min(100, gap));
-                        }
                     }
                     else if (string.Equals(key, "CycleHalves", StringComparison.OrdinalIgnoreCase))
                     {
-                        config.CycleHalves = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
-                            || value == "1";
+                        config.CycleHalves = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || value == "1";
                     }
                 }
             }
-            catch (IOException)
-            {
-                // 파일을 못 읽으면 기본 설정으로 계속 동작한다.
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
 
             return config;
         }
@@ -116,13 +95,10 @@ namespace RectangleWindows
         {
             try
             {
-                if (!System.IO.Directory.Exists(Directory))
-                {
-                    System.IO.Directory.CreateDirectory(Directory);
-                }
+                if (!System.IO.Directory.Exists(Directory)) System.IO.Directory.CreateDirectory(Directory);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine("; Rectangle for Windows 설정 파일");
+                sb.AppendLine("; SnapDeck for Windows 설정 파일");
                 sb.AppendLine("; 단축키 형식 예시: Ctrl+Alt+Left, Ctrl+Alt+Shift+U, Win+Alt+Enter");
                 sb.AppendLine("; 값을 비워 두면 그 기능의 단축키는 등록하지 않는다.");
                 sb.AppendLine();
@@ -134,10 +110,7 @@ namespace RectangleWindows
                     SnapAction action = ordered[i];
                     Hotkey hotkey;
                     string value = "";
-                    if (Hotkeys.TryGetValue(action, out hotkey) && hotkey != null)
-                    {
-                        value = hotkey.ToString();
-                    }
+                    if (Hotkeys.TryGetValue(action, out hotkey) && hotkey != null) value = hotkey.ToString();
                     sb.AppendLine(action.ToString() + "=" + value);
                 }
 
@@ -148,31 +121,20 @@ namespace RectangleWindows
 
                 File.WriteAllText(FilePath, sb.ToString(), new UTF8Encoding(false));
             }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         public Hotkey Get(SnapAction action)
         {
             Hotkey hotkey;
-            if (Hotkeys.TryGetValue(action, out hotkey) && hotkey != null)
-            {
-                return hotkey;
-            }
+            if (Hotkeys.TryGetValue(action, out hotkey) && hotkey != null) return hotkey;
             return new Hotkey();
         }
 
-        /// <summary>설정 창에서 돌아온 값을 지금 쓰고 있는 설정 개체에 그대로 옮겨 담는다.</summary>
         public void CopyFrom(Config other)
         {
-            if (other == null)
-            {
-                return;
-            }
+            if (other == null) return;
             Gap = other.Gap;
             CycleHalves = other.CycleHalves;
             Hotkeys = other.Hotkeys;

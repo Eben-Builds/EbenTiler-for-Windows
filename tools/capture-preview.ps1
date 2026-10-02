@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $toolsDir
-$exe  = Join-Path $root 'build\Rectangle.exe'
+$exe  = Join-Path $root 'build\SnapFlow.exe'
 $outDir = Join-Path $root 'build\screenshots'
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
 
@@ -30,7 +30,6 @@ Add-Type -Namespace Pv -Name U -MemberDefinition @'
 $auto  = [System.Windows.Automation.AutomationElement]
 $scope = [System.Windows.Automation.TreeScope]::Descendants
 
-# 확인할 기능: 목록에서 위에서부터 몇 번째인지와 이름
 $targets = @(
     @{ Index = 0;  Name = '왼쪽 절반' }
     @{ Index = 4;  Name = '왼쪽 위 1/4' }
@@ -81,7 +80,6 @@ try {
     $window = $auto::FromHandle($hwnd)
     $panes = $window.FindAll($scope, [System.Windows.Automation.Condition]::TrueCondition)
 
-    # 이름 없는 칸 중 가장 큰 것이 기능 목록, 그 오른쪽에 있는 것이 미리보기 칸이다.
     $list = $null; $best = 0
     foreach ($e in $panes) {
         if ($e.Current.Name -ne '') { continue }
@@ -104,13 +102,11 @@ try {
     $pr = $preview.Current.BoundingRectangle
     Write-Host ("미리보기 칸: {0},{1} {2}x{3}" -f [int]$pr.X, [int]$pr.Y, [int]$pr.Width, [int]$pr.Height)
 
-    # 설명 글까지 함께 담기도록 아래로 조금 더 잡는다.
     $capX = [int]$pr.X - 6
     $capY = [int]$pr.Y - 6
     $capW = [int]$pr.Width + 12
     $capH = [int]$pr.Height + 108
 
-    # 목록에 포커스를 준다
     [Pv.U]::SetCursorPos([int]($lr.X + 30), [int]($lr.Y + 45)) | Out-Null
     Start-Sleep -Milliseconds 150
     [Pv.U]::mouse_event(0x0002, 0, 0, 0, [IntPtr]::Zero)
@@ -119,8 +115,8 @@ try {
 
     $shots = @()
     foreach ($t in $targets) {
-        Send-Key 0x24                                   # Home
-        for ($k = 0; $k -lt $t.Index; $k++) { Send-Key 0x28 }   # Down
+        Send-Key 0x24
+        for ($k = 0; $k -lt $t.Index; $k++) { Send-Key 0x28 }
         Start-Sleep -Milliseconds 350
 
         $bmp = New-Object System.Drawing.Bitmap $capW, $capH
@@ -131,7 +127,6 @@ try {
         Write-Host ("  캡처: {0}" -f $t.Name)
     }
 
-    # 한 장으로 이어 붙인다
     $cols = 4
     $rows = [Math]::Ceiling($shots.Count / $cols)
     $cellW = $capW + 24

@@ -2,13 +2,13 @@ using System;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
     /// <summary>Windows 시작 시 자동 실행 등록을 켜고 끈다. 현재 사용자 계정에만 적용된다.</summary>
     public static class Startup
     {
         private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string ValueName = "RumiFlow";
+        private const string ValueName = "EbenTiler";
 
         public static bool IsEnabled()
         {

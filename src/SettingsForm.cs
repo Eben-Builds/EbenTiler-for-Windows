@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace RumiFlowWindows
+namespace EbenTilerWindows
 {
     /// <summary>누른 키 조합을 그대로 받아 적는 입력 상자.</summary>
     public sealed class HotkeyCaptureBox : TextBox
@@ -91,7 +91,7 @@ namespace RumiFlowWindows
 
         private void BuildUi()
         {
-            Text = "RumiFlow for Windows - 단축키 설정";
+            Text = "EbenTiler for Windows - 단축키 설정";
             ShowIcon = true;
             Icon = AppIcon.LoadLarge();
             // FixedDialog 로 두면 제목 표시줄에 아이콘이 나오지 않는다.
@@ -292,7 +292,7 @@ namespace RumiFlowWindows
             SnapAction action;
             if (!TryGetSelectedAction(out action))
             {
-                MessageBox.Show(this, "먼저 위 목록에서 기능을 하나 고르세요.", "RumiFlow for Windows",
+                MessageBox.Show(this, "먼저 위 목록에서 기능을 하나 고르세요.", "EbenTiler for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -300,7 +300,7 @@ namespace RumiFlowWindows
             Hotkey source = _capture.Captured;
             if (source.IsEmpty)
             {
-                MessageBox.Show(this, "입력 상자를 누른 뒤 원하는 키 조합을 눌러 주세요.", "RumiFlow for Windows",
+                MessageBox.Show(this, "입력 상자를 누른 뒤 원하는 키 조합을 눌러 주세요.", "EbenTiler for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -317,7 +317,7 @@ namespace RumiFlowWindows
                 MessageBox.Show(this,
                     "Ctrl, Alt, Shift, Win 중 하나 이상을 함께 눌러야 합니다.\n" +
                     "보조키 없이 등록하면 다른 프로그램에서 그 키를 아예 쓸 수 없게 됩니다.",
-                    "RumiFlow for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    "EbenTiler for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -342,7 +342,7 @@ namespace RumiFlowWindows
                 DialogResult answer = MessageBox.Show(this,
                     hotkey.ToDisplayString() + " 는 이미 " + names + " 에 쓰이고 있습니다.\n" +
                     "그쪽 단축키를 비우고 이 기능에 지정할까요?",
-                    "RumiFlow for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    "EbenTiler for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (answer != DialogResult.Yes)
                 {
                     return;
@@ -374,7 +374,7 @@ namespace RumiFlowWindows
         private void OnResetDefaults(object sender, EventArgs e)
         {
             DialogResult answer = MessageBox.Show(this,
-                "모든 단축키를 처음 상태로 되돌릴까요?", "RumiFlow for Windows",
+                "모든 단축키를 처음 상태로 되돌릴까요?", "EbenTiler for Windows",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (answer != DialogResult.Yes)
             {

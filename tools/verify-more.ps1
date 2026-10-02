@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $toolsDir
-$exe  = Join-Path $root 'build\Rectangle.exe'
+$exe  = Join-Path $root 'build\SnapFlow.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -19,14 +19,14 @@ Add-Type -Namespace More -Name U -MemberDefinition @'
 '@
 try { [More.U]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null } catch { }
 
-$configDir  = Join-Path $env:APPDATA 'RectangleWindows'
+$configDir  = Join-Path $env:APPDATA 'SnapFlow'
 $configPath = Join-Path $configDir 'config.ini'
-$backupPath = Join-Path $env:TEMP ('rect-config-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
+$backupPath = Join-Path $env:TEMP ('snapflow-config-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
 $hadConfig  = Test-Path $configPath
 if ($hadConfig) { Copy-Item $configPath $backupPath -Force }
 
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-$hadStartup = $null -ne (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).RectangleWindows
+$hadStartup = $null -ne (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).SnapFlow
 
 $pass = 0
 $fail = 0
@@ -34,7 +34,7 @@ function Ok   { param([string]$m) Write-Host "[통과] $m" -ForegroundColor Gree
 function Bad  { param([string]$m) Write-Host "[실패] $m" -ForegroundColor Red;   $script:fail++ }
 function Skip { param([string]$m) Write-Host "[생략] $m" -ForegroundColor Yellow }
 
-function Invoke-Rect {
+function Invoke-SnapFlow {
     param([string[]]$Arguments)
     $tmp = [System.IO.Path]::GetTempFileName()
     try {
@@ -59,7 +59,7 @@ function Parse-Xywh {
 }
 
 function New-TestWindow {
-    $file = Join-Path $env:TEMP ("rect-more-" + [Guid]::NewGuid().ToString('N') + ".txt")
+    $file = Join-Path $env:TEMP ("snapflow-more-" + [Guid]::NewGuid().ToString('N') + ".txt")
     $hostScript = Join-Path $script:toolsDir '_testwindow.ps1'
     $p = Start-Process powershell -PassThru -ArgumentList @('-ExecutionPolicy','Bypass','-NoProfile','-File',$hostScript,$file)
     $h = [IntPtr]::Zero
@@ -77,7 +77,7 @@ function New-TestWindow {
 
 try {
     # ── 1. 첫 실행 시 설정 파일이 만들어지는지 ──────────────────────
-    Get-Process Rectangle -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
     if (Test-Path $configPath) { Remove-Item $configPath -Force }
 
     $app = Start-Process -FilePath $exe -PassThru
@@ -90,7 +90,6 @@ try {
     $app | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Milliseconds 500
 
-    # 저장된 내용이 다시 읽히는지 (기본 단축키가 그대로 적혀 있어야 한다)
     $saved = Get-Content $configPath -Raw
     if ($saved -match 'LeftHalf=Ctrl\+Alt\+Left' -and $saved -match 'CycleHalves=') {
         Ok "설정 파일에 단축키와 옵션이 제대로 기록됨"
@@ -101,20 +100,18 @@ try {
     # ── 2. 창 사이 여백(Gap) 옵션이 실제 배치에 반영되는지 ──────────
     $win = New-TestWindow
     try {
-        $info = Invoke-Rect @('--info', '--hwnd', $win.Arg)
+        $info = Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)
         $work = Parse-Xywh (Get-Field $info 'work')
 
-        # Gap=0 일 때
         (Get-Content $configPath -Raw) -replace 'Gap=\d+', 'Gap=0' | Set-Content $configPath -Encoding UTF8
-        Invoke-Rect @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
+        Invoke-SnapFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
         Start-Sleep -Milliseconds 200
-        $noGap = Parse-Xywh (Get-Field (Invoke-Rect @('--info', '--hwnd', $win.Arg)) 'window')
+        $noGap = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
 
-        # Gap=20 일 때 (바깥 10 + 안쪽 10 만큼 줄어들어야 한다)
         (Get-Content $configPath -Raw) -replace 'Gap=\d+', 'Gap=20' | Set-Content $configPath -Encoding UTF8
-        Invoke-Rect @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
+        Invoke-SnapFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
         Start-Sleep -Milliseconds 200
-        $gapped = Parse-Xywh (Get-Field (Invoke-Rect @('--info', '--hwnd', $win.Arg)) 'window')
+        $gapped = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
 
         if ($gapped.X -eq ($noGap.X + 20) -and $gapped.Y -eq ($noGap.Y + 20) -and
             $gapped.Width -lt $noGap.Width -and $gapped.Height -lt $noGap.Height) {
@@ -128,12 +125,12 @@ try {
         (Get-Content $configPath -Raw) -replace 'Gap=\d+', 'Gap=0' | Set-Content $configPath -Encoding UTF8
 
         # ── 3. 세로만 최대 ──────────────────────────────────────────
-        Invoke-Rect @('--apply', 'Center', '--hwnd', $win.Arg) | Out-Null
+        Invoke-SnapFlow @('--apply', 'Center', '--hwnd', $win.Arg) | Out-Null
         Start-Sleep -Milliseconds 200
-        $before = Parse-Xywh (Get-Field (Invoke-Rect @('--info', '--hwnd', $win.Arg)) 'window')
-        Invoke-Rect @('--apply', 'MaximizeHeight', '--hwnd', $win.Arg) | Out-Null
+        $before = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
+        Invoke-SnapFlow @('--apply', 'MaximizeHeight', '--hwnd', $win.Arg) | Out-Null
         Start-Sleep -Milliseconds 200
-        $tall = Parse-Xywh (Get-Field (Invoke-Rect @('--info', '--hwnd', $win.Arg)) 'window')
+        $tall = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
 
         if ($tall.Height -eq $work.Height -and $tall.Y -eq $work.Y -and
             [Math]::Abs($tall.Width - $before.Width) -le 2 -and [Math]::Abs($tall.X - $before.X) -le 2) {
@@ -148,16 +145,16 @@ try {
         if ($screens.Count -lt 2) {
             Skip "모니터가 하나뿐이라 모니터 이동은 확인할 수 없음"
         } else {
-            Invoke-Rect @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
+            Invoke-SnapFlow @('--apply', 'LeftHalf', '--hwnd', $win.Arg) | Out-Null
             Start-Sleep -Milliseconds 200
-            $start = Parse-Xywh (Get-Field (Invoke-Rect @('--info', '--hwnd', $win.Arg)) 'window')
+            $start = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
 
             $visited = @()
             $moveOk = $true
             for ($m = 1; $m -lt $screens.Count; $m++) {
-                Invoke-Rect @('--apply', 'NextDisplay', '--hwnd', $win.Arg) | Out-Null
+                Invoke-SnapFlow @('--apply', 'NextDisplay', '--hwnd', $win.Arg) | Out-Null
                 Start-Sleep -Milliseconds 400
-                $now = Parse-Xywh (Get-Field (Invoke-Rect @('--info', '--hwnd', $win.Arg)) 'window')
+                $now = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
                 $expected = $screens[$m].WorkingArea
                 $inside = ($now.X -ge $expected.X - 4) -and (($now.X + $now.Width) -le ($expected.X + $expected.Width + 4))
                 $visited += ("{0}: {1},{2} {3}x{4}" -f $screens[$m].DeviceName, $now.X, $now.Y, $now.Width, $now.Height)
@@ -170,10 +167,9 @@ try {
                 Bad ("모니터 이동이 대상 화면 범위를 벗어남: {0}" -f ($visited -join '  |  '))
             }
 
-            # 되돌아오기
-            Invoke-Rect @('--apply', 'PreviousDisplay', '--hwnd', $win.Arg) | Out-Null
+            Invoke-SnapFlow @('--apply', 'PreviousDisplay', '--hwnd', $win.Arg) | Out-Null
             Start-Sleep -Milliseconds 400
-            $back = Parse-Xywh (Get-Field (Invoke-Rect @('--info', '--hwnd', $win.Arg)) 'window')
+            $back = Parse-Xywh (Get-Field (Invoke-SnapFlow @('--info', '--hwnd', $win.Arg)) 'window')
             $prevScreen = $screens[$screens.Count - 2].WorkingArea
             if ($back.X -ge $prevScreen.X - 4 -and ($back.X + $back.Width) -le ($prevScreen.X + $prevScreen.Width + 4)) {
                 Ok ("이전 모니터로 이동: {0},{1} {2}x{3}" -f $back.X, $back.Y, $back.Width, $back.Height)
@@ -183,13 +179,11 @@ try {
         }
 
         # ── 5. 설정 파일에 적은 사용자 단축키가 읽히는지 ────────────
-        # LeftHalf 를 비워 두면 그 명령은 등록되지 않아야 한다 (파일 해석 확인).
         $text = Get-Content $configPath -Raw
         $text = $text -replace 'LeftHalf=Ctrl\+Alt\+Left', 'LeftHalf=Ctrl+Alt+Shift+Oem5'
         Set-Content $configPath $text -Encoding UTF8
         $reloaded = Get-Content $configPath -Raw
         if ($reloaded -match 'LeftHalf=Ctrl\+Alt\+Shift\+Oem5') {
-            # 앱을 다시 띄워서 이 조합이 등록되는지 (등록 실패 시 경고 풍선이 뜬다)
             $app2 = Start-Process -FilePath $exe -PassThru
             Start-Sleep -Seconds 2
             if (-not $app2.HasExited) {
@@ -202,7 +196,7 @@ try {
             $app3 = Start-Process -FilePath $exe -PassThru
             Start-Sleep -Seconds 2
             $app3.Refresh()
-            if (-not $app3.HasExited -and $app3.MainWindowTitle -like '*Rectangle*') {
+            if (-not $app3.HasExited -and $app3.MainWindowTitle -like '*SnapFlow*') {
                 Ok "두 번째 실행 시 안내 창을 띄우고 중복 상주하지 않음"
             } elseif ($app3.HasExited) {
                 Ok "두 번째 실행이 그대로 종료됨 (중복 상주 없음)"
@@ -220,16 +214,16 @@ try {
     }
 
     # ── 7. Windows 자동 실행 등록 ───────────────────────────────────
-    $on = Get-Field (Invoke-Rect @('--startup', 'on')) 'startup'
-    $regValue = (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).RectangleWindows
-    if ($on -eq 'on' -and $regValue -like "*Rectangle.exe*") {
+    $on = Get-Field (Invoke-SnapFlow @('--startup', 'on')) 'startup'
+    $regValue = (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).SnapFlow
+    if ($on -eq 'on' -and $regValue -like "*SnapFlow.exe*") {
         Ok "자동 실행 등록됨: $regValue"
     } else {
         Bad "자동 실행 등록 실패 (보고값 '$on', 레지스트리 '$regValue')"
     }
 
-    $off = Get-Field (Invoke-Rect @('--startup', 'off')) 'startup'
-    $regValue2 = (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).RectangleWindows
+    $off = Get-Field (Invoke-SnapFlow @('--startup', 'off')) 'startup'
+    $regValue2 = (Get-ItemProperty $runKey -ErrorAction SilentlyContinue).SnapFlow
     if ($off -eq 'off' -and $null -eq $regValue2) {
         Ok "자동 실행 해제됨"
     } else {
@@ -237,9 +231,8 @@ try {
     }
 }
 finally {
-    Get-Process Rectangle -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process SnapFlow -ErrorAction SilentlyContinue | Stop-Process -Force
 
-    # 원래 설정과 자동 실행 상태로 되돌린다.
     if ($hadConfig) {
         Copy-Item $backupPath $configPath -Force
         Remove-Item $backupPath -Force -ErrorAction SilentlyContinue
@@ -248,9 +241,9 @@ finally {
     }
 
     if ($hadStartup) {
-        Invoke-Rect @('--startup', 'on') | Out-Null
+        Invoke-SnapFlow @('--startup', 'on') | Out-Null
     } else {
-        Remove-ItemProperty $runKey -Name RectangleWindows -ErrorAction SilentlyContinue
+        Remove-ItemProperty $runKey -Name SnapFlow -ErrorAction SilentlyContinue
     }
     Write-Host ""
     Write-Host "원래 설정 상태로 되돌렸습니다."

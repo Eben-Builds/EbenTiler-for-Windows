@@ -10,7 +10,7 @@ namespace EbenTilerWindows
 {
     internal static class Program
     {
-        private const string MutexName = "Global\\EbenTiler.SingleInstance";
+        private const string MutexName = "Local\\EbenTiler.SingleInstance";
 
         [DllImport("kernel32.dll")]
         private static extern bool AttachConsole(int processId);

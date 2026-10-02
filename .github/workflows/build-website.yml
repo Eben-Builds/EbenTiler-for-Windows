@@ -1,5 +1,6 @@
 name: 랜딩페이지 배포 묶음 만들기
 
+# Rebuilds and verifies the website hero asset before publishing.
 on:
   workflow_dispatch:
   push:

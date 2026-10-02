@@ -98,14 +98,22 @@ namespace EbenTilerWindows
                 if (arg == "--startup" && i + 1 < args.Length)
                 {
                     string mode = args[i + 1]; i++;
-                    if (string.Equals(mode, "on", StringComparison.OrdinalIgnoreCase)) Startup.SetEnabled(true);
-                    else if (string.Equals(mode, "off", StringComparison.OrdinalIgnoreCase)) Startup.SetEnabled(false);
+                    bool changed = true;
+                    if (string.Equals(mode, "on", StringComparison.OrdinalIgnoreCase)) changed = Startup.SetEnabled(true);
+                    else if (string.Equals(mode, "off", StringComparison.OrdinalIgnoreCase)) changed = Startup.SetEnabled(false);
                     else if (!string.Equals(mode, "status", StringComparison.OrdinalIgnoreCase))
                     {
                         Emit("--startup 에는 on, off, status 중 하나를 적어 주세요.");
                         return 2;
                     }
-                    Emit("startup=" + (Startup.IsEnabled() ? "on" : "off"));
+
+                    bool enabled = Startup.IsEnabled();
+                    Emit("startup=" + (enabled ? "on" : "off"));
+                    if (!changed)
+                    {
+                        Emit("Windows 시작 프로그램 설정을 변경하지 못했습니다.");
+                        return 1;
+                    }
                     return 0;
                 }
 

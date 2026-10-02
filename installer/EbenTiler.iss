@@ -62,7 +62,8 @@ Filename: "{app}\{#AppExeName}"; Description: "EbenTiler 실행"; Flags: nowait 
 Filename: "{app}\{#AppExeName}"; Parameters: "--startup off"; Flags: runhidden waituntilterminated; RunOnceId: "DisableEbenTilerStartup"
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{userappdata}\EbenTiler"
+Type: files; Name: "{userappdata}\EbenTiler\config.ini"
+Type: dirifempty; Name: "{userappdata}\EbenTiler"
 
 [Code]
 procedure CurStepChanged(CurStep: TSetupStep);

@@ -7,7 +7,7 @@ param([string]$OutDir)
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$exe  = Join-Path $root 'build\Rectangle.exe'
+$exe  = Join-Path $root 'build\SnapFlow.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 if ([string]::IsNullOrEmpty($OutDir)) { $OutDir = Join-Path $root 'build\screenshots' }
@@ -36,7 +36,6 @@ function Save-Region {
     Write-Host "저장: $Path"
 }
 
-# 1) 설정 창 캡처
 $settings = Start-Process -FilePath $exe -ArgumentList '--settings' -PassThru
 Start-Sleep -Seconds 3
 
@@ -53,8 +52,6 @@ if ($hwnd -eq [IntPtr]::Zero) {
 
 $r = New-Object 'Cap.U+R'
 [Cap.U]::GetWindowRect($hwnd, [ref]$r) | Out-Null
-
-# 다른 창에 가려도 제대로 찍히도록 창 자체에 그리게 한다.
 $w = $r.Right - $r.Left
 $h = $r.Bottom - $r.Top
 $bmp = New-Object System.Drawing.Bitmap $w, $h
@@ -70,7 +67,6 @@ Write-Host "저장: $settingsPng"
 
 $settings | Stop-Process -Force -ErrorAction SilentlyContinue
 
-# 2) 알림 영역(작업표시줄 오른쪽) 캡처
 $app = Start-Process -FilePath $exe -PassThru
 Start-Sleep -Seconds 3
 

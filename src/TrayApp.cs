@@ -140,6 +140,7 @@ namespace EbenTilerWindows
 
             _hotkeys.UnregisterAll();
             _settingsForm = new SettingsForm(_config);
+            SettingsWelcomeGuide.Attach(_settingsForm);
             try
             {
                 if (_settingsForm.ShowDialog() == DialogResult.OK)

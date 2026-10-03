@@ -67,6 +67,7 @@ namespace EbenTilerWindows
 
         private Bitmap _headerIcon;
         private Bitmap _aboutIcon;
+        private ImageList _monitorImages;
         private Panel _pageHost;
         private Panel _navHost;
 
@@ -156,7 +157,7 @@ namespace EbenTilerWindows
 
             Label platformBadge = MakeLabel("Windows 10 · 11", 808, 25, 126, 24, 8.5f, FontStyle.Bold, UiPalette.Primary);
             platformBadge.TextAlign = ContentAlignment.MiddleCenter;
-            platformBadge.BackColor = UiPalette.PrimarySoft;
+            platformBadge.BackColor = UiPalette.Canvas;
             platformBadge.AccessibleName = "지원 운영체제";
             Controls.Add(platformBadge);
 
@@ -428,9 +429,9 @@ namespace EbenTilerWindows
             page.Controls.Add(MakeLabel("모니터", 0, 0, 240, 30, 15f, FontStyle.Bold, UiPalette.Text));
             page.Controls.Add(MakeLabel(
                 "현재 연결된 디스플레이와 EbenTiler의 모니터 이동 방식을 확인합니다.",
-                0, 32, 610, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
+                0, 32, 520, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
 
-            Button refresh = MakePageButton("새로 고침", 590, 24, 102, false);
+            Button refresh = MakePageButton("새로 고침", 548, 20, 144, false);
             refresh.Click += delegate { FillMonitors(); };
             page.Controls.Add(refresh);
 
@@ -444,11 +445,13 @@ namespace EbenTilerWindows
             _monitorList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
             _monitorList.BackColor = UiPalette.Surface;
             _monitorList.ForeColor = UiPalette.Text;
+            _monitorImages = CreateMonitorImageList();
+            _monitorList.SmallImageList = _monitorImages;
+            _monitorList.Columns.Add("디스플레이", S(194));
             _monitorList.Columns.Add("번호", S(54));
-            _monitorList.Columns.Add("디스플레이", S(172));
             _monitorList.Columns.Add("해상도", S(120));
             _monitorList.Columns.Add("작업 영역", S(154));
-            _monitorList.Columns.Add("상태", S(104));
+            _monitorList.Columns.Add("상태", S(110));
             page.Controls.Add(_monitorList);
 
             PreviewPanel monitorPreview = new PreviewPanel();
@@ -549,6 +552,11 @@ namespace EbenTilerWindows
                     _aboutIcon.Dispose();
                     _aboutIcon = null;
                 }
+                if (_monitorImages != null)
+                {
+                    _monitorImages.Dispose();
+                    _monitorImages = null;
+                }
             }
             base.Dispose(disposing);
         }
@@ -618,14 +626,64 @@ namespace EbenTilerWindows
             for (int i = 0; i < screens.Length; i++)
             {
                 Screen screen = screens[i];
-                ListViewItem item = new ListViewItem((i + 1).ToString());
-                item.SubItems.Add(screen.DeviceName);
+                ListViewItem item = new ListViewItem(FriendlyDisplayName(screen.DeviceName), 0);
+                item.SubItems.Add((i + 1).ToString());
                 item.SubItems.Add(screen.Bounds.Width + " × " + screen.Bounds.Height);
                 item.SubItems.Add(screen.WorkingArea.Width + " × " + screen.WorkingArea.Height);
                 item.SubItems.Add(screen.Primary ? "주 모니터" : "연결됨");
                 _monitorList.Items.Add(item);
             }
             _monitorList.EndUpdate();
+        }
+
+        private string FriendlyDisplayName(string deviceName)
+        {
+            if (string.IsNullOrWhiteSpace(deviceName)) return "DISPLAY";
+            const string devicePrefix = "\\\\.\\";
+            string name = deviceName.StartsWith(devicePrefix, StringComparison.OrdinalIgnoreCase)
+                ? deviceName.Substring(devicePrefix.Length)
+                : deviceName.TrimStart('\\', '.', '/');
+            return string.IsNullOrWhiteSpace(name) ? "DISPLAY" : name;
+        }
+
+        private ImageList CreateMonitorImageList()
+        {
+            int pixels = Math.Max(16, S(18));
+            ImageList images = new ImageList();
+            images.ColorDepth = ColorDepth.Depth32Bit;
+            images.ImageSize = new Size(pixels, pixels);
+            images.TransparentColor = Color.Transparent;
+            images.Images.Add(CreateMonitorListIcon(pixels));
+            return images;
+        }
+
+        private Bitmap CreateMonitorListIcon(int pixels)
+        {
+            Bitmap bitmap = new Bitmap(pixels, pixels, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bitmap))
+            {
+                g.Clear(Color.Transparent);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                float stroke = Math.Max(1.25f, pixels / 13f);
+                using (Pen pen = new Pen(UiPalette.PrimaryDark, stroke))
+                {
+                    pen.StartCap = LineCap.Round;
+                    pen.EndCap = LineCap.Round;
+                    pen.LineJoin = LineJoin.Round;
+                    RectangleF screen = new RectangleF(
+                        stroke, stroke,
+                        pixels - stroke * 2f,
+                        pixels * 0.62f);
+                    UiDrawing.DrawRoundedRectangle(g, pen, screen, Math.Max(2f, pixels * 0.12f));
+                    float center = pixels / 2f;
+                    float standTop = screen.Bottom;
+                    float standBottom = pixels - stroke * 1.5f;
+                    g.DrawLine(pen, center, standTop, center, standBottom - stroke * 1.8f);
+                    g.DrawLine(pen, center - pixels * 0.20f, standBottom, center + pixels * 0.20f, standBottom);
+                }
+            }
+            return bitmap;
         }
 
         private bool TryGetSelectedAction(out SnapAction action)

@@ -54,6 +54,10 @@ namespace EbenTilerWindows
             string path = FilePath;
             if (!File.Exists(path)) return config;
 
+            // 기존 버전에서 이미 사용 중이던 사람에게 업데이트 후 가이드를 갑자기 띄우지 않는다.
+            // 새 설정 키가 파일에 명시된 경우에만 아래 파싱에서 값을 덮어쓴다.
+            config.ShowWelcomeGuide = false;
+
             try
             {
                 string[] lines = File.ReadAllLines(path, Encoding.UTF8);

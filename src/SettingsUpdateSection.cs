@@ -47,6 +47,12 @@ namespace EbenTilerWindows
             check.AccessibleName = "업데이트 확인";
             aboutPage.Controls.Add(check);
 
+            string pendingTag = UpdateBadgeState.GetPendingTag();
+            if (!string.IsNullOrWhiteSpace(pendingTag))
+            {
+                status.Text = "새 버전 " + pendingTag + "을 사용할 수 있습니다.";
+            }
+
             string availableReleaseUrl = null;
             check.Click += delegate
             {
@@ -63,6 +69,15 @@ namespace EbenTilerWindows
                 ThreadPool.QueueUserWorkItem(delegate
                 {
                     UpdateCheckResult result = UpdateChecker.CheckNow();
+                    if (result.Status == UpdateCheckStatus.UpdateAvailable)
+                    {
+                        UpdateBadgeState.SetPending(result.TagName);
+                    }
+                    else if (result.Status == UpdateCheckStatus.UpToDate || result.Status == UpdateCheckStatus.NoRelease)
+                    {
+                        UpdateBadgeState.Clear();
+                    }
+
                     try
                     {
                         if (form.IsDisposed || !form.IsHandleCreated) return;

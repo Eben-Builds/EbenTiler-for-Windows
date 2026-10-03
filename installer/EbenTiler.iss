@@ -65,6 +65,7 @@ Filename: "{app}\{#AppExeName}"; Parameters: "--startup off"; Flags: runhidden w
 [UninstallDelete]
 Type: files; Name: "{userappdata}\EbenTiler\config.ini"
 Type: files; Name: "{userappdata}\EbenTiler\update-state.ini"
+Type: files; Name: "{userappdata}\EbenTiler\update-badge.ini"
 Type: dirifempty; Name: "{userappdata}\EbenTiler"
 
 [Code]

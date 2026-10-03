@@ -6,6 +6,8 @@
 - 실행 파일 하나, 약 80KB
 - 알림 영역에 상주, 설정 창에서 단축키 자유롭게 변경
 
+[Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Code signing policy](docs/CODE_SIGNING.md)
+
 ## 기본 단축키
 
 | 단축키 | 하는 일 |
@@ -100,6 +102,11 @@ Windows 는 처음 보는 프로그램의 아이콘을 기본으로 숨김 처�
 
 메뉴를 열 때마다 실제 등록 상태를 다시 읽어 체크를 맞추므로, 설정을 다른 데서 바꿔도 표시가 어긋나지 않는다.
 
+### 처음 실행할 때
+
+처음 사용하는 사람에게는 핵심 단축키를 설명하는 시작 가이드가 표시된다.
+`다시 표시하지 않기`가 기본으로 선택되어 있어 보통 한 번만 나타난다. 체크를 풀고 닫으면 다음 실행 때 다시 볼 수 있다.
+
 ## 명령줄에서 쓰기
 
 스크립트나 다른 도구에서 창 배치를 시킬 수도 있다.
@@ -161,11 +168,20 @@ TopLeft=Ctrl+Alt+U
 Maximize=Ctrl+Alt+Enter
 
 [Options]
-Gap=0            ; 창 사이와 화면 가장자리에 남길 여백(픽셀)
-CycleHalves=true ; 같은 단축키 연타 시 1/2 -> 1/3 -> 2/3 순환
+Gap=0                  ; 창 사이와 화면 가장자리에 남길 여백(픽셀)
+CycleHalves=true       ; 같은 단축키 연타 시 1/2 -> 1/3 -> 2/3 순환
+ShowWelcomeGuide=false ; 다음 실행 때 시작 가이드를 표시할지 여부
 ```
 
 값을 비워 두면 그 기능의 단축키는 등록하지 않는다.
+
+## 개인정보 / Privacy
+
+EbenTiler 앱은 개인정보, 사용 통계, 창 제목, 입력 내용이나 파일 내용을 수집하지 않으며 텔레메트리·광고·분석 SDK·원격 API를 사용하지 않는다.
+
+**This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.**
+
+상세 정책은 [`PRIVACY.md`](PRIVACY.md)를 참고한다.
 
 ## 검증
 
@@ -210,10 +226,12 @@ powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1
 powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSigning
 ```
 
-## 코드 서명 정책
+## Code signing policy
 
 정식 공개 릴리스는 유효한 Authenticode 서명 없이는 게시하지 않는다.
 2026년 공개 코드서명 인증서는 개인키가 하드웨어/HSM/클라우드 서명 서비스에 보관되는 형태를 기본으로 보고 있으며, 새 인증서 구매를 export 가능한 PFX 전제로 설계하지 않는다.
+
+SignPath Foundation은 공개 OSS 코드서명의 우선 검토 대상이지만 **현재 EbenTiler는 아직 SignPath 승인을 받거나 연동한 상태가 아니다.** 승인 전에는 SignPath가 현재 서명을 제공하는 것처럼 표시하지 않는다.
 
 상세 정책과 공급자 선택 기준은 [`docs/CODE_SIGNING.md`](docs/CODE_SIGNING.md)를 참고한다.
 

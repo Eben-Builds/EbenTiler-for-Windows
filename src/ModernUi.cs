@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace EbenTilerWindows
@@ -126,8 +127,6 @@ namespace EbenTilerWindows
                 ? SurroundingBackColor
                 : (Parent != null ? Parent.BackColor : UiPalette.Canvas);
 
-            // 이전 hover/pressed 프레임의 안티앨리어싱 픽셀이 모서리에 남지 않도록
-            // 컨트롤 전체를 실제 배경색으로 먼저 지운 뒤 둥근 버튼을 새로 그린다.
             g.Clear(surrounding);
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
@@ -189,9 +188,100 @@ namespace EbenTilerWindows
         }
     }
 
-    /// <summary>알림 영역 메뉴를 부드러운 둥근 모서리로 그린다.</summary>
+    /// <summary>설정 창 왼쪽 사이드바용 탐색 버튼.</summary>
+    internal sealed class NavigationButton : Button
+    {
+        private bool _hover;
+        private bool _selected;
+
+        public string Glyph { get; set; }
+        public bool Selected
+        {
+            get { return _selected; }
+            set
+            {
+                if (_selected == value) return;
+                _selected = value;
+                Invalidate();
+            }
+        }
+
+        public NavigationButton()
+        {
+            Glyph = "";
+            FlatStyle = FlatStyle.Flat;
+            FlatAppearance.BorderSize = 0;
+            UseVisualStyleBackColor = false;
+            Cursor = Cursors.Hand;
+            TabStop = true;
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
+                | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            _hover = true;
+            Invalidate();
+            base.OnMouseEnter(e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            _hover = false;
+            Invalidate();
+            base.OnMouseLeave(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs pevent)
+        {
+            Graphics g = pevent.Graphics;
+            Color surrounding = Parent != null ? Parent.BackColor : UiPalette.Surface;
+            g.Clear(surrounding);
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+            RectangleF rect = new RectangleF(1f, 1f, Math.Max(1f, Width - 2f), Math.Max(1f, Height - 2f));
+            Color fill = _selected ? UiPalette.PrimarySoft : (_hover ? UiPalette.SurfaceSoft : UiPalette.Surface);
+            Color textColor = _selected ? UiPalette.PrimaryDark : UiPalette.Text;
+            using (SolidBrush fillBrush = new SolidBrush(fill))
+            {
+                UiDrawing.FillRoundedRectangle(g, fillBrush, rect, 8f);
+            }
+
+            if (_selected)
+            {
+                RectangleF accent = new RectangleF(5f, 9f, 3f, Math.Max(10f, Height - 18f));
+                using (SolidBrush accentBrush = new SolidBrush(UiPalette.Primary))
+                {
+                    UiDrawing.FillRoundedRectangle(g, accentBrush, accent, 2f);
+                }
+            }
+
+            Rectangle glyphRect = new Rectangle(16, 0, 28, Height);
+            Rectangle textRect = new Rectangle(46, 0, Math.Max(1, Width - 54), Height);
+            if (!string.IsNullOrEmpty(Glyph))
+            {
+                TextRenderer.DrawText(g, Glyph, Font, glyphRect, textColor,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
+                    | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
+            }
+            TextRenderer.DrawText(g, Text, Font, textRect, textColor,
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter
+                | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
+        }
+    }
+
+    /// <summary>알림 영역 메뉴를 Windows 11에서는 DWM 네이티브 모서리로, 이전 버전에서는 Region으로 둥글게 만든다.</summary>
     internal sealed class RoundedContextMenuStrip : ContextMenuStrip
     {
+        private const int DwmwaWindowCornerPreference = 33;
+        private const int DwmwcpRoundSmall = 3;
+        private bool _nativeRoundedCorners;
+
+        [DllImport("dwmapi.dll", PreserveSig = true)]
+        private static extern int DwmSetWindowAttribute(
+            IntPtr hwnd, int attribute, ref int attributeValue, int attributeSize);
+
         public RoundedContextMenuStrip()
         {
             AutoSize = true;
@@ -205,16 +295,56 @@ namespace EbenTilerWindows
             Renderer = new EbenMenuRenderer();
         }
 
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            _nativeRoundedCorners = TryApplyNativeRoundedCorners();
+            UpdateFallbackRegion();
+        }
+
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);
-            if (Width <= 0 || Height <= 0) return;
+            UpdateFallbackRegion();
+        }
+
+        private bool TryApplyNativeRoundedCorners()
+        {
+            try
+            {
+                int preference = DwmwcpRoundSmall;
+                return DwmSetWindowAttribute(
+                    Handle,
+                    DwmwaWindowCornerPreference,
+                    ref preference,
+                    Marshal.SizeOf(typeof(int))) == 0;
+            }
+            catch (DllNotFoundException)
+            {
+                return false;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return false;
+            }
+        }
+
+        private void UpdateFallbackRegion()
+        {
+            if (!IsHandleCreated || Width <= 0 || Height <= 0) return;
 
             Region old = Region;
-            using (GraphicsPath path = UiDrawing.RoundedRectangle(
-                new RectangleF(0f, 0f, Width, Height), 10f))
+            if (_nativeRoundedCorners)
             {
-                Region = new Region(path);
+                Region = null;
+            }
+            else
+            {
+                using (GraphicsPath path = UiDrawing.RoundedRectangle(
+                    new RectangleF(0f, 0f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - 1f)), 9f))
+                {
+                    Region = new Region(path);
+                }
             }
             if (old != null) old.Dispose();
         }
@@ -224,7 +354,7 @@ namespace EbenTilerWindows
     {
         protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
         {
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.SmoothingMode = SmoothingMode.None;
             using (SolidBrush brush = new SolidBrush(UiPalette.Surface))
             {
                 e.Graphics.FillRectangle(brush, e.AffectedBounds);
@@ -233,11 +363,18 @@ namespace EbenTilerWindows
 
         protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
         {
+            if (e.ToolStrip.Width < 4 || e.ToolStrip.Height < 4) return;
+
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            RectangleF rect = new RectangleF(0.5f, 0.5f, e.ToolStrip.Width - 1.5f, e.ToolStrip.Height - 1.5f);
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            RectangleF rect = new RectangleF(
+                1f, 1f,
+                Math.Max(1f, e.ToolStrip.Width - 3f),
+                Math.Max(1f, e.ToolStrip.Height - 3f));
             using (Pen pen = new Pen(UiPalette.BorderStrong, 1f))
             {
-                UiDrawing.DrawRoundedRectangle(e.Graphics, pen, rect, 10f);
+                pen.Alignment = PenAlignment.Inset;
+                UiDrawing.DrawRoundedRectangle(e.Graphics, pen, rect, 8f);
             }
         }
 
@@ -250,6 +387,7 @@ namespace EbenTilerWindows
                 bounds.Left + 3, bounds.Top + 2,
                 Math.Max(1, bounds.Width - 6), Math.Max(1, bounds.Height - 4));
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
             using (SolidBrush brush = new SolidBrush(UiPalette.Hover))
             {
                 UiDrawing.FillRoundedRectangle(e.Graphics, brush, rect, 6f);
@@ -259,6 +397,7 @@ namespace EbenTilerWindows
         protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
         {
             int y = e.Item.ContentRectangle.Top + e.Item.ContentRectangle.Height / 2;
+            e.Graphics.SmoothingMode = SmoothingMode.None;
             using (Pen pen = new Pen(UiPalette.Border, 1f))
             {
                 e.Graphics.DrawLine(pen, 10, y, e.ToolStrip.Width - 10, y);

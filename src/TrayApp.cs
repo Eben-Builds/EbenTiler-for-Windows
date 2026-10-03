@@ -103,6 +103,11 @@ namespace EbenTilerWindows
             return item;
         }
 
+        private static int ScaleMenuPixel(int value, float scale)
+        {
+            return Math.Max(1, (int)Math.Round(value * scale));
+        }
+
         private void ApplyMenuScale(ContextMenuStrip menu)
         {
             int dpi = GetMenuDpi(menu);
@@ -110,11 +115,6 @@ namespace EbenTilerWindows
             if (_menuDpi == dpi) return;
 
             float scale = dpi / 96f;
-            int Scale(int value)
-            {
-                return Math.Max(1, (int)Math.Round(value * scale));
-            }
-
             Font regular = new Font("Malgun Gothic", 12f * scale, FontStyle.Regular, GraphicsUnit.Pixel);
             Font bold = new Font("Malgun Gothic", 12f * scale, FontStyle.Bold, GraphicsUnit.Pixel);
             Font oldRegular = _menuRegularFont;
@@ -124,8 +124,8 @@ namespace EbenTilerWindows
             try
             {
                 menu.Font = regular;
-                menu.Padding = new Padding(Scale(6));
-                menu.MinimumSize = new Size(Scale(220), 0);
+                menu.Padding = new Padding(ScaleMenuPixel(6, scale));
+                menu.MinimumSize = new Size(ScaleMenuPixel(220, scale), 0);
 
                 foreach (ToolStripItem item in menu.Items)
                 {
@@ -134,11 +134,15 @@ namespace EbenTilerWindows
                     {
                         bool isBold = menuItem.Font != null && menuItem.Font.Bold;
                         menuItem.Font = isBold ? bold : regular;
-                        menuItem.Padding = new Padding(Scale(8), Scale(5), Scale(8), Scale(5));
+                        menuItem.Padding = new Padding(
+                            ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale),
+                            ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale));
                     }
                     else if (item is ToolStripSeparator)
                     {
-                        item.Margin = new Padding(Scale(4), Scale(2), Scale(4), Scale(2));
+                        item.Margin = new Padding(
+                            ScaleMenuPixel(4, scale), ScaleMenuPixel(2, scale),
+                            ScaleMenuPixel(4, scale), ScaleMenuPixel(2, scale));
                     }
                 }
             }

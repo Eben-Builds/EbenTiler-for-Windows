@@ -8,15 +8,23 @@ namespace EbenTilerWindows
     public sealed class WelcomeForm : Form
     {
         private readonly float _scale;
+        private readonly bool _manualPreview;
         private CheckBox _doNotShowAgain;
 
         public bool DoNotShowAgain
         {
-            get { return _doNotShowAgain != null && _doNotShowAgain.Checked; }
+            get { return !_manualPreview && _doNotShowAgain != null && _doNotShowAgain.Checked; }
         }
 
         public WelcomeForm()
+            : this(false)
         {
+        }
+
+        public WelcomeForm(bool manualPreview)
+        {
+            _manualPreview = manualPreview;
+
             using (Graphics g = Graphics.FromHwnd(IntPtr.Zero))
             {
                 _scale = g.DpiX / 96f;
@@ -56,7 +64,7 @@ namespace EbenTilerWindows
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             MinimizeBox = false;
-            StartPosition = FormStartPosition.CenterScreen;
+            StartPosition = _manualPreview ? FormStartPosition.CenterParent : FormStartPosition.CenterScreen;
             BackColor = UiPalette.Canvas;
             ForeColor = UiPalette.Text;
             Font = MakeFont(9f, FontStyle.Regular);
@@ -100,6 +108,26 @@ namespace EbenTilerWindows
             Controls.Add(MakeLabel(
                 "작업표시줄 오른쪽 EbenTiler 아이콘에서 언제든 단축키와 시작 옵션을 바꿀 수 있습니다.",
                 30, 360, 590, 24, 8.8f, FontStyle.Regular, UiPalette.TextMuted));
+
+            if (_manualPreview)
+            {
+                Controls.Add(MakeLabel(
+                    "이 화면은 설정 > 일반에서 언제든 다시 열 수 있습니다.",
+                    30, 408, 390, 28, 8.8f, FontStyle.Regular, UiPalette.TextMuted));
+
+                RoundedButton close = MakeButton("닫기", 496, 402, 126, true);
+                close.Click += delegate
+                {
+                    DialogResult = DialogResult.OK;
+                    Close();
+                };
+                close.AccessibleName = "시작 가이드 닫기";
+                Controls.Add(close);
+
+                AcceptButton = close;
+                CancelButton = close;
+                return;
+            }
 
             _doNotShowAgain = new CheckBox();
             _doNotShowAgain.Text = "다시 표시하지 않기";

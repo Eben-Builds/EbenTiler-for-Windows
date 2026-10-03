@@ -19,7 +19,6 @@ namespace EbenTilerWindows
 
         public TrayApp()
         {
-            bool firstRun = !System.IO.File.Exists(Config.FilePath);
             _config = Config.Load();
             _windows = new WindowManager(_config);
 
@@ -57,13 +56,19 @@ namespace EbenTilerWindows
             _tray.MouseUp += OnTrayMouseUp;
 
             bool openSettingsAfterWelcome = false;
-            if (firstRun)
+            if (_config.ShowWelcomeGuide)
             {
-                _config.Save();
                 using (WelcomeForm welcome = new WelcomeForm())
                 {
-                    openSettingsAfterWelcome = welcome.ShowDialog() == DialogResult.Yes;
+                    DialogResult result = welcome.ShowDialog();
+                    openSettingsAfterWelcome = result == DialogResult.Yes;
+                    _config.ShowWelcomeGuide = !welcome.DoNotShowAgain;
+                    _config.Save();
                 }
+            }
+            else if (!System.IO.File.Exists(Config.FilePath))
+            {
+                _config.Save();
             }
 
             ApplyHotkeys(true);

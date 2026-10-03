@@ -7,34 +7,29 @@ on:
       - main
     paths:
       - 'website/**'
-      - 'src/**'
-      - 'assets/**'
-      - 'installer/**'
-      - 'tools/make-appicon.ps1'
-      - 'tools/verify-installer.ps1'
-      - 'build.ps1'
-      - 'build-installer.ps1'
       - '.github/workflows/build-website.yml'
 
 permissions:
   contents: read
 
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-site:
     runs-on: windows-2025
-    timeout-minutes: 15
+    timeout-minutes: 8
     permissions:
       contents: read
-    env:
-      SIGNING_PFX_BASE64: ${{ secrets.EBENTILER_SIGNING_PFX_BASE64 }}
-      SIGNING_PFX_PASSWORD: ${{ secrets.EBENTILER_SIGNING_PFX_PASSWORD }}
-      EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
 
     steps:
       - name: 저장소 받기
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - name: 웹 자산 무결성 확인
+      - name: 웹 자산과 안전한 다운로드 경로 확인
         shell: powershell
         run: |
           $webpAssets = @(
@@ -56,58 +51,19 @@ jobs:
 
           $index = Get-Content '.\website\index.html' -Raw
           $styles = Get-Content '.\website\styles.css' -Raw
+          $app = Get-Content '.\website\app.js' -Raw
           if ($index -notmatch 'hero-ebentiler\.webp') { throw 'Landing page does not reference the hero asset.' }
           if ($styles -notmatch 'thirds-ebentiler\.webp') { throw 'Landing page styles do not reference the thirds asset.' }
-          if ($index -notmatch 'EbenTiler-Setup\.exe') { throw 'Landing page does not reference the installer.' }
-
-      - name: 설치 도구 준비
-        shell: powershell
-        run: choco install innosetup --version=6.7.1 -y --no-progress
-
-      - name: 코드 서명 인증서 준비
-        if: env.SIGNING_PFX_BASE64 != ''
-        shell: powershell
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_PASSWORD)) {
-            throw 'Signing certificate is configured but password is missing.'
-          }
-          $pfxPath = Join-Path $env:RUNNER_TEMP 'ebentiler-signing.pfx'
-          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGNING_PFX_BASE64))
-          try {
-            $password = ConvertTo-SecureString $env:SIGNING_PFX_PASSWORD -AsPlainText -Force
-            $certificate = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation 'Cert:\CurrentUser\My' -Password $password -Exportable:$false
-            if (-not $certificate -or [string]::IsNullOrWhiteSpace($certificate.Thumbprint)) {
-              throw 'Failed to import the code-signing certificate.'
-            }
-            "EBENTILER_SIGNING_CERT_SHA1=$($certificate.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          }
-          finally {
-            Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
+          if ($app -notmatch 'releases/latest/download/EbenTiler-Setup\.exe') {
+            throw 'Landing page does not route downloads to the verified GitHub Release asset.'
           }
 
-      - name: 최신 설치 파일 만들기
-        shell: powershell
-        run: .\build-installer.ps1
-
-      - name: 설치 파일 SHA256 확인
-        shell: powershell
-        run: |
-          $expected = ((Get-Content '.\dist\EbenTiler-Setup.exe.sha256' -Raw).Split()[0]).Trim().ToLowerInvariant()
-          $actual = (Get-FileHash '.\dist\EbenTiler-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($expected -ne $actual) { throw "Installer SHA256 mismatch: $actual" }
-
-      - name: 설치와 제거 스모크 테스트
-        shell: powershell
-        run: .\tools\verify-installer.ps1
-
-      - name: 랜딩페이지와 설치 파일 묶기
+      - name: 정적 랜딩페이지 묶기
         shell: powershell
         run: |
           $target = Join-Path $env:RUNNER_TEMP 'ebentiler-site'
           New-Item -ItemType Directory -Path $target -Force | Out-Null
           Copy-Item '.\website\*' $target -Recurse -Force
-          Copy-Item '.\dist\EbenTiler-Setup.exe' (Join-Path $target 'EbenTiler-Setup.exe') -Force
-          Copy-Item '.\dist\EbenTiler-Setup.exe.sha256' (Join-Path $target 'EbenTiler-Setup.exe.sha256') -Force
           "EBENTILER_SITE_DIR=$target" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 검증된 사이트 묶음 업로드
@@ -116,6 +72,7 @@ jobs:
           name: EbenTiler-Website
           path: ${{ env.EBENTILER_SITE_DIR }}
           if-no-files-found: error
+          retention-days: 7
 
   publish-site:
     needs: build-site
@@ -139,7 +96,6 @@ jobs:
         run: |
           $siteDir = Join-Path $env:RUNNER_TEMP 'ebentiler-site'
           if (-not (Test-Path (Join-Path $siteDir 'index.html'))) { throw 'Verified site artifact is missing index.html.' }
-          if (-not (Test-Path (Join-Path $siteDir 'EbenTiler-Setup.exe'))) { throw 'Verified site artifact is missing installer.' }
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

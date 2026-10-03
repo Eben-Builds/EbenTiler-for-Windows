@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 $installerPath = [IO.Path]::GetFullPath((Join-Path (Get-Location) $Installer))
 $installDir = Join-Path $env:LOCALAPPDATA 'Programs\EbenTiler'
 $installedExe = Join-Path $installDir 'EbenTiler.exe'
+$installedRuntimeConfig = Join-Path $installDir 'EbenTiler.exe.config'
 $uninstaller = Join-Path $installDir 'unins000.exe'
 $configDir = Join-Path $env:APPDATA 'EbenTiler'
 $configFile = Join-Path $configDir 'config.ini'
@@ -49,6 +50,15 @@ try {
     }
     if (-not (Test-Path $installedExe)) {
         throw "Installed executable not found: $installedExe"
+    }
+    if (-not (Test-Path $installedRuntimeConfig)) {
+        throw "Installed runtime configuration not found: $installedRuntimeConfig"
+    }
+
+    $runtimeConfig = Get-Content $installedRuntimeConfig -Raw
+    if ($runtimeConfig -notmatch 'DpiAwareness" value="PerMonitorV2"'
+        -or $runtimeConfig -notmatch 'EnableWindowsFormsHighDpiAutoResizing" value="false"') {
+        throw 'Installed runtime configuration does not contain the expected DPI settings.'
     }
 
     $cli = Start-Process -FilePath $installedExe -ArgumentList @('--list', '--out', $outputPath) -Wait -PassThru
@@ -109,6 +119,9 @@ try {
     if (Test-Path $installedExe) {
         throw 'Installed executable remains after uninstall.'
     }
+    if (Test-Path $installedRuntimeConfig) {
+        throw 'Installed runtime configuration remains after uninstall.'
+    }
 
     $startupAfter = Get-StartupValue
     if ($null -ne $startupAfter) {
@@ -122,7 +135,7 @@ try {
         throw 'Uninstaller removed an unrelated file from the EbenTiler config directory.'
     }
 
-    Write-Host 'Installer smoke test passed: install, CLI launch, startup on/off, safe config cleanup, uninstall.'
+    Write-Host 'Installer smoke test passed: install, DPI runtime config, CLI launch, startup on/off, safe config cleanup, uninstall.'
 }
 finally {
     Remove-Item $outputPath -Force -ErrorAction SilentlyContinue

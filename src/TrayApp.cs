@@ -16,12 +16,14 @@ namespace EbenTilerWindows
         private readonly HotkeyManager _hotkeys;
         private readonly NotifyIcon _tray;
         private readonly ToolStripMenuItem _startupItem;
+        private readonly ToolStripMenuItem _updateItem;
         private readonly Control _uiDispatcher;
         private ContextMenuStrip _menu;
         private SettingsForm _settingsForm;
         private int _menuDpi;
         private Font _menuRegularFont;
         private Font _menuBoldFont;
+        private Icon _trayIcon;
         private bool _updateNotificationPending;
 
         [DllImport("user32.dll")]
@@ -52,6 +54,13 @@ namespace EbenTilerWindows
             _startupItem.Click += delegate { Startup.SetEnabled(_startupItem.Checked); };
             menu.Items.Add(_startupItem);
 
+            _updateItem = MakeMenuItem("업데이트 있음");
+            _updateItem.Font = new Font(menu.Font, FontStyle.Bold);
+            _updateItem.ForeColor = Color.FromArgb(196, 96, 0);
+            _updateItem.Visible = false;
+            _updateItem.Click += delegate { ShowSettings(true); };
+            menu.Items.Add(_updateItem);
+
             menu.Items.Add(new ToolStripSeparator());
 
             ToolStripMenuItem exitItem = MakeMenuItem("종료");
@@ -70,7 +79,8 @@ namespace EbenTilerWindows
             _menu = menu;
 
             _tray = new NotifyIcon();
-            _tray.Icon = AppIcon.LoadSmall();
+            _trayIcon = TrayUpdateIcon.Create(false);
+            _tray.Icon = _trayIcon;
             _tray.Text = "EbenTiler for Windows";
             _tray.ContextMenuStrip = menu;
             _tray.Visible = true;
@@ -81,6 +91,9 @@ namespace EbenTilerWindows
                 _updateNotificationPending = false;
                 ShowSettings(true);
             };
+
+            UpdateBadgeState.Changed += OnUpdateBadgeStateChanged;
+            ApplyUpdateBadge(UpdateBadgeState.GetPendingTag());
 
             bool openSettingsAfterWelcome = false;
             if (_config.ShowWelcomeGuide)
@@ -200,19 +213,58 @@ namespace EbenTilerWindows
             ThreadPool.QueueUserWorkItem(delegate
             {
                 UpdateCheckResult result = UpdateChecker.CheckNow();
-                if (result.Status != UpdateCheckStatus.UpdateAvailable) return;
-                if (!UpdateChecker.ShouldNotify(result.TagName)) return;
 
-                UpdateChecker.MarkNotified(result.TagName);
-                try
+                if (result.Status == UpdateCheckStatus.UpdateAvailable)
                 {
-                    _uiDispatcher.BeginInvoke((MethodInvoker)delegate
+                    UpdateBadgeState.SetPending(result.TagName);
+
+                    if (!UpdateChecker.ShouldNotify(result.TagName)) return;
+                    UpdateChecker.MarkNotified(result.TagName);
+                    try
                     {
-                        ShowUpdateNotification(result);
-                    });
+                        _uiDispatcher.BeginInvoke((MethodInvoker)delegate
+                        {
+                            ShowUpdateNotification(result);
+                        });
+                    }
+                    catch (InvalidOperationException) { }
+                    return;
                 }
-                catch (InvalidOperationException) { }
+
+                if (result.Status == UpdateCheckStatus.UpToDate || result.Status == UpdateCheckStatus.NoRelease)
+                {
+                    UpdateBadgeState.Clear();
+                }
             });
+        }
+
+        private void OnUpdateBadgeStateChanged(string tagName)
+        {
+            try
+            {
+                if (_uiDispatcher.IsDisposed || !_uiDispatcher.IsHandleCreated) return;
+                _uiDispatcher.BeginInvoke((MethodInvoker)delegate
+                {
+                    ApplyUpdateBadge(tagName);
+                });
+            }
+            catch (InvalidOperationException) { }
+        }
+
+        private void ApplyUpdateBadge(string tagName)
+        {
+            bool hasUpdate = !string.IsNullOrWhiteSpace(tagName);
+            Icon nextIcon = TrayUpdateIcon.Create(hasUpdate);
+            Icon oldIcon = _trayIcon;
+            _trayIcon = nextIcon;
+            _tray.Icon = nextIcon;
+            if (oldIcon != null) oldIcon.Dispose();
+
+            _tray.Text = hasUpdate
+                ? "EbenTiler for Windows · 업데이트 " + tagName
+                : "EbenTiler for Windows";
+            _updateItem.Visible = hasUpdate;
+            _updateItem.Text = hasUpdate ? "업데이트 있음 · " + tagName : "업데이트 있음";
         }
 
         private void ShowUpdateNotification(UpdateCheckResult result)
@@ -281,6 +333,7 @@ namespace EbenTilerWindows
             _hotkeys.UnregisterAll();
             _settingsForm = new SettingsForm(_config);
             SettingsWelcomeGuide.Attach(_settingsForm);
+            SettingsUpdateSection.Attach(_settingsForm);
             if (showAboutPage) _settingsForm.ShowAboutPage();
             try
             {
@@ -300,8 +353,10 @@ namespace EbenTilerWindows
 
         private void ExitApp()
         {
+            UpdateBadgeState.Changed -= OnUpdateBadgeStateChanged;
             _tray.Visible = false;
             _tray.Dispose();
+            if (_trayIcon != null) _trayIcon.Dispose();
             if (_menu != null) _menu.Dispose();
             if (_menuRegularFont != null) _menuRegularFont.Dispose();
             if (_menuBoldFont != null) _menuBoldFont.Dispose();

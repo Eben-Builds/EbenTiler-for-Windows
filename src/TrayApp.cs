@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace EbenTilerWindows
@@ -15,11 +16,13 @@ namespace EbenTilerWindows
         private readonly HotkeyManager _hotkeys;
         private readonly NotifyIcon _tray;
         private readonly ToolStripMenuItem _startupItem;
+        private readonly Control _uiDispatcher;
         private ContextMenuStrip _menu;
         private SettingsForm _settingsForm;
         private int _menuDpi;
         private Font _menuRegularFont;
         private Font _menuBoldFont;
+        private bool _updateNotificationPending;
 
         [DllImport("user32.dll")]
         private static extern uint GetDpiForWindow(IntPtr hwnd);
@@ -29,6 +32,9 @@ namespace EbenTilerWindows
             _config = Config.Load();
             _windows = new WindowManager(_config);
 
+            _uiDispatcher = new Control();
+            _uiDispatcher.CreateControl();
+
             _hotkeys = new HotkeyManager();
             _hotkeys.HotkeyPressed += OnHotkeyPressed;
 
@@ -37,7 +43,7 @@ namespace EbenTilerWindows
 
             ToolStripMenuItem settingsItem = MakeMenuItem("설정...");
             settingsItem.Font = new Font(menu.Font, FontStyle.Bold);
-            settingsItem.Click += delegate { ShowSettings(); };
+            settingsItem.Click += delegate { ShowSettings(false); };
             menu.Items.Add(settingsItem);
 
             _startupItem = MakeMenuItem("Windows 시작할 때 함께 실행");
@@ -69,6 +75,12 @@ namespace EbenTilerWindows
             _tray.ContextMenuStrip = menu;
             _tray.Visible = true;
             _tray.MouseUp += OnTrayMouseUp;
+            _tray.BalloonTipClicked += delegate
+            {
+                if (!_updateNotificationPending) return;
+                _updateNotificationPending = false;
+                ShowSettings(true);
+            };
 
             bool openSettingsAfterWelcome = false;
             if (_config.ShowWelcomeGuide)
@@ -90,8 +102,10 @@ namespace EbenTilerWindows
 
             if (openSettingsAfterWelcome)
             {
-                ShowSettings();
+                ShowSettings(false);
             }
+
+            StartAutomaticUpdateCheck();
         }
 
         private static ToolStripMenuItem MakeMenuItem(string text)
@@ -179,6 +193,40 @@ namespace EbenTilerWindows
             }
         }
 
+        private void StartAutomaticUpdateCheck()
+        {
+            if (!UpdateChecker.IsAutomaticCheckDue()) return;
+
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                UpdateCheckResult result = UpdateChecker.CheckNow();
+                if (result.Status != UpdateCheckStatus.UpdateAvailable) return;
+                if (!UpdateChecker.ShouldNotify(result.TagName)) return;
+
+                UpdateChecker.MarkNotified(result.TagName);
+                try
+                {
+                    _uiDispatcher.BeginInvoke((MethodInvoker)delegate
+                    {
+                        ShowUpdateNotification(result);
+                    });
+                }
+                catch (InvalidOperationException) { }
+                catch (ObjectDisposedException) { }
+            });
+        }
+
+        private void ShowUpdateNotification(UpdateCheckResult result)
+        {
+            if (result == null || result.Status != UpdateCheckStatus.UpdateAvailable) return;
+
+            _updateNotificationPending = true;
+            _tray.BalloonTipTitle = "EbenTiler 업데이트가 있습니다";
+            _tray.BalloonTipText = "새 버전 " + result.TagName + "을 사용할 수 있습니다. 눌러서 업데이트 정보를 확인하세요.";
+            _tray.BalloonTipIcon = ToolTipIcon.Info;
+            _tray.ShowBalloonTip(10000);
+        }
+
         private void OnTrayMouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left) return;
@@ -214,6 +262,7 @@ namespace EbenTilerWindows
             for (int i = 0; i < shown; i++) message += failed[i] + "\n";
             if (failed.Count > shown) message += "외 " + (failed.Count - shown) + "개";
 
+            _updateNotificationPending = false;
             _tray.BalloonTipTitle = "이미 다른 프로그램이 쓰는 단축키가 있습니다";
             _tray.BalloonTipText = "아래 단축키는 등록하지 못했습니다. 설정에서 다른 조합으로 바꿔 주세요.\n" + message;
             _tray.BalloonTipIcon = ToolTipIcon.Warning;
@@ -221,10 +270,11 @@ namespace EbenTilerWindows
             return failed.Count;
         }
 
-        private void ShowSettings()
+        private void ShowSettings(bool showAboutPage)
         {
             if (_settingsForm != null)
             {
+                if (showAboutPage) _settingsForm.ShowAboutPage();
                 _settingsForm.Activate();
                 return;
             }
@@ -232,6 +282,7 @@ namespace EbenTilerWindows
             _hotkeys.UnregisterAll();
             _settingsForm = new SettingsForm(_config);
             SettingsWelcomeGuide.Attach(_settingsForm);
+            if (showAboutPage) _settingsForm.ShowAboutPage();
             try
             {
                 if (_settingsForm.ShowDialog() == DialogResult.OK)
@@ -255,6 +306,7 @@ namespace EbenTilerWindows
             if (_menu != null) _menu.Dispose();
             if (_menuRegularFont != null) _menuRegularFont.Dispose();
             if (_menuBoldFont != null) _menuBoldFont.Dispose();
+            _uiDispatcher.Dispose();
             _hotkeys.Dispose();
             ExitThread();
         }

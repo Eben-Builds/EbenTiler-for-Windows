@@ -1,6 +1,6 @@
-# EbenTiler v1.0.0 출시 준비
+# EbenTiler v1.0.1 공개 릴리스 상태
 
-이 문서는 공개 OSS 상태의 EbenTiler를 첫 공개 Release로 배포하기 전에 확인할 항목만 정리합니다.
+이 문서는 EbenTiler의 첫 공개 다운로드 가능 Release 상태와 코드서명 전후 전환 조건을 기록합니다.
 
 ## 1. GitHub Rulesets
 
@@ -33,7 +33,7 @@
 
 `windows`, `window-manager`, `window-tiling`, `productivity`, `hotkeys`, `desktop-app`, `winforms`, `dotnet-framework`, `multi-monitor`, `open-source`
 
-버전용 Git tag와 GitHub Topics는 목적이 다릅니다. `v1.0.0`은 공개 릴리스 신호이고, Topics는 검색과 프로젝트 발견성을 위한 메타데이터입니다.
+버전용 Git tag와 GitHub Topics는 목적이 다릅니다. 버전 태그는 공개 릴리스 신호이고, Topics는 검색과 프로젝트 발견성을 위한 메타데이터입니다.
 
 ## 3. 코드 서명 / 공개 배포 정책
 
@@ -46,7 +46,9 @@
 - 코드서명 신원이 없으면 unsigned 상태와 Windows 경고 가능성을 Release와 랜딩페이지에 명확히 고지한 뒤 공개 가능
 - 랜딩페이지는 GitHub 최신 공개 Release의 설치 파일만 가리킴
 
-따라서 SignPath 승인 전에도 `v1.0.0` unsigned 공개 Release를 만들 수 있습니다. 코드서명이 연결되면 다음 버전부터 signed Release로 전환합니다.
+2026-10-03 `v1.0.1` unsigned 공개 Release가 실제 게시되었습니다. `EbenTiler-Setup.exe`와 `EbenTiler-Setup.exe.sha256`이 함께 공개되어 있으며, Release 본문에는 Authenticode 미서명 상태와 SmartScreen/알 수 없는 게시자 경고 가능성을 명시합니다.
+
+`v1.0.0` 태그는 첫 Release 게시 시도의 기록으로 남아 있으나 Release 게시 단계가 실패해 공개 Release는 생성되지 않았습니다. 보호된 태그를 덮어쓰지 않고 `v1.0.1`로 정상 공개했습니다.
 
 상세 내용은 `docs/CODE_SIGNING.md`를 봅니다.
 
@@ -126,11 +128,9 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 
 2026-10-03 실제 Windows에서 테스트용 `v9.9.9` 상태로 트레이 `!` 배지와 `업데이트 있음 · v9.9.9` 메뉴를 확인했고, 해당 메뉴를 누르면 `설정 > 정보`로 바로 이동하는 동작까지 확인했습니다.
 
-중요: 첫 공개 unsigned Release를 `v1.0.0`으로 배포하면 이후 코드서명 연결 후 같은 `v1.0.0` 파일만 교체하지 않습니다. 기존 사용자가 새 버전으로 인식하도록 첫 signed Release는 `v1.0.1` 이상을 사용합니다.
+첫 공개 다운로드 가능 unsigned Release는 `v1.0.1`입니다. 이후 코드서명이 연결되면 같은 버전 파일을 교체하지 않고 `v1.0.2` 이상으로 올려 기존 사용자가 새 버전으로 인식하도록 합니다.
 
-## 8. v1.0.0 unsigned 공개 Release 조건
-
-다음이 모두 완료될 때 `v1.0.0` 태그를 만들 수 있습니다.
+## 8. v1.0.1 unsigned 공개 Release 상태
 
 - [x] `main` Ruleset 활성화
 - [x] `v*` tag Ruleset 활성화
@@ -141,18 +141,19 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [x] SignPath 승인 전 unsigned 공개 Release 허용 정책 확정
 - [x] unsigned 상태와 Windows 경고 가능성을 Release/랜딩페이지에 명확히 고지
 - [x] 공개 Release workflow가 SHA-256 및 설치/제거 검증 후 unsigned 게시를 허용하도록 변경
-- [ ] `v1.0.0` Release workflow 실제 실행 성공
-- [ ] GitHub Release에 `EbenTiler-Setup.exe`와 `.sha256` 게시
-- [ ] 랜딩페이지 다운로드가 공개 Release의 `EbenTiler-Setup.exe`를 실제로 내려받는지 확인
-- [ ] `설정 > 정보 > 업데이트 확인`에서 공개 Release 상태 확인
+- [x] `v1.0.1` Release workflow 실제 실행 성공
+- [x] GitHub Release에 `EbenTiler-Setup.exe`와 `.sha256` 게시
+- [x] 랜딩페이지 소스가 `releases/latest/download/EbenTiler-Setup.exe`를 사용하고 최신 공개 Release가 `v1.0.1`인 것 확인
+- [ ] 실제 브라우저에서 랜딩페이지 `윈도우용 다운로드` 클릭 후 `EbenTiler-Setup.exe` 다운로드 확인
+- [ ] 실제 Windows 앱의 `설정 > 정보 > 업데이트 확인`에서 공개 Release 상태 확인
 
 ## 9. 코드서명 승인 후
 
 SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release에서:
 
-- 앱 버전을 `1.0.1` 이상으로 올림
+- 앱 버전을 `1.0.2` 이상으로 올림
 - Authenticode 서명 적용
 - `tools/verify-release.ps1 -RequireCodeSigning` 통과
 - signed 설치 파일 게시
 - 랜딩페이지의 `코드 서명 준비 중` 안내 제거
-- 기존 `v1.0.0` unsigned 사용자에게 업데이트 알림이 뜨는지 확인
+- 기존 `v1.0.1` unsigned 사용자에게 업데이트 알림이 뜨는지 확인

@@ -473,7 +473,7 @@ namespace EbenTilerWindows
 
         // 대상 창 고르기
 
-        /// <summary>배치 대상이 될 만한 활성 창을 고른다. 바탕화면이나 작업표시줄 등은 제외한다.</summary>
+        /// <summary>배치 가능한 활성 창을 고른다. 시스템 셸/일시적 팝업은 제외하고 일반 borderless 앱 창은 허용한다.</summary>
         public static IntPtr GetTargetWindow()
         {
             IntPtr hwnd = Native.GetForegroundWindow();
@@ -484,12 +484,6 @@ namespace EbenTilerWindows
 
             long style = Native.GetWindowLongSafe(hwnd, Native.GWL_STYLE);
             if ((style & Native.WS_CHILD) != 0)
-            {
-                return IntPtr.Zero;
-            }
-
-            // 제목 표시줄도 크기 조절 테두리도 없으면 배치할 수 없는 창으로 본다.
-            if ((style & Native.WS_CAPTION) == 0 && (style & Native.WS_THICKFRAME) == 0)
             {
                 return IntPtr.Zero;
             }
@@ -510,13 +504,35 @@ namespace EbenTilerWindows
             StringBuilder className = new StringBuilder(256);
             Native.GetClassName(hwnd, className, className.Capacity);
             string name = className.ToString();
-            if (name == "Progman" || name == "WorkerW" || name == "Shell_TrayWnd"
-                || name == "Windows.UI.Core.CoreWindow" || name == "MultitaskingViewFrame")
+            if (IsBlockedWindowClass(name))
+            {
+                return IntPtr.Zero;
+            }
+
+            // 제목 표시줄이 없는 Electron/Chromium/커스텀 프레임 창도 실제 앱 창이면 허용한다.
+            // 대신 아주 작은 메뉴/오버레이가 실수로 화면 전체에 타일링되는 것은 막는다.
+            Rectangle visual = GetVisualRect(hwnd);
+            if (visual.IsEmpty || visual.Width < 80 || visual.Height < 60)
             {
                 return IntPtr.Zero;
             }
 
             return hwnd;
+        }
+
+        private static bool IsBlockedWindowClass(string name)
+        {
+            return name == "Progman"
+                || name == "WorkerW"
+                || name == "Shell_TrayWnd"
+                || name == "Shell_SecondaryTrayWnd"
+                || name == "Windows.UI.Core.CoreWindow"
+                || name == "MultitaskingViewFrame"
+                || name == "#32768"
+                || name == "tooltips_class32"
+                || name == "SysShadow"
+                || name == "TaskListThumbnailWnd"
+                || name == "TaskSwitcherWnd";
         }
     }
 }

@@ -64,6 +64,7 @@ EbenTiler는 공개 MIT OSS이고 소스/빌드 스크립트를 직접 관리합
 - `.env`, PFX/P12/PEM/KEY 등 민감 파일은 저장소에 커밋하지 않음
 - 업데이트 확인은 GitHub 공개 Release 메타데이터만 조회하며 자동 다운로드/자동 설치하지 않음
 - 업데이트 확인 시각과 마지막 알림 태그만 `%APPDATA%\EbenTiler\update-state.ini`에 로컬 저장
+- 새 버전이 실제 설치되기 전까지 보일 트레이 `!` 배지 상태만 `%APPDATA%\EbenTiler\update-badge.ini`에 로컬 저장
 
 ## 5. UI / DPI 최종 확인
 
@@ -100,11 +101,26 @@ EbenTiler는 자동 설치 대신 다음 흐름을 사용합니다.
 
 - 최대 24시간에 한 번 GitHub 최신 Release 정보 확인
 - 새 버전이 있을 때만 Windows 알림 표시
-- 알림 클릭 시 `설정 > 정보`로 이동
+- 새 버전이 감지되면 트레이 아이콘 오른쪽 위에 주황색 `!` 배지를 지속 표시
+- 트레이 메뉴에 `업데이트 있음 · vX.Y.Z` 항목 표시
+- 알림 또는 메뉴 클릭 시 `설정 > 정보`로 이동
 - 사용자가 `업데이트 확인` 또는 Release 페이지 열기를 직접 선택
 - 자동 다운로드 / 자동 설치는 하지 않음
+- 새 버전 설치 후 현재 앱 버전이 해당 Release 이상이면 `!` 배지 상태를 자동 정리
 
 현재 GitHub 정식 Release가 없으므로 `업데이트 확인`을 누르면 `아직 공개된 정식 릴리스가 없습니다.`가 정상입니다.
+
+실제 Release를 만들지 않고 트레이 업데이트 배지를 눈으로 확인하려면 다음 로컬 테스트 도구를 사용합니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1
+```
+
+테스트가 끝나면 이전 상태를 복원합니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
+```
 
 중요: 현재 unsigned 빌드의 제품 버전은 `1.0.0.0`입니다. 이 버전을 지인에게 이미 배포했다면 첫 signed Release를 같은 `v1.0.0`으로 내지 말고 `v1.0.1` 이상으로 올려야 기존 unsigned 사용자의 업데이트 확인이 새 버전을 감지합니다. unsigned 빌드를 외부에 배포하지 않았다면 첫 signed Release를 `v1.0.0`으로 유지할 수 있습니다.
 
@@ -118,6 +134,7 @@ EbenTiler는 자동 설치 대신 다음 흐름을 사용합니다.
 - [x] 실제 Windows 100% / 125% / 150%에서 설정 UI, 첫 실행 가이드, 트레이 메뉴 최종 확인
 - [x] 실제 `EbenTiler-Setup.exe` 설치 / 실행 / 시작 프로그램 / 제거 수동 확인
 - [ ] 로컬에서 `설정 > 정보 > 업데이트 확인` 동작 확인
+- [ ] 로컬에서 트레이 업데이트 `!` 배지와 `업데이트 있음 · vX.Y.Z` 메뉴 항목 확인
 - [ ] unsigned 빌드 외부 배포 여부에 따라 첫 signed 버전 번호 확정 (`v1.0.0` 또는 `v1.0.1+`)
 - [ ] 코드서명 공급자/인증서 연결 또는 공개 배포 정책 최종 결정
 - [ ] 정식 Release workflow의 Authenticode 검증 통과

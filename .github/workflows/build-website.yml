@@ -50,12 +50,19 @@ jobs:
           }
 
           $index = Get-Content '.\website\index.html' -Raw
+          $download = Get-Content '.\website\download.html' -Raw
           $styles = Get-Content '.\website\styles.css' -Raw
           $app = Get-Content '.\website\app.js' -Raw
           if ($index -notmatch 'hero-ebentiler\.webp') { throw 'Landing page does not reference the hero asset.' }
           if ($styles -notmatch 'thirds-ebentiler\.webp') { throw 'Landing page styles do not reference the thirds asset.' }
+          if ($index -notmatch 'href="\.\/download\.html"') {
+            throw 'Landing page download buttons do not route through the download guide.'
+          }
+          if ($download -notmatch 'Windows의 PC 보호' -or $download -notmatch '추가 정보' -or $download -notmatch 'EbenTiler-Setup\.exe') {
+            throw 'Download guide is missing the Windows protection instructions or installer link.'
+          }
           if ($app -notmatch 'releases/latest/download/EbenTiler-Setup\.exe') {
-            throw 'Landing page does not route downloads to the verified GitHub Release asset.'
+            throw 'Download guide does not route the installer to the verified GitHub Release asset.'
           }
 
       - name: 정적 랜딩페이지 묶기
@@ -96,6 +103,7 @@ jobs:
         run: |
           $siteDir = Join-Path $env:RUNNER_TEMP 'ebentiler-site'
           if (-not (Test-Path (Join-Path $siteDir 'index.html'))) { throw 'Verified site artifact is missing index.html.' }
+          if (-not (Test-Path (Join-Path $siteDir 'download.html'))) { throw 'Verified site artifact is missing download.html.' }
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

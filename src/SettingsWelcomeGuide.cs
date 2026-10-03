@@ -11,7 +11,11 @@ namespace EbenTilerWindows
 
         public static void Attach(SettingsForm form)
         {
-            if (form == null || FindByName(form, ButtonName) != null) return;
+            if (form == null) return;
+
+            // 설정을 여는 모든 경로에서 정보 > 업데이트 확인도 함께 붙인다.
+            SettingsUpdateSection.Attach(form);
+            if (FindByName(form, ButtonName) != null) return;
 
             Panel generalPage = FindGeneralPage(form);
             if (generalPage == null) return;

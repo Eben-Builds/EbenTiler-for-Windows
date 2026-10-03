@@ -1,6 +1,6 @@
 # EbenTiler v1.0.0 출시 준비
 
-이 문서는 공개 OSS 상태의 EbenTiler를 정식 배포하기 전에 확인할 항목만 정리합니다.
+이 문서는 공개 OSS 상태의 EbenTiler를 첫 공개 Release로 배포하기 전에 확인할 항목만 정리합니다.
 
 ## 1. GitHub Rulesets
 
@@ -25,7 +25,7 @@
 - `Restrict deletions`: 켬
 - `Block force pushes` / `Non-fast-forward`: 켬
 
-`Restrict creations`는 현재 켜지 않습니다. 정식 릴리스 workflow 자체가 저장소 owner가 만든 `vMAJOR.MINOR.PATCH` 태그만 허용하고, 태그가 `main`의 커밋인지 다시 검증합니다.
+`Restrict creations`는 현재 켜지 않습니다. 공개 릴리스 workflow 자체가 저장소 owner가 만든 `vMAJOR.MINOR.PATCH` 태그만 허용하고, 태그가 `main`의 커밋인지 다시 검증합니다.
 
 ## 2. GitHub Topics
 
@@ -33,16 +33,20 @@
 
 `windows`, `window-manager`, `window-tiling`, `productivity`, `hotkeys`, `desktop-app`, `winforms`, `dotnet-framework`, `multi-monitor`, `open-source`
 
-버전용 Git tag와 GitHub Topics는 목적이 다릅니다. `v1.0.0`은 정식 릴리스 신호이고, Topics는 검색과 프로젝트 발견성을 위한 메타데이터입니다.
+버전용 Git tag와 GitHub Topics는 목적이 다릅니다. `v1.0.0`은 공개 릴리스 신호이고, Topics는 검색과 프로젝트 발견성을 위한 메타데이터입니다.
 
-## 3. 코드 서명
+## 3. 코드 서명 / 공개 배포 정책
 
 현재 정책은 다음과 같습니다.
 
 - 일반 `main` CI: unsigned, 코드서명 비밀정보 접근 금지
-- 랜딩페이지: unsigned 설치파일 직접 호스팅 금지
-- 정식 `v*` Release: Authenticode 서명 필수
-- 서명 후 설치/제거, EKU, SHA-256까지 검증한 뒤에만 Release 게시
+- 일반 CI artifact는 공개 다운로드 경로로 사용하지 않음
+- 공개 `v*` Release: 태그/버전/`main` 포함 여부, 설치/제거 smoke test, SHA-256 검증 필수
+- 코드서명 신원이 있으면 Authenticode 서명과 EKU 검증까지 추가
+- 코드서명 신원이 없으면 unsigned 상태와 Windows 경고 가능성을 Release와 랜딩페이지에 명확히 고지한 뒤 공개 가능
+- 랜딩페이지는 GitHub 최신 공개 Release의 설치 파일만 가리킴
+
+따라서 SignPath 승인 전에도 `v1.0.0` unsigned 공개 Release를 만들 수 있습니다. 코드서명이 연결되면 다음 버전부터 signed Release로 전환합니다.
 
 상세 내용은 `docs/CODE_SIGNING.md`를 봅니다.
 
@@ -108,8 +112,6 @@ EbenTiler는 자동 설치 대신 다음 흐름을 사용합니다.
 - 자동 다운로드 / 자동 설치는 하지 않음
 - 새 버전 설치 후 현재 앱 버전이 해당 Release 이상이면 `!` 배지 상태를 자동 정리
 
-현재 GitHub 정식 Release가 없으므로 `업데이트 확인`을 누르면 `아직 공개된 정식 릴리스가 없습니다.`가 정상입니다.
-
 실제 Release를 만들지 않고 트레이 업데이트 배지를 눈으로 확인하려면 다음 로컬 테스트 도구를 사용합니다.
 
 ```powershell
@@ -124,23 +126,33 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 
 2026-10-03 실제 Windows에서 테스트용 `v9.9.9` 상태로 트레이 `!` 배지와 `업데이트 있음 · v9.9.9` 메뉴를 확인했고, 해당 메뉴를 누르면 `설정 > 정보`로 바로 이동하는 동작까지 확인했습니다.
 
-중요: 현재 unsigned 빌드의 제품 버전은 `1.0.0.0`입니다. 이 버전을 지인에게 이미 배포했다면 첫 signed Release를 같은 `v1.0.0`으로 내지 말고 `v1.0.1` 이상으로 올려야 기존 unsigned 사용자의 업데이트 확인이 새 버전을 감지합니다. unsigned 빌드를 외부에 배포하지 않았다면 첫 signed Release를 `v1.0.0`으로 유지할 수 있습니다.
+중요: 첫 공개 unsigned Release를 `v1.0.0`으로 배포하면 이후 코드서명 연결 후 같은 `v1.0.0` 파일만 교체하지 않습니다. 기존 사용자가 새 버전으로 인식하도록 첫 signed Release는 `v1.0.1` 이상을 사용합니다.
 
-## 8. v1.0.0 생성 조건
+## 8. v1.0.0 unsigned 공개 Release 조건
 
-다음이 모두 완료될 때만 첫 정식 signed Release 태그를 만듭니다.
+다음이 모두 완료될 때 `v1.0.0` 태그를 만들 수 있습니다.
 
 - [x] `main` Ruleset 활성화
 - [x] `v*` tag Ruleset 활성화
 - [x] GitHub Topics 설정
 - [x] 실제 Windows 100% / 125% / 150%에서 설정 UI, 첫 실행 가이드, 트레이 메뉴 최종 확인
 - [x] 실제 `EbenTiler-Setup.exe` 설치 / 실행 / 시작 프로그램 / 제거 수동 확인
-- [ ] 로컬에서 `설정 > 정보 > 업데이트 확인` 동작 확인
 - [x] 로컬에서 트레이 업데이트 `!` 배지, `업데이트 있음 · vX.Y.Z` 메뉴, `설정 > 정보` 이동 확인
-- [ ] unsigned 빌드 외부 배포 여부에 따라 첫 signed 버전 번호 확정 (`v1.0.0` 또는 `v1.0.1+`)
-- [ ] 코드서명 공급자/인증서 연결 또는 공개 배포 정책 최종 결정
-- [ ] 정식 Release workflow의 Authenticode 검증 통과
+- [x] SignPath 승인 전 unsigned 공개 Release 허용 정책 확정
+- [x] unsigned 상태와 Windows 경고 가능성을 Release/랜딩페이지에 명확히 고지
+- [x] 공개 Release workflow가 SHA-256 및 설치/제거 검증 후 unsigned 게시를 허용하도록 변경
+- [ ] `v1.0.0` Release workflow 실제 실행 성공
 - [ ] GitHub Release에 `EbenTiler-Setup.exe`와 `.sha256` 게시
-- [ ] 랜딩페이지 다운로드가 해당 signed Release를 가리키는지 확인
+- [ ] 랜딩페이지 다운로드가 공개 Release의 `EbenTiler-Setup.exe`를 실제로 내려받는지 확인
+- [ ] `설정 > 정보 > 업데이트 확인`에서 공개 Release 상태 확인
 
-이 조건 전에는 첫 정식 signed Release 태그를 만들지 않습니다.
+## 9. 코드서명 승인 후
+
+SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release에서:
+
+- 앱 버전을 `1.0.1` 이상으로 올림
+- Authenticode 서명 적용
+- `tools/verify-release.ps1 -RequireCodeSigning` 통과
+- signed 설치 파일 게시
+- 랜딩페이지의 `코드 서명 준비 중` 안내 제거
+- 기존 `v1.0.0` unsigned 사용자에게 업데이트 알림이 뜨는지 확인

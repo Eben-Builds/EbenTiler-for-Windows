@@ -21,11 +21,6 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       signed: ${{ steps.signing.outputs.signed }}
-    env:
-      EBENTILER_SIGNING_CERT_SHA1: ${{ secrets.EBENTILER_SIGNING_CERT_SHA1 }}
-      SIGNING_PFX_BASE64: ${{ secrets.SIGNING_PFX_BASE64 }}
-      SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
-      EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
 
     steps:
       - name: Checkout release tag
@@ -67,12 +62,17 @@ jobs:
         run: choco install innosetup --version=6.7.1 -y --no-progress
 
       # Signing is optional until a public code-signing identity is connected.
-      # If a usable certificate is configured, the same release path signs and
-      # verifies the binaries. Otherwise the release is published transparently
-      # as unsigned after the same source/version/install/hash checks.
+      # Signing secrets are exposed only to this preparation step. The helper
+      # exports only the usable certificate thumbprint through GITHUB_ENV for
+      # later build/verification steps; PFX material and its password do not
+      # remain in the environment of unrelated steps.
       - name: Prepare optional code-signing identity
         id: signing
         shell: powershell
+        env:
+          EBENTILER_SIGNING_CERT_SHA1: ${{ secrets.EBENTILER_SIGNING_CERT_SHA1 }}
+          SIGNING_PFX_BASE64: ${{ secrets.SIGNING_PFX_BASE64 }}
+          SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
         run: |
           .\tools\prepare-code-signing.ps1
           $signed = -not [string]::IsNullOrWhiteSpace($env:EBENTILER_SIGNING_CERT_SHA1)
@@ -85,6 +85,8 @@ jobs:
 
       - name: Build release installer
         shell: powershell
+        env:
+          EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
         run: .\build-installer.ps1
 
       - name: Verify install and uninstall

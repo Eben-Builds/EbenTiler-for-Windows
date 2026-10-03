@@ -56,21 +56,21 @@ namespace EbenTilerWindows
             _tray.Visible = true;
             _tray.MouseUp += OnTrayMouseUp;
 
-            int failedCount = ApplyHotkeys(true);
-
+            bool openSettingsAfterWelcome = false;
             if (firstRun)
             {
                 _config.Save();
+                using (WelcomeForm welcome = new WelcomeForm())
+                {
+                    openSettingsAfterWelcome = welcome.ShowDialog() == DialogResult.Yes;
+                }
             }
 
-            if (firstRun && failedCount == 0)
+            ApplyHotkeys(true);
+
+            if (openSettingsAfterWelcome)
             {
-                _tray.BalloonTipTitle = "EbenTiler for Windows 실행 중";
-                _tray.BalloonTipText =
-                    "Ctrl+Alt+방향키로 창을 절반씩 배치하고, Ctrl+Alt+U/I/J/K로 사분면에 붙입니다.\n" +
-                    "아이콘은 작업표시줄 오른쪽 숨김(∧) 안에 있을 수 있습니다.";
-                _tray.BalloonTipIcon = ToolTipIcon.Info;
-                _tray.ShowBalloonTip(7000);
+                ShowSettings();
             }
         }
 

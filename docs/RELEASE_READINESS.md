@@ -48,7 +48,7 @@
 
 ### SignPath Foundation 검토
 
-EbenTiler는 공개 MIT OSS이고 소스/빌드 스크립트를 직접 관리하며, 앱 자체는 원격 API·텔레메트리·사용자 데이터 전송 기능이 없습니다. 구조상 SignPath Foundation의 무료 OSS 코드서명 후보로 검토할 수 있습니다.
+EbenTiler는 공개 MIT OSS이고 소스/빌드 스크립트를 직접 관리합니다. 앱은 텔레메트리·광고·분석 SDK·사용자 데이터 전송 기능을 사용하지 않으며, 업데이트 확인 기능은 최대 24시간에 한 번 GitHub의 공개 Release 정보만 조회합니다.
 
 2026-10-03 신청을 제출했으며 승인 여부는 SignPath Foundation이 결정합니다. 승인 전에는 SignPath가 현재 EbenTiler의 서명을 제공하는 것처럼 표시하지 않습니다.
 
@@ -62,6 +62,8 @@ EbenTiler는 공개 MIT OSS이고 소스/빌드 스크립트를 직접 관리하
 - 향후 로컬 Git 커밋에는 GitHub `noreply` 이메일 사용
 - 기존 공개 Git 히스토리는 파괴적인 rewrite 없이 유지
 - `.env`, PFX/P12/PEM/KEY 등 민감 파일은 저장소에 커밋하지 않음
+- 업데이트 확인은 GitHub 공개 Release 메타데이터만 조회하며 자동 다운로드/자동 설치하지 않음
+- 업데이트 확인 시각과 마지막 알림 태그만 `%APPDATA%\EbenTiler\update-state.ini`에 로컬 저장
 
 ## 5. UI / DPI 최종 확인
 
@@ -92,18 +94,34 @@ powershell -ExecutionPolicy Bypass -File tools\capture-dpi-ui.ps1
 
 자동 CI의 install/uninstall smoke test와 별도로 실제 사용자 흐름을 수동으로 한 번 더 확인한 상태입니다.
 
-## 7. v1.0.0 생성 조건
+## 7. 업데이트 전환 확인
 
-다음이 모두 완료될 때만 `v1.0.0` 태그를 만듭니다.
+EbenTiler는 자동 설치 대신 다음 흐름을 사용합니다.
+
+- 최대 24시간에 한 번 GitHub 최신 Release 정보 확인
+- 새 버전이 있을 때만 Windows 알림 표시
+- 알림 클릭 시 `설정 > 정보`로 이동
+- 사용자가 `업데이트 확인` 또는 Release 페이지 열기를 직접 선택
+- 자동 다운로드 / 자동 설치는 하지 않음
+
+현재 GitHub 정식 Release가 없으므로 `업데이트 확인`을 누르면 `아직 공개된 정식 릴리스가 없습니다.`가 정상입니다.
+
+중요: 현재 unsigned 빌드의 제품 버전은 `1.0.0.0`입니다. 이 버전을 지인에게 이미 배포했다면 첫 signed Release를 같은 `v1.0.0`으로 내지 말고 `v1.0.1` 이상으로 올려야 기존 unsigned 사용자의 업데이트 확인이 새 버전을 감지합니다. unsigned 빌드를 외부에 배포하지 않았다면 첫 signed Release를 `v1.0.0`으로 유지할 수 있습니다.
+
+## 8. v1.0.0 생성 조건
+
+다음이 모두 완료될 때만 첫 정식 signed Release 태그를 만듭니다.
 
 - [x] `main` Ruleset 활성화
 - [x] `v*` tag Ruleset 활성화
 - [x] GitHub Topics 설정
 - [x] 실제 Windows 100% / 125% / 150%에서 설정 UI, 첫 실행 가이드, 트레이 메뉴 최종 확인
 - [x] 실제 `EbenTiler-Setup.exe` 설치 / 실행 / 시작 프로그램 / 제거 수동 확인
+- [ ] 로컬에서 `설정 > 정보 > 업데이트 확인` 동작 확인
+- [ ] unsigned 빌드 외부 배포 여부에 따라 첫 signed 버전 번호 확정 (`v1.0.0` 또는 `v1.0.1+`)
 - [ ] 코드서명 공급자/인증서 연결 또는 공개 배포 정책 최종 결정
 - [ ] 정식 Release workflow의 Authenticode 검증 통과
 - [ ] GitHub Release에 `EbenTiler-Setup.exe`와 `.sha256` 게시
 - [ ] 랜딩페이지 다운로드가 해당 signed Release를 가리키는지 확인
 
-이 조건 전에는 `v1.0.0` 태그를 만들지 않습니다.
+이 조건 전에는 첫 정식 signed Release 태그를 만들지 않습니다.

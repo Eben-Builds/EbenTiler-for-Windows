@@ -112,7 +112,7 @@ namespace EbenTilerWindows
                     result.TagName = tagName;
                     result.LatestVersion = latestVersion;
                     if (!string.IsNullOrWhiteSpace(htmlUrl)) result.ReleaseUrl = htmlUrl;
-                    result.Status = latestVersion > result.CurrentVersion
+                    result.Status = latestVersion.CompareTo(result.CurrentVersion) > 0
                         ? UpdateCheckStatus.UpdateAvailable
                         : UpdateCheckStatus.UpToDate;
 

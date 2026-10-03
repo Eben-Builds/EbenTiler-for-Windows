@@ -29,7 +29,7 @@ namespace EbenTilerWindows
             RoundedContextMenuStrip menu = new RoundedContextMenuStrip();
             menu.MinimumSize = new Size(220, 0);
 
-            ToolStripMenuItem settingsItem = MakeMenuItem("단축키 설정...");
+            ToolStripMenuItem settingsItem = MakeMenuItem("설정...");
             settingsItem.Font = new Font(menu.Font, FontStyle.Bold);
             settingsItem.Click += delegate { ShowSettings(); };
             menu.Items.Add(settingsItem);

@@ -24,18 +24,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p website
+          if [ ! -f .repair/hero.part00 ] || [ ! -f .repair/thirds.part00 ]; then
+            echo 'Repair payload is not present; nothing to do.'
+            echo 'SKIP_REPAIR=1' >> "$GITHUB_ENV"
+            exit 0
+          fi
 
+          mkdir -p website
           cat .repair/hero.part* | tr -d '\r\n' | base64 -d > website/hero-ebentiler.webp
           cat .repair/thirds.part* | tr -d '\r\n' | base64 -d > website/thirds-ebentiler.webp
 
           python3 - <<'PY'
           from pathlib import Path
+          import hashlib
           expected = {
               'website/hero-ebentiler.webp': ('7f08a6480574b0cbe3abadb2cd592d9278d55224f4309598c32f4af49495b0be', 65018),
               'website/thirds-ebentiler.webp': ('01f48a1e7220afe59a6cfc90842f9497632ca77bcb02a5ed9eb61fb34a817360', 40416),
           }
-          import hashlib
           for name, (sha, size) in expected.items():
               data = Path(name).read_bytes()
               assert len(data) == size, (name, len(data), size)
@@ -44,6 +49,7 @@ jobs:
           PY
 
       - name: Commit repaired binaries
+        if: env.SKIP_REPAIR != '1'
         shell: bash
         run: |
           set -euo pipefail

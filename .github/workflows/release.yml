@@ -31,11 +31,22 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          fetch-depth: 0
 
-      - name: Verify tag matches app version
+      - name: Verify release source and version
         id: version
         shell: powershell
         run: |
+          if ($env:GITHUB_ACTOR -ne $env:GITHUB_REPOSITORY_OWNER) {
+            throw "Only the repository owner may trigger a signed release. Actor: $env:GITHUB_ACTOR"
+          }
+
+          git fetch origin main --no-tags
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Release tags must point to a commit already contained in main.'
+          }
+
           if ($env:GITHUB_REF_NAME -notmatch '^v(\d+\.\d+\.\d+)$') {
             throw "Release tag must use vMAJOR.MINOR.PATCH: $env:GITHUB_REF_NAME"
           }
@@ -54,12 +65,10 @@ jobs:
         shell: powershell
         run: choco install innosetup --version=6.7.1 -y --no-progress
 
-      # 2026 public code-signing certificates normally keep private keys in a
-      # hardware token, HSM, cloud HSM, or signing service. A provider-specific
-      # bootstrap (KSP/client/action) can be inserted immediately before this
-      # step. It should expose the certificate through Cert:\CurrentUser\My and
-      # set EBENTILER_SIGNING_CERT_SHA1. Existing exportable PFX credentials are
-      # supported only as a compatibility path by prepare-code-signing.ps1.
+      # Public code-signing private keys should live in a hardware token, HSM,
+      # cloud HSM, or signing service. A provider-specific bootstrap may expose
+      # the certificate through Cert:\CurrentUser\My and set the thumbprint.
+      # Exportable PFX credentials are supported only as a compatibility path.
       - name: Prepare code-signing identity
         shell: powershell
         run: .\tools\prepare-code-signing.ps1 -RequireSigning

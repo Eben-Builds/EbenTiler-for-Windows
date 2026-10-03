@@ -1,4 +1,4 @@
-name: Publish Signed Release
+name: Publish Release
 
 on:
   push:
@@ -20,10 +20,11 @@ jobs:
       contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
+      signed: ${{ steps.signing.outputs.signed }}
     env:
       EBENTILER_SIGNING_CERT_SHA1: ${{ secrets.EBENTILER_SIGNING_CERT_SHA1 }}
-      SIGNING_PFX_BASE64: ${{ secrets.EBENTILER_SIGNING_PFX_BASE64 }}
-      SIGNING_PFX_PASSWORD: ${{ secrets.EBENTILER_SIGNING_PFX_PASSWORD }}
+      SIGNING_PFX_BASE64: ${{ secrets.SIGNING_PFX_BASE64 }}
+      SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
       EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
 
     steps:
@@ -38,7 +39,7 @@ jobs:
         shell: powershell
         run: |
           if ($env:GITHUB_ACTOR -ne $env:GITHUB_REPOSITORY_OWNER) {
-            throw "Only the repository owner may trigger a signed release. Actor: $env:GITHUB_ACTOR"
+            throw "Only the repository owner may trigger a release. Actor: $env:GITHUB_ACTOR"
           }
 
           git fetch origin main --no-tags
@@ -65,15 +66,24 @@ jobs:
         shell: powershell
         run: choco install innosetup --version=6.7.1 -y --no-progress
 
-      # Public code-signing private keys should live in a hardware token, HSM,
-      # cloud HSM, or signing service. A provider-specific bootstrap may expose
-      # the certificate through Cert:\CurrentUser\My and set the thumbprint.
-      # Exportable PFX credentials are supported only as a compatibility path.
-      - name: Prepare code-signing identity
+      # Signing is optional until a public code-signing identity is connected.
+      # If a usable certificate is configured, the same release path signs and
+      # verifies the binaries. Otherwise the release is published transparently
+      # as unsigned after the same source/version/install/hash checks.
+      - name: Prepare optional code-signing identity
+        id: signing
         shell: powershell
-        run: .\tools\prepare-code-signing.ps1 -RequireSigning
+        run: |
+          .\tools\prepare-code-signing.ps1
+          $signed = -not [string]::IsNullOrWhiteSpace($env:EBENTILER_SIGNING_CERT_SHA1)
+          "signed=$($signed.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          if ($signed) {
+            Write-Host 'Release mode: Authenticode signed.'
+          } else {
+            Write-Warning 'Release mode: unsigned. GitHub Release notes will disclose this clearly.'
+          }
 
-      - name: Build signed installer
+      - name: Build release installer
         shell: powershell
         run: .\build-installer.ps1
 
@@ -81,14 +91,19 @@ jobs:
         shell: powershell
         run: .\tools\verify-installer.ps1
 
-      - name: Verify signed release artifacts
+      - name: Verify release artifacts
         shell: powershell
-        run: .\tools\verify-release.ps1 -RequireCodeSigning
+        run: |
+          if ('${{ steps.signing.outputs.signed }}' -eq 'true') {
+            .\tools\verify-release.ps1 -RequireCodeSigning
+          } else {
+            .\tools\verify-release.ps1
+          }
 
       - name: Upload verified release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: EbenTiler-Signed-Release
+          name: EbenTiler-Release
           path: |
             dist\EbenTiler-Setup.exe
             dist\EbenTiler-Setup.exe.sha256
@@ -107,7 +122,7 @@ jobs:
       - name: Download verified release artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: EbenTiler-Signed-Release
+          name: EbenTiler-Release
           path: release-artifacts
 
       - name: Publish GitHub Release
@@ -116,11 +131,37 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           EBENTILER_RELEASE_VERSION: ${{ needs.build-release.outputs.version }}
+          EBENTILER_RELEASE_SIGNED: ${{ needs.build-release.outputs.signed }}
         run: |
-          gh release create "$env:GITHUB_REF_NAME" `
-            '.\release-artifacts\EbenTiler-Setup.exe' `
-            '.\release-artifacts\EbenTiler-Setup.exe.sha256' `
-            --repo "$env:GH_REPO" `
-            --verify-tag `
-            --title "EbenTiler $env:EBENTILER_RELEASE_VERSION" `
-            --generate-notes
+          $installer = '.\release-artifacts\EbenTiler-Setup.exe'
+          $checksum = '.\release-artifacts\EbenTiler-Setup.exe.sha256'
+
+          if ($env:EBENTILER_RELEASE_SIGNED -eq 'true') {
+            gh release create "$env:GITHUB_REF_NAME" `
+              $installer `
+              $checksum `
+              --repo "$env:GH_REPO" `
+              --verify-tag `
+              --title "EbenTiler $env:EBENTILER_RELEASE_VERSION" `
+              --generate-notes
+          } else {
+            $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+            @"
+> [!WARNING]
+> 이 릴리스의 설치 파일은 아직 Authenticode 코드 서명이 적용되지 않았습니다. Windows에서 `알 수 없는 게시자` 또는 SmartScreen 경고가 표시될 수 있습니다.
+>
+> 설치 파일은 이 저장소의 GitHub Actions에서 빌드했으며, 설치/제거 smoke test와 SHA-256 검증을 통과한 결과물입니다. `EbenTiler-Setup.exe.sha256` 파일을 함께 제공합니다.
+>
+> SignPath Foundation 승인 또는 다른 공개 코드서명 수단이 연결되면 이후 릴리스부터 서명된 설치 파일로 전환할 예정입니다.
+
+현재 버전: `$env:EBENTILER_RELEASE_VERSION`
+"@ | Set-Content -LiteralPath $notesPath -Encoding utf8
+
+            gh release create "$env:GITHUB_REF_NAME" `
+              $installer `
+              $checksum `
+              --repo "$env:GH_REPO" `
+              --verify-tag `
+              --title "EbenTiler $env:EBENTILER_RELEASE_VERSION (unsigned)" `
+              --notes-file $notesPath
+          }

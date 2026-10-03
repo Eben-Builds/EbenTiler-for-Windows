@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace EbenTilerWindows
@@ -11,6 +12,11 @@ namespace EbenTilerWindows
     /// </summary>
     public static class AppIcon
     {
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern uint PrivateExtractIcons(
+            string fileName, int iconIndex, int cxIcon, int cyIcon,
+            IntPtr[] iconHandles, uint[] iconIds, uint iconCount, uint flags);
+
         /// <summary>알림 영역용 작은 아이콘.</summary>
         public static Icon LoadSmall()
         {
@@ -31,6 +37,52 @@ namespace EbenTilerWindows
                 return icon;
             }
             return Fallback(64);
+        }
+
+        /// <summary>
+        /// 설정 창처럼 정확한 물리 픽셀 크기가 필요한 곳에서 쓸 아이콘.
+        /// EXE에 포함된 멀티사이즈 ICO에서 요청 크기에 맞는 프레임을 직접 꺼낸다.
+        /// </summary>
+        public static Icon LoadSized(int pixelSize)
+        {
+            int size = Math.Max(16, pixelSize);
+            Icon icon = ExtractSized(size);
+            if (icon != null)
+            {
+                return icon;
+            }
+            return Fallback(size);
+        }
+
+        private static Icon ExtractSized(int pixelSize)
+        {
+            IntPtr[] handles = new IntPtr[1];
+            uint[] ids = new uint[1];
+            try
+            {
+                uint count = PrivateExtractIcons(
+                    Application.ExecutablePath, 0, pixelSize, pixelSize,
+                    handles, ids, 1, 0);
+
+                if (count > 0 && count != uint.MaxValue && handles[0] != IntPtr.Zero)
+                {
+                    using (Icon raw = Icon.FromHandle(handles[0]))
+                    {
+                        return (Icon)raw.Clone();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                if (handles[0] != IntPtr.Zero)
+                {
+                    Native.DestroyIcon(handles[0]);
+                }
+            }
+            return null;
         }
 
         private static Icon Extract(bool small)

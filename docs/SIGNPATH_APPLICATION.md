@@ -1,8 +1,8 @@
 # SignPath Foundation 신청 준비
 
-이 문서는 EbenTiler를 SignPath Foundation 무료 OSS 코드서명에 신청할 때 확인하거나 복사해 사용할 수 있는 공개 정보만 정리합니다.
+이 문서는 EbenTiler의 SignPath Foundation 무료 OSS 코드서명 신청과 현재 공개 배포 상태를 함께 정리합니다.
 
-> 현재 상태: **신청/승인/연동 전**. 이 문서는 SignPath가 EbenTiler를 승인했다는 의미가 아닙니다.
+> 현재 상태: **2026-10-03 신청 제출, 승인 대기 중**. 이 문서는 SignPath가 EbenTiler를 승인했다는 의미가 아닙니다.
 
 ## 프로젝트 정보
 
@@ -23,15 +23,14 @@ EbenTiler는 전역 단축키로 현재 Windows 창을 화면 절반, 사분면,
 - 계정/로그인 없음
 - 텔레메트리 없음
 - 광고/분석 SDK 없음
-- 앱 자체 네트워크 요청 없음
 - 사용자 파일/입력 내용/창 제목 수집 없음
-- 로컬 설정만 `%APPDATA%\EbenTiler\config.ini`에 저장
+- 최대 24시간에 한 번 GitHub 공개 Release API에서 최신 버전 정보만 조회
+- 업데이트 파일 자동 다운로드/자동 설치 없음
+- 앱 설정은 `%APPDATA%\EbenTiler\config.ini`에 로컬 저장
+- 업데이트 확인 상태는 `%APPDATA%\EbenTiler\update-state.ini`에 로컬 저장
+- 업데이트 배지 상태는 `%APPDATA%\EbenTiler\update-badge.ini`에 로컬 저장
 
 Privacy policy: [`PRIVACY.md`](../PRIVACY.md)
-
-필요한 공개 문구:
-
-> This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
 ## 코드서명 역할
 
@@ -53,30 +52,31 @@ Privacy policy: [`PRIVACY.md`](../PRIVACY.md)
 - SHA-256 검증
 - 실제 설치/CLI/자동시작/제거 smoke test
 - 코드서명 비밀정보에 접근하지 않음
-- 결과물은 GitHub Actions artifact로만 보관
+- 결과물은 GitHub Actions artifact로 보관
 
 ### 웹사이트
 
 `.github/workflows/build-website.yml`
 
 - 정적 사이트만 배포
-- unsigned installer를 사이트에 포함하지 않음
-- 다운로드는 정식 GitHub Release 자산만 가리키도록 구성
+- 일반 CI artifact를 사이트에 포함하지 않음
+- 다운로드는 최신 공개 GitHub Release 자산만 가리키도록 구성
+- 코드서명 전 공개 릴리스 기간에는 Windows 경고 가능성을 고지
 
-### 정식 릴리스
+### 공개 릴리스
 
 `.github/workflows/release.yml`
-
-현재는 Authenticode 서명 신원이 없으면 실패하도록 잠겨 있습니다.
 
 - `vMAJOR.MINOR.PATCH`만 허용
 - tag가 `main`의 commit인지 검증
 - tag와 앱 버전 일치 검증
 - 설치/제거 smoke test
-- Authenticode 검증
-- Code Signing EKU 확인
 - SHA-256 검증
+- 코드서명 신원이 연결되어 있으면 Authenticode와 Code Signing EKU까지 검증
+- 코드서명 신원이 아직 없으면 Release 제목/설명에 unsigned 상태를 명확히 표시
 - 검증된 결과만 GitHub Release 게시
+
+현재 정책상 SignPath 승인 전에도 검증된 unsigned 공개 Release를 제공할 수 있습니다. 이는 일반 CI artifact를 그대로 공개하는 것이 아니라, 보호된 `v*` 태그와 별도 Release workflow를 통해 다시 검증한 결과물만 게시하는 방식입니다.
 
 ## SignPath 승인 후 목표 흐름
 
@@ -102,24 +102,26 @@ SignPath의 organization/project/signing-policy/artifact-configuration 식별자
 - release source는 해당 GitHub repository로 제한
 - release branch/tag 정책을 명확히 제한
 
-## 신청 전 외부 설정
-
-GitHub 웹 UI에서 확인:
+## GitHub 외부 설정
 
 - GitHub 계정 MFA 활성화
 - `main` branch Ruleset: force push 및 deletion 차단
 - `v*` tag Ruleset: update/deletion 제한
 - GitHub Topics 설정
 
-현재 연결된 자동화 권한으로 repository administration Ruleset을 생성할 수 없으므로 저장소 owner가 GitHub UI에서 직접 설정해야 합니다.
+## Released 상태
 
-## 중요: Released 조건
+EbenTiler는 SignPath 승인 여부와 독립적으로 공개 GitHub Release를 제공할 수 있도록 정책을 변경했습니다.
 
-SignPath Foundation 조건에는 프로젝트가 **서명받고자 하는 형태로 이미 released 상태**여야 한다는 항목이 있습니다.
+코드서명 전 Release는 다음을 지킵니다.
 
-EbenTiler는 현재 안전을 위해 unsigned installer를 정식 사용자 다운로드로 공개하지 않도록 구성되어 있습니다. 따라서 신청 전에 SignPath에 현재 공개 저장소/빌드/사이트 상태로 신청 가능한지 확인합니다.
+- unsigned 상태를 숨기지 않음
+- Windows에서 `알 수 없는 게시자` 또는 SmartScreen 경고가 표시될 수 있음을 고지
+- GitHub Actions에서 소스/버전/설치/제거/SHA-256 검증
+- `.sha256` 파일 함께 게시
+- 일반 CI artifact가 아닌 보호된 Release workflow 결과물만 공개
 
-SignPath가 실제 downloadable pre-release를 요구한다고 확인한 경우에만, 정식 `v1.0.0`과 분리된 preview 배포 방식을 검토합니다. 확인 없이 unsigned production release를 만들지 않습니다.
+승인 후에는 기존 unsigned 버전을 같은 버전 번호로 교체하지 않고 더 높은 버전 번호의 signed Release를 새로 게시합니다.
 
 ## 승인 후 홈페이지에 추가할 문구
 

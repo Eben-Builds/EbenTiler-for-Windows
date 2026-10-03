@@ -232,7 +232,7 @@ powershell -ExecutionPolicy Bypass -File tools\verify-installer.ps1
 powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1
 ```
 
-정식 공개 릴리스는 코드 서명까지 반드시 검증한다.
+unsigned 공개 릴리스는 설치/제거와 SHA-256 검증을 통과한 뒤 게시한다. 코드서명 신원이 연결된 signed 릴리스는 Authenticode까지 추가 검증한다.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSigning
@@ -240,8 +240,9 @@ powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSi
 
 ## Code signing policy
 
-정식 공개 릴리스는 유효한 Authenticode 서명 없이는 게시하지 않는다.
-2026년 공개 코드서명 인증서는 개인키가 하드웨어/HSM/클라우드 서명 서비스에 보관되는 형태를 기본으로 보고 있으며, 새 인증서 구매를 export 가능한 PFX 전제로 설계하지 않는다.
+SignPath Foundation 또는 다른 공개 코드서명 수단이 연결되기 전에는 검증된 unsigned GitHub Release를 공개할 수 있다. 이 경우 Release와 랜딩페이지에 코드서명 전 상태와 Windows의 `알 수 없는 게시자`/SmartScreen 경고 가능성을 명확히 표시한다.
+
+코드서명 신원이 준비되면 이후 릴리스부터 Authenticode 서명과 Code Signing EKU 검증을 필수로 적용한다. 최초 공개 unsigned 버전이 `v1.0.0`이면 첫 signed 버전은 기존 사용자가 업데이트로 감지할 수 있도록 `v1.0.1` 이상을 사용한다.
 
 SignPath Foundation은 공개 OSS 코드서명의 우선 검토 대상이지만 **현재 EbenTiler는 아직 SignPath 승인을 받거나 연동한 상태가 아니다.** 승인 전에는 SignPath가 현재 서명을 제공하는 것처럼 표시하지 않는다.
 

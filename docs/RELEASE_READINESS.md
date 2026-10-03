@@ -122,6 +122,8 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1
 powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 ```
 
+2026-10-03 실제 Windows에서 테스트용 `v9.9.9` 상태로 트레이 `!` 배지와 `업데이트 있음 · v9.9.9` 메뉴를 확인했고, 해당 메뉴를 누르면 `설정 > 정보`로 바로 이동하는 동작까지 확인했습니다.
+
 중요: 현재 unsigned 빌드의 제품 버전은 `1.0.0.0`입니다. 이 버전을 지인에게 이미 배포했다면 첫 signed Release를 같은 `v1.0.0`으로 내지 말고 `v1.0.1` 이상으로 올려야 기존 unsigned 사용자의 업데이트 확인이 새 버전을 감지합니다. unsigned 빌드를 외부에 배포하지 않았다면 첫 signed Release를 `v1.0.0`으로 유지할 수 있습니다.
 
 ## 8. v1.0.0 생성 조건
@@ -134,7 +136,7 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [x] 실제 Windows 100% / 125% / 150%에서 설정 UI, 첫 실행 가이드, 트레이 메뉴 최종 확인
 - [x] 실제 `EbenTiler-Setup.exe` 설치 / 실행 / 시작 프로그램 / 제거 수동 확인
 - [ ] 로컬에서 `설정 > 정보 > 업데이트 확인` 동작 확인
-- [ ] 로컬에서 트레이 업데이트 `!` 배지와 `업데이트 있음 · vX.Y.Z` 메뉴 항목 확인
+- [x] 로컬에서 트레이 업데이트 `!` 배지, `업데이트 있음 · vX.Y.Z` 메뉴, `설정 > 정보` 이동 확인
 - [ ] unsigned 빌드 외부 배포 여부에 따라 첫 signed 버전 번호 확정 (`v1.0.0` 또는 `v1.0.1+`)
 - [ ] 코드서명 공급자/인증서 연결 또는 공개 배포 정책 최종 결정
 - [ ] 정식 Release workflow의 Authenticode 검증 통과

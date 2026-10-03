@@ -37,19 +37,27 @@ jobs:
       - name: 웹 자산 무결성 확인
         shell: powershell
         run: |
-          $heroPath = '.\website\hero-ebentiler.webp'
-          if (-not (Test-Path $heroPath)) { throw 'Hero asset is missing.' }
+          $webpAssets = @(
+            '.\website\hero-ebentiler.webp',
+            '.\website\thirds-ebentiler.webp'
+          )
 
-          $bytes = [IO.File]::ReadAllBytes($heroPath)
-          if ($bytes.Length -lt 1024) { throw "Hero asset is unexpectedly small: $($bytes.Length)" }
+          foreach ($assetPath in $webpAssets) {
+            if (-not (Test-Path $assetPath)) { throw "Web asset is missing: $assetPath" }
 
-          $header = [Text.Encoding]::ASCII.GetString($bytes, 0, 12)
-          if (-not ($header.StartsWith('RIFF') -and $header.Substring(8, 4) -eq 'WEBP')) {
-            throw 'Hero asset is not a valid WebP container.'
+            $bytes = [IO.File]::ReadAllBytes($assetPath)
+            if ($bytes.Length -lt 1024) { throw "Web asset is unexpectedly small: $assetPath ($($bytes.Length) bytes)" }
+
+            $header = [Text.Encoding]::ASCII.GetString($bytes, 0, 12)
+            if (-not ($header.StartsWith('RIFF') -and $header.Substring(8, 4) -eq 'WEBP')) {
+              throw "Web asset is not a valid WebP container: $assetPath"
+            }
           }
 
           $index = Get-Content '.\website\index.html' -Raw
+          $styles = Get-Content '.\website\styles.css' -Raw
           if ($index -notmatch 'hero-ebentiler\.webp') { throw 'Landing page does not reference the hero asset.' }
+          if ($styles -notmatch 'thirds-ebentiler\.webp') { throw 'Landing page styles do not reference the thirds asset.' }
           if ($index -notmatch 'EbenTiler-Setup\.exe') { throw 'Landing page does not reference the installer.' }
 
       - name: 설치 도구 준비

@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -116,14 +117,27 @@ namespace EbenTilerWindows
             aboutPage.Controls.SetChildIndex(status, 0);
         }
 
-        /// <summary>업데이트 알림을 눌렀을 때 설정의 정보 페이지를 바로 보여 준다.</summary>
+        /// <summary>업데이트 알림이나 트레이 메뉴에서 설정의 정보 페이지를 바로 보여 준다.</summary>
         public static void ShowAboutPage(this SettingsForm form)
         {
             if (form == null || form.IsDisposed) return;
             Attach(form);
 
-            NavigationButton infoButton = FindNavigationButton(form, "정보");
-            if (infoButton != null) infoButton.PerformClick();
+            try
+            {
+                MethodInfo showPage = typeof(SettingsForm).GetMethod(
+                    "ShowPage", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (showPage != null)
+                {
+                    showPage.Invoke(form, new object[] { "about" });
+                }
+            }
+            catch (TargetInvocationException)
+            {
+            }
+            catch (MethodAccessException)
+            {
+            }
         }
 
         private static int S(int value, float scale)
@@ -154,20 +168,6 @@ namespace EbenTilerWindows
                 if (label != null && string.Equals(label.Text, text, StringComparison.Ordinal)) return true;
             }
             return false;
-        }
-
-        private static NavigationButton FindNavigationButton(Control root, string text)
-        {
-            if (root == null) return null;
-            foreach (Control child in root.Controls)
-            {
-                NavigationButton button = child as NavigationButton;
-                if (button != null && string.Equals(button.Text, text, StringComparison.Ordinal)) return button;
-
-                NavigationButton nested = FindNavigationButton(child, text);
-                if (nested != null) return nested;
-            }
-            return null;
         }
 
         private static Control FindByName(Control root, string name)

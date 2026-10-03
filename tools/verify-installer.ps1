@@ -56,8 +56,9 @@ try {
     }
 
     $runtimeConfig = Get-Content $installedRuntimeConfig -Raw
-    if ($runtimeConfig -notmatch 'DpiAwareness" value="PerMonitorV2"'
-        -or $runtimeConfig -notmatch 'EnableWindowsFormsHighDpiAutoResizing" value="false"') {
+    $hasPerMonitorV2 = $runtimeConfig -match 'DpiAwareness" value="PerMonitorV2"'
+    $hasAutoResizeOff = $runtimeConfig -match 'EnableWindowsFormsHighDpiAutoResizing" value="false"'
+    if (-not $hasPerMonitorV2 -or -not $hasAutoResizeOff) {
         throw 'Installed runtime configuration does not contain the expected DPI settings.'
     }
 

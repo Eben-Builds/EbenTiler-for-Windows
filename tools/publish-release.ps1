@@ -1,0 +1,101 @@
+param(
+    [Parameter(Mandatory = $false)]
+    [string]$Version = '1.0.0'
+)
+
+$ErrorActionPreference = 'Stop'
+
+$root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+Set-Location $root
+
+function Invoke-Git {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
+    & git @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "git command failed: git $($Arguments -join ' ')"
+    }
+}
+
+if ($Version -notmatch '^\d+\.\d+\.\d+$') {
+    throw "Version must use MAJOR.MINOR.PATCH, for example 1.0.0: $Version"
+}
+
+$tag = 'v' + $Version
+
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    throw 'git.exe was not found.'
+}
+
+$status = (& git status --porcelain)
+if ($LASTEXITCODE -ne 0) { throw 'Could not read git status.' }
+if (-not [string]::IsNullOrWhiteSpace(($status -join "`n"))) {
+    throw 'Working tree is not clean. Commit or stash local changes before publishing a release.'
+}
+
+$branch = (& git branch --show-current).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Could not determine the current branch.' }
+if ($branch -ne 'main') {
+    throw "Release tags must be created from main. Current branch: $branch"
+}
+
+Write-Host 'Fetching the latest protected main and existing tags...'
+Invoke-Git fetch origin main --tags
+
+$head = (& git rev-parse HEAD).Trim()
+$remoteMain = (& git rev-parse origin/main).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Could not resolve origin/main.' }
+if ($head -ne $remoteMain) {
+    throw "Local main is not exactly origin/main. Local: $head Remote: $remoteMain. Run git pull origin main and retry."
+}
+
+$assemblyInfoPath = Join-Path $root 'src\AssemblyInfo.cs'
+$assemblyInfo = Get-Content -LiteralPath $assemblyInfoPath -Raw
+if ($assemblyInfo -notmatch 'AssemblyFileVersion\("(\d+)\.(\d+)\.(\d+)\.\d+"\)') {
+    throw 'AssemblyFileVersion was not found.'
+}
+$appVersion = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
+if ($appVersion -ne $Version) {
+    throw "Requested release $Version does not match AssemblyFileVersion $appVersion."
+}
+
+$installerScript = Get-Content -LiteralPath (Join-Path $root 'installer\EbenTiler.iss') -Raw
+if ($installerScript -notmatch '#define AppVersion\s+"' + [regex]::Escape($Version) + '"') {
+    throw "installer/EbenTiler.iss does not declare AppVersion $Version."
+}
+
+$existingLocal = & git show-ref --tags --verify --quiet "refs/tags/$tag"
+if ($LASTEXITCODE -eq 0) {
+    throw "Tag already exists locally: $tag"
+}
+
+$existingRemote = & git ls-remote --tags origin "refs/tags/$tag"
+if ($LASTEXITCODE -ne 0) { throw 'Could not check remote tags.' }
+if (-not [string]::IsNullOrWhiteSpace(($existingRemote -join "`n"))) {
+    throw "Tag already exists on origin: $tag"
+}
+
+$workflowPath = Join-Path $root '.github\workflows\release.yml'
+$workflow = Get-Content -LiteralPath $workflowPath -Raw
+if ($workflow -notmatch 'name:\s*Publish Release' -or $workflow -notmatch "tags:\s*\r?\n\s*- 'v\*'") {
+    throw 'The release workflow does not appear to be configured for protected v* release tags.'
+}
+
+Write-Host ''
+Write-Host "Release preflight passed for $tag"
+Write-Host "Commit: $head"
+Write-Host 'Mode: unsigned unless a valid code-signing identity is configured in GitHub Actions.'
+Write-Host 'The GitHub Release will disclose the unsigned state and publish a SHA-256 checksum.'
+Write-Host ''
+
+Invoke-Git tag -a $tag -m "EbenTiler $Version"
+try {
+    Invoke-Git push origin $tag
+}
+catch {
+    Write-Warning "The local tag $tag was created, but push failed. The tag was not deleted automatically."
+    throw
+}
+
+Write-Host ''
+Write-Host "Published tag: $tag"
+Write-Host 'GitHub Actions will now build, verify, and publish EbenTiler-Setup.exe plus its SHA-256 checksum.'

@@ -3,8 +3,9 @@
 단축키로 창을 화면 절반·사분면·3분할에 순식간에 붙여 주는 Windows 상주 프로그램.
 
 - 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
-- 실행 파일 하나, 약 80KB
+- 실행 파일 하나, 약 100KB
 - 알림 영역에 상주, 설정 창에서 단축키 자유롭게 변경
+- 새 정식 버전이 있으면 최대 하루 한 번 알림으로 안내하며 자동 다운로드·설치는 하지 않음
 
 [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Code signing policy](docs/CODE_SIGNING.md)
 
@@ -107,6 +108,14 @@ Windows 는 처음 보는 프로그램의 아이콘을 기본으로 숨김 처�
 처음 사용하는 사람에게는 핵심 단축키를 설명하는 시작 가이드가 표시된다.
 `다시 표시하지 않기`가 기본으로 선택되어 있어 보통 한 번만 나타난다. 체크를 풀고 닫으면 다음 실행 때 다시 볼 수 있다.
 
+### 업데이트 확인
+
+EbenTiler는 최대 24시간에 한 번 GitHub의 공개 최신 Release 정보를 확인한다.
+현재 버전보다 새 정식 버전이 있으면 Windows 알림으로 한 번 알려 준다.
+
+알림을 누르면 `설정 > 정보`가 열리며, 여기서 `업데이트 확인`을 직접 눌러 언제든 다시 확인할 수 있다.
+업데이트 파일을 백그라운드에서 자동 다운로드하거나 자동 설치하지 않는다. 새 버전이 있으면 사용자가 직접 GitHub Release 페이지를 열어 확인한다.
+
 ## 명령줄에서 쓰기
 
 스크립트나 다른 도구에서 창 배치를 시킬 수도 있다.
@@ -144,6 +153,7 @@ conflict=오른쪽 1/3 (Ctrl + Alt + H)
   크기 조절이나 모니터 이동처럼 자리만으로 설명이 안 되는 것은 점선(바뀌기 전)과 화살표로 함께 보여 준다.
 - 같은 조합을 이미 다른 기능이 쓰고 있으면 물어보고 그쪽을 비운다.
 - 보조키(Ctrl/Alt/Shift/Win) 없는 조합은 막는다. 그렇게 등록하면 다른 프로그램에서 그 키를 아예 못 쓰게 된다.
+- `정보` 페이지에서 현재 버전과 업데이트 상태를 확인할 수 있다.
 
 ## 아이콘
 
@@ -175,13 +185,15 @@ ShowWelcomeGuide=false ; 다음 실행 때 시작 가이드를 표시할지 여�
 
 값을 비워 두면 그 기능의 단축키는 등록하지 않는다.
 
+업데이트 확인 상태는 별도 `%APPDATA%\EbenTiler\update-state.ini`에 마지막 확인 시각과 이미 알린 릴리스 태그만 저장한다.
+
 ## 개인정보 / Privacy
 
-EbenTiler 앱은 개인정보, 사용 통계, 창 제목, 입력 내용이나 파일 내용을 수집하지 않으며 텔레메트리·광고·분석 SDK·원격 API를 사용하지 않는다.
+EbenTiler 앱은 개인정보, 사용 통계, 창 제목, 입력 내용이나 파일 내용을 수집하지 않으며 텔레메트리·광고·분석 SDK를 사용하지 않는다.
 
-**This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.**
+새 버전 알림을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에서 최신 버전 정보만 확인한다. 앱은 업데이트 파일을 자동 다운로드하거나 자동 설치하지 않는다.
 
-상세 정책은 [`PRIVACY.md`](PRIVACY.md)를 참고한다.
+상세한 네트워크 동작과 로컬 저장 정보는 [`PRIVACY.md`](PRIVACY.md)를 참고한다.
 
 ## 검증
 
@@ -255,6 +267,8 @@ SignPath Foundation은 공개 OSS 코드서명의 우선 검토 대상이지만 
 | `src/Config.cs` | 설정 파일 읽기/쓰기 |
 | `src/WindowManager.cs` | 창 찾기, 위치 계산, 이동, 원래 크기 기억 |
 | `src/HotkeyManager.cs` | 전역 단축키 등록과 수신 |
-| `src/TrayApp.cs` | 알림 영역 상주, 메뉴 |
+| `src/TrayApp.cs` | 알림 영역 상주, 메뉴, 새 버전 알림 |
+| `src/UpdateChecker.cs` | GitHub 공개 Release 버전 확인과 24시간 상태 기록 |
+| `src/SettingsUpdateSection.cs` | 설정 > 정보의 수동 업데이트 확인 UI |
 | `src/SettingsForm.cs` | 설정 창 |
 | `src/Program.cs` | 진입점, 명령줄 모드 |

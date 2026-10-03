@@ -1,21 +1,22 @@
 # EbenTiler Code signing policy
 
-이 문서는 EbenTiler의 **개발용 unsigned 빌드와 일반 사용자용 signed release를 분리**하는 기준을 정리합니다.
+이 문서는 EbenTiler의 **unsigned 공개 릴리스와 signed 공개 릴리스를 안전하게 구분**하는 기준을 정리합니다.
 
 ## 현재 상태
 
 - EbenTiler는 공개 MIT OSS입니다.
-- 정식 공개 릴리스는 유효한 Authenticode 서명 없이는 게시하지 않습니다.
 - SignPath Foundation은 우선 검토 대상이지만 **아직 승인되거나 연결된 상태가 아닙니다.**
 - 승인 전에는 SignPath가 EbenTiler의 서명을 제공하는 것처럼 표시하지 않습니다.
+- 코드서명 신원이 연결되기 전에도 GitHub Release를 공개할 수 있습니다. 이 경우 설치 파일은 unsigned임을 Release와 랜딩페이지에 명확히 표시합니다.
 
 ## 핵심 원칙
 
 - `main`의 일반 CI는 코드 서명 비밀정보에 접근하지 않습니다.
-- 개발/검증용 설치 파일은 unsigned 상태로 GitHub Actions artifact에만 보관합니다.
-- 일반 사용자에게 공개하는 GitHub Release는 **유효한 Authenticode 서명 없이는 게시하지 않습니다.**
-- 랜딩페이지는 자체 unsigned 설치 파일을 호스팅하지 않고 GitHub의 최신 정식 Release 자산으로 연결합니다.
-- `EbenTiler.exe`, 설치 프로그램, 제거 프로그램을 서명하고 SHA-256을 함께 검증합니다.
+- 일반 CI의 unsigned 설치 파일은 GitHub Actions artifact에만 보관하고 공개 다운로드 경로로 사용하지 않습니다.
+- 공개 GitHub Release는 태그/버전/소스 위치, 설치/제거 smoke test, SHA-256 검증을 통과해야 합니다.
+- 코드서명 신원이 준비되어 있으면 같은 Release 경로에서 Authenticode 서명과 검증을 추가로 수행합니다.
+- 코드서명 신원이 아직 없으면 Release 제목/설명과 랜딩페이지에 unsigned 상태와 Windows 경고 가능성을 명확히 고지합니다.
+- 랜딩페이지는 자체 설치 파일을 호스팅하지 않고 GitHub의 최신 공개 Release 자산으로 연결합니다.
 - 인증서 개인키, 비밀번호, API 키는 저장소나 릴리스 자산, 로그에 포함하지 않습니다.
 
 ## 프로젝트 역할
@@ -31,11 +32,9 @@
 
 ## 개인정보 정책
 
-EbenTiler 앱은 텔레메트리, 광고, 분석 SDK 또는 원격 API를 사용하지 않으며 앱 자체가 사용자 데이터를 외부 시스템으로 전송하지 않습니다.
+EbenTiler는 개인정보, 사용 기록, 창 제목, 입력 내용 또는 파일 내용을 수집하지 않습니다. 새 버전 확인을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에서 최신 버전 정보만 조회하며, 업데이트 파일을 자동 다운로드하거나 자동 설치하지 않습니다.
 
 상세 내용: [`PRIVACY.md`](../PRIVACY.md)
-
-> This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
 ## 2026년 코드 서명 키 보관
 
@@ -89,9 +88,10 @@ SignPath Foundation 승인을 받은 경우에만 홈페이지/다운로드/릴�
 
 - 정적 웹 자산만 검증/게시
 - 설치 파일을 빌드하거나 `site` 브랜치에 포함하지 않음
-- 다운로드는 최신 정식 GitHub Release의 `EbenTiler-Setup.exe`로 연결
+- 다운로드는 최신 공개 GitHub Release의 `EbenTiler-Setup.exe`로 연결
+- unsigned 공개 릴리스 기간에는 Windows 경고 가능성을 사용자에게 고지
 
-### 정식 릴리스
+### 공개 릴리스
 
 `.github/workflows/release.yml`
 
@@ -99,10 +99,10 @@ SignPath Foundation 승인을 받은 경우에만 홈페이지/다운로드/릴�
 - 저장소 owner가 만든 릴리스만 허용
 - 태그가 `main`에 포함된 커밋을 가리키는지 확인
 - 태그 버전과 `AssemblyFileVersion` 일치 확인
-- 코드 서명 신원이 없으면 실패
 - 설치/제거 테스트
-- EXE와 Setup Authenticode 검증
 - SHA-256 검증
+- 코드서명 신원이 있으면 EXE/Setup Authenticode 서명과 검증
+- 코드서명 신원이 없으면 unsigned 상태를 Release 제목/설명에 명확히 표시
 - 모든 검증 후에만 GitHub Release 게시
 
 ## 서명 신원 준비
@@ -111,7 +111,8 @@ SignPath Foundation 승인을 받은 경우에만 홈페이지/다운로드/릴�
 
 1. `EBENTILER_SIGNING_CERT_SHA1`이 있고 해당 인증서가 `Cert:\CurrentUser\My`에서 사용 가능하면 사용
 2. 기존 export 가능한 PFX가 있는 경우에만 PFX 호환 경로 사용
-3. 정식 릴리스에서 둘 다 없으면 실패
+3. 둘 다 없고 `-RequireSigning`을 지정한 경우 실패
+4. 둘 다 없고 `-RequireSigning`이 없으면 unsigned 빌드로 계속 진행
 
 HSM/클라우드 서명 공급자를 붙일 때는 Release workflow에서 공급자의 KSP/클라이언트를 준비한 뒤 최종 인증서 thumbprint를 `EBENTILER_SIGNING_CERT_SHA1`로 넘깁니다.
 
@@ -119,22 +120,40 @@ SignPath Foundation이 승인되면 위 로컬 인증서 경로를 억지로 사
 
 ## 릴리스 검증
 
-정식 릴리스는 최소한 다음을 모두 통과해야 합니다.
+모든 공개 릴리스는 최소한 다음을 통과해야 합니다.
 
 - `vMAJOR.MINOR.PATCH` 태그
 - 태그가 `main`에 포함된 커밋을 가리킴
 - 앱 버전과 태그 버전 일치
 - 설치/제거 스모크 테스트 통과
+- 설치 파일 SHA-256 일치
+
+unsigned 공개 릴리스 수동 검증:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1
+```
+
+signed 공개 릴리스는 위 항목에 더해 다음을 확인합니다.
+
 - `EbenTiler.exe` Authenticode 유효
 - `EbenTiler-Setup.exe` Authenticode 유효
 - Code Signing EKU 확인
-- 설치 파일 SHA-256 일치
-
-수동 검증:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSigning
 ```
+
+## unsigned → signed 전환
+
+처음 공개한 unsigned 버전과 같은 버전 번호로 signed 파일을 다시 올리지 않습니다. 기존 사용자 앱이 새 버전으로 인식할 수 있도록 다음 signed 릴리스는 반드시 더 높은 버전 번호를 사용합니다.
+
+예:
+
+- `v1.0.0`: 최초 공개 unsigned 릴리스
+- `v1.0.1`: 코드서명 연결 후 첫 signed 릴리스
+
+이렇게 하면 기존 unsigned 사용자의 업데이트 알림이 signed 새 버전을 정상적으로 감지할 수 있습니다.
 
 ## 개인키와 비밀정보
 
@@ -146,5 +165,7 @@ powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSi
 - 릴리스 게시 권한과 일반 빌드 권한을 분리합니다.
 
 ## SmartScreen
+
+코드서명 전 공개 릴리스는 Windows에서 `알 수 없는 게시자` 또는 SmartScreen 경고가 표시될 수 있습니다. 이것은 사용자에게 숨기지 않습니다.
 
 코드서명은 게시자 신원과 파일 무결성을 제공하지만 새 publisher와 새 바이너리가 첫날부터 SmartScreen 경고를 항상 피한다는 의미는 아닙니다. 동일한 publisher identity를 안정적으로 유지하며 정상 배포 이력을 쌓는 것이 중요합니다.

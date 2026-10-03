@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace EbenTilerWindows
@@ -37,7 +40,6 @@ namespace EbenTilerWindows
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             Keys code = keyData & Keys.KeyCode;
-
             if (code == Keys.Escape)
             {
                 return base.ProcessCmdKey(ref msg, keyData);
@@ -49,21 +51,24 @@ namespace EbenTilerWindows
                 _captured = hotkey;
                 Text = hotkey.ToDisplayString();
                 EventHandler handler = CapturedChanged;
-                if (handler != null)
-                {
-                    handler(this, EventArgs.Empty);
-                }
+                if (handler != null) handler(this, EventArgs.Empty);
             }
             return true;
         }
     }
 
-    /// <summary>단축키와 옵션을 바꾸는 설정 창.</summary>
+    /// <summary>EbenTiler의 일반, 단축키, 레이아웃, 모니터, 정보를 관리하는 설정 창.</summary>
     public sealed class SettingsForm : Form
     {
         private readonly Config _config;
         private readonly float _scale;
+        private readonly Dictionary<string, Panel> _pages = new Dictionary<string, Panel>();
+        private readonly Dictionary<string, NavigationButton> _navButtons = new Dictionary<string, NavigationButton>();
+
         private Bitmap _headerIcon;
+        private Bitmap _aboutIcon;
+        private Panel _pageHost;
+        private Panel _navHost;
 
         private ListView _list;
         private HotkeyCaptureBox _capture;
@@ -72,6 +77,8 @@ namespace EbenTilerWindows
         private NumericUpDown _gap;
         private PreviewPanel _preview;
         private Label _previewNote;
+        private CheckBox _startupToggle;
+        private ListView _monitorList;
 
         public Config ResultConfig { get { return _config; } }
 
@@ -86,6 +93,8 @@ namespace EbenTilerWindows
 
             BuildUi();
             FillList();
+            FillMonitors();
+            ShowPage("hotkeys");
         }
 
         private int S(int value)
@@ -113,7 +122,7 @@ namespace EbenTilerWindows
 
         private void BuildUi()
         {
-            Text = "EbenTiler for Windows - 단축키 설정";
+            Text = "EbenTiler for Windows - 설정";
             ShowIcon = true;
             Icon = AppIcon.LoadLarge();
             FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -123,7 +132,7 @@ namespace EbenTilerWindows
             BackColor = UiPalette.Canvas;
             ForeColor = UiPalette.Text;
             Font = MakeFont(9f, FontStyle.Regular);
-            ClientSize = new Size(S(800), S(620));
+            ClientSize = new Size(S(960), S(660));
             KeyPreview = true;
             DoubleBuffered = true;
 
@@ -140,44 +149,156 @@ namespace EbenTilerWindows
             iconBox.AccessibleName = "EbenTiler 앱 아이콘";
             Controls.Add(iconBox);
 
-            Label title = MakeLabel("EbenTiler 단축키 설정", 82, 17, 450, 30, 16f, FontStyle.Bold, UiPalette.Text);
-            Controls.Add(title);
+            Controls.Add(MakeLabel("EbenTiler 설정", 82, 17, 450, 30, 16f, FontStyle.Bold, UiPalette.Text));
+            Controls.Add(MakeLabel(
+                "창 배치 방식과 단축키, 모니터 동작을 한곳에서 관리하세요.",
+                82, 48, 570, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
 
-            Label subtitle = MakeLabel(
-                "기능을 고르고 원하는 키 조합을 지정하세요. 변경 내용은 저장할 때 적용됩니다.",
-                82, 48, 540, 24, 9f, FontStyle.Regular, UiPalette.TextMuted);
-            Controls.Add(subtitle);
-
-            Label platformBadge = MakeLabel("Windows 10 · 11", 650, 25, 124, 24, 8.5f, FontStyle.Bold, UiPalette.Primary);
+            Label platformBadge = MakeLabel("Windows 10 · 11", 808, 25, 126, 24, 8.5f, FontStyle.Bold, UiPalette.Primary);
             platformBadge.TextAlign = ContentAlignment.MiddleCenter;
             platformBadge.BackColor = UiPalette.PrimarySoft;
             platformBadge.AccessibleName = "지원 운영체제";
             Controls.Add(platformBadge);
 
-            Label listTitle = MakeLabel("배치 기능", 34, 108, 180, 24, 11f, FontStyle.Bold, UiPalette.Text);
-            Controls.Add(listTitle);
+            _navHost = new Panel();
+            _navHost.Location = new Point(S(24), S(105));
+            _navHost.Size = new Size(S(154), S(454));
+            _navHost.BackColor = UiPalette.Surface;
+            Controls.Add(_navHost);
 
-            Label listLabel = MakeLabel(
-                "기능을 선택하면 오른쪽에서 배치 결과를 미리 볼 수 있습니다.",
-                34, 132, 430, 20, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
-            Controls.Add(listLabel);
+            AddNavigation("general", "일반", "●", 0);
+            AddNavigation("hotkeys", "단축키", "⌨", 1);
+            AddNavigation("layout", "레이아웃", "▦", 2);
+            AddNavigation("monitors", "모니터", "▣", 3);
+            AddNavigation("about", "정보", "ⓘ", 4);
+
+            _pageHost = new Panel();
+            _pageHost.Location = new Point(S(212), S(108));
+            _pageHost.Size = new Size(S(716), S(450));
+            _pageHost.BackColor = UiPalette.Surface;
+            Controls.Add(_pageHost);
+
+            BuildGeneralPage();
+            BuildHotkeysPage();
+            BuildLayoutPage();
+            BuildMonitorsPage();
+            BuildAboutPage();
+
+            Button save = MakeButton("저장", 754, 606, 90, true, false);
+            save.Click += OnSave;
+            Controls.Add(save);
+
+            Button cancel = MakeButton("취소", 854, 606, 84, false, false);
+            cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+            Controls.Add(cancel);
+            CancelButton = cancel;
+        }
+
+        private void AddNavigation(string key, string text, string glyph, int index)
+        {
+            NavigationButton button = new NavigationButton();
+            button.Text = text;
+            button.Glyph = glyph;
+            button.Location = new Point(S(4), S(8 + index * 52));
+            button.Size = new Size(S(146), S(44));
+            button.Font = MakeFont(9.5f, FontStyle.Bold);
+            button.AccessibleName = text + " 설정";
+            button.Click += delegate { ShowPage(key); };
+            _navHost.Controls.Add(button);
+            _navButtons[key] = button;
+        }
+
+        private Panel CreatePage(string key)
+        {
+            Panel page = new Panel();
+            page.Dock = DockStyle.Fill;
+            page.BackColor = UiPalette.Surface;
+            page.Visible = false;
+            _pageHost.Controls.Add(page);
+            _pages[key] = page;
+            return page;
+        }
+
+        private void ShowPage(string key)
+        {
+            foreach (KeyValuePair<string, Panel> pair in _pages)
+            {
+                pair.Value.Visible = pair.Key == key;
+            }
+            foreach (KeyValuePair<string, NavigationButton> pair in _navButtons)
+            {
+                pair.Value.Selected = pair.Key == key;
+            }
+            if (_pages.ContainsKey(key)) _pages[key].BringToFront();
+        }
+
+        private void BuildGeneralPage()
+        {
+            Panel page = CreatePage("general");
+            page.Controls.Add(MakeLabel("일반", 0, 0, 240, 30, 15f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(
+                "Windows 시작 동작과 기본 설정을 관리합니다.",
+                0, 32, 560, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeLabel("시작", 0, 78, 120, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
+            _startupToggle = new CheckBox();
+            _startupToggle.Text = "Windows 시작 시 EbenTiler 자동 실행";
+            _startupToggle.Location = new Point(S(4), S(110));
+            _startupToggle.Size = new Size(S(340), S(28));
+            _startupToggle.FlatStyle = FlatStyle.System;
+            _startupToggle.ForeColor = UiPalette.Text;
+            _startupToggle.Checked = Startup.IsEnabled();
+            _startupToggle.AccessibleName = "Windows 시작 시 자동 실행";
+            page.Controls.Add(_startupToggle);
+            page.Controls.Add(MakeLabel(
+                "현재 사용자 계정에만 적용되며 언제든 다시 끌 수 있습니다.",
+                24, 140, 520, 22, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeSeparator(0, 184, 690));
+            page.Controls.Add(MakeLabel("설정 파일", 0, 208, 140, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(Config.FilePath, 0, 240, 545, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+
+            Button openConfig = MakePageButton("설정 폴더 열기", 566, 232, 126, false);
+            openConfig.Click += delegate { OpenTarget(Config.Directory); };
+            page.Controls.Add(openConfig);
+
+            page.Controls.Add(MakeSeparator(0, 292, 690));
+            page.Controls.Add(MakeLabel("초기화", 0, 316, 120, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(
+                "단축키와 레이아웃 설정을 처음 상태로 되돌립니다.",
+                0, 346, 470, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+
+            Button resetAll = MakePageButton("앱 설정 초기화", 548, 336, 144, false);
+            resetAll.Click += OnResetAllSettings;
+            page.Controls.Add(resetAll);
+        }
+
+        private void BuildHotkeysPage()
+        {
+            Panel page = CreatePage("hotkeys");
+            page.Controls.Add(MakeLabel("단축키", 0, 0, 220, 30, 15f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(
+                "기능을 선택하고 원하는 키 조합을 지정하세요.",
+                0, 32, 520, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeLabel("배치 기능", 0, 70, 180, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
 
             _list = new ListView();
-            _list.Location = new Point(S(34), S(158));
-            _list.Size = new Size(S(444), S(310));
+            _list.Location = new Point(S(0), S(98));
+            _list.Size = new Size(S(430), S(268));
             _list.View = View.Details;
             _list.FullRowSelect = true;
             _list.MultiSelect = false;
             _list.HideSelection = false;
             _list.Scrollable = true;
-            _list.BorderStyle = BorderStyle.None;
+            _list.BorderStyle = BorderStyle.FixedSingle;
             _list.BackColor = UiPalette.Surface;
             _list.ForeColor = UiPalette.Text;
             _list.HeaderStyle = ColumnHeaderStyle.Nonclickable;
             _list.AccessibleName = "기능 목록";
             _list.TabIndex = 0;
 
-            int[] listColumnWidths = new int[] { S(184), S(160), S(72) };
+            int[] listColumnWidths = new int[] { S(178), S(154), S(72) };
             _list.Columns.Add("기능", listColumnWidths[0]);
             _list.Columns.Add("단축키", listColumnWidths[1]);
             _list.Columns.Add("분류", listColumnWidths[2]);
@@ -190,77 +311,105 @@ namespace EbenTilerWindows
                 }
             };
             _list.SelectedIndexChanged += OnSelectionChanged;
-            Controls.Add(_list);
+            page.Controls.Add(_list);
 
-            Label captureLabel = MakeLabel("새 단축키", 34, 486, 76, 26, 9f, FontStyle.Bold, UiPalette.Text);
+            Label captureLabel = MakeLabel("새 단축키", 0, 382, 82, 26, 9f, FontStyle.Bold, UiPalette.Text);
             captureLabel.TextAlign = ContentAlignment.MiddleLeft;
-            Controls.Add(captureLabel);
+            page.Controls.Add(captureLabel);
 
             _capture = new HotkeyCaptureBox();
-            _capture.Location = new Point(S(112), S(484));
-            _capture.Size = new Size(S(244), S(28));
+            _capture.Location = new Point(S(84), S(380));
+            _capture.Size = new Size(S(238), S(28));
             _capture.AccessibleName = "새 단축키 입력";
             _capture.TabIndex = 1;
-            Controls.Add(_capture);
+            page.Controls.Add(_capture);
 
             _winModifier = new CheckBox();
             _winModifier.Text = "Win 포함";
-            _winModifier.Location = new Point(S(366), S(486));
-            _winModifier.Size = new Size(S(100), S(24));
+            _winModifier.Location = new Point(S(330), S(382));
+            _winModifier.Size = new Size(S(96), S(24));
             _winModifier.FlatStyle = FlatStyle.System;
             _winModifier.ForeColor = UiPalette.Text;
-            Controls.Add(_winModifier);
+            page.Controls.Add(_winModifier);
 
-            Button assign = MakeButton("이 단축키로 지정", 34, 522, 146, true, true);
+            Button assign = MakePageButton("이 단축키로 지정", 0, 416, 136, true);
             assign.Click += OnAssign;
-            Controls.Add(assign);
+            page.Controls.Add(assign);
 
-            Button clear = MakeButton("단축키 지우기", 190, 522, 126, false, true);
+            Button clear = MakePageButton("단축키 지우기", 144, 416, 122, false);
             clear.Click += OnClear;
-            Controls.Add(clear);
+            page.Controls.Add(clear);
 
-            Button reset = MakeButton("전체 기본값 복원", 326, 522, 152, false, true);
+            Button reset = MakePageButton("기본값 복원", 274, 416, 120, false);
             reset.Click += OnResetDefaults;
-            Controls.Add(reset);
+            page.Controls.Add(reset);
 
-            Label previewTitle = MakeLabel("배치 미리보기", 526, 108, 160, 24, 11f, FontStyle.Bold, UiPalette.Text);
-            Controls.Add(previewTitle);
-
-            Label previewHelp = MakeLabel(
-                "선택한 기능이 실제 화면에 어떻게 배치되는지 보여 줍니다.",
-                526, 132, 242, 40, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
-            Controls.Add(previewHelp);
-
+            page.Controls.Add(MakeLabel("배치 미리보기", 456, 70, 170, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
             _preview = new PreviewPanel();
-            _preview.Location = new Point(S(526), S(176));
-            _preview.Size = new Size(S(242), S(176));
+            _preview.Location = new Point(S(456), S(98));
+            _preview.Size = new Size(S(244), S(176));
             _preview.AccessibleName = "배치 미리보기";
-            Controls.Add(_preview);
+            page.Controls.Add(_preview);
 
-            _previewNote = MakeLabel("", 526, 362, 242, 64, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
+            _previewNote = MakeLabel("", 456, 286, 244, 88, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
             _previewNote.AccessibleName = "배치 설명";
-            Controls.Add(_previewNote);
+            page.Controls.Add(_previewNote);
+
+            page.Controls.Add(MakeLabel(
+                "창 사이 여백과 반복 배치 방식은 ‘레이아웃’에서 설정할 수 있습니다.",
+                456, 392, 244, 48, 8f, FontStyle.Regular, UiPalette.TextMuted));
+        }
+
+        private void BuildLayoutPage()
+        {
+            Panel page = CreatePage("layout");
+            page.Controls.Add(MakeLabel("레이아웃", 0, 0, 240, 30, 15f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(
+                "절반, 사분면, 3분할 배치의 간격과 반복 동작을 조정합니다.",
+                0, 32, 620, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeLabel("절반", 0, 70, 120, 22, 9f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel("사분면", 238, 70, 120, 22, 9f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel("3분할", 476, 70, 120, 22, 9f, FontStyle.Bold, UiPalette.Text));
+
+            PreviewPanel half = new PreviewPanel();
+            half.Location = new Point(S(0), S(96));
+            half.Size = new Size(S(214), S(132));
+            half.SetAction(SnapAction.LeftHalf);
+            page.Controls.Add(half);
+
+            PreviewPanel quadrant = new PreviewPanel();
+            quadrant.Location = new Point(S(238), S(96));
+            quadrant.Size = new Size(S(214), S(132));
+            quadrant.SetAction(SnapAction.TopLeft);
+            page.Controls.Add(quadrant);
+
+            PreviewPanel thirds = new PreviewPanel();
+            thirds.Location = new Point(S(476), S(96));
+            thirds.Size = new Size(S(214), S(132));
+            thirds.SetAction(SnapAction.FirstThird);
+            page.Controls.Add(thirds);
+
+            page.Controls.Add(MakeSeparator(0, 252, 690));
+            page.Controls.Add(MakeLabel("반복 배치", 0, 274, 130, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
 
             _cycleHalves = new CheckBox();
-            _cycleHalves.Text = "같은 단축키를 연달아 누르면\r\n1/2 → 1/3 → 2/3 으로 폭 바꾸기";
-            _cycleHalves.Location = new Point(S(526), S(432));
-            _cycleHalves.Size = new Size(S(242), S(48));
+            _cycleHalves.Text = "같은 방향 단축키를 연달아 누르면 1/2 → 1/3 → 2/3 으로 폭 바꾸기";
+            _cycleHalves.Location = new Point(S(4), S(306));
+            _cycleHalves.Size = new Size(S(560), S(28));
             _cycleHalves.FlatStyle = FlatStyle.System;
             _cycleHalves.ForeColor = UiPalette.Text;
             _cycleHalves.Checked = _config.CycleHalves;
-            Controls.Add(_cycleHalves);
+            page.Controls.Add(_cycleHalves);
 
-            Label gapLabel = MakeLabel("창 사이 여백", 526, 494, 110, 24, 9f, FontStyle.Bold, UiPalette.Text);
-            gapLabel.TextAlign = ContentAlignment.MiddleLeft;
-            Controls.Add(gapLabel);
-
-            Label gapUnit = MakeLabel("픽셀", 718, 494, 44, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
-            gapUnit.TextAlign = ContentAlignment.MiddleLeft;
-            Controls.Add(gapUnit);
+            page.Controls.Add(MakeLabel("창 사이 여백", 0, 358, 140, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(
+                "배치된 창 사이에 둘 여백을 픽셀 단위로 지정합니다.",
+                0, 388, 430, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
 
             _gap = new NumericUpDown();
-            _gap.Location = new Point(S(642), S(492));
-            _gap.Size = new Size(S(70), S(26));
+            _gap.Location = new Point(S(548), S(364));
+            _gap.Size = new Size(S(82), S(26));
             _gap.Minimum = 0;
             _gap.Maximum = 100;
             _gap.Value = Math.Max(0, Math.Min(100, _config.Gap));
@@ -268,60 +417,109 @@ namespace EbenTilerWindows
             _gap.BackColor = UiPalette.Surface;
             _gap.ForeColor = UiPalette.Text;
             _gap.AccessibleName = "창 사이 여백";
-            _gap.ValueChanged += delegate { _preview.Invalidate(); };
-            Controls.Add(_gap);
-
-            Button save = MakeButton("저장", 594, 574, 90, true, false);
-            save.Click += OnSave;
-            Controls.Add(save);
-
-            Button cancel = MakeButton("취소", 694, 574, 84, false, false);
-            cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
-            Controls.Add(cancel);
-
-            CancelButton = cancel;
+            page.Controls.Add(_gap);
+            Label unit = MakeLabel("픽셀", 638, 366, 46, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
+            page.Controls.Add(unit);
         }
 
-        protected override void Dispose(bool disposing)
+        private void BuildMonitorsPage()
         {
-            if (disposing && _headerIcon != null)
-            {
-                _headerIcon.Dispose();
-                _headerIcon = null;
-            }
-            base.Dispose(disposing);
+            Panel page = CreatePage("monitors");
+            page.Controls.Add(MakeLabel("모니터", 0, 0, 240, 30, 15f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(
+                "현재 연결된 디스플레이와 EbenTiler의 모니터 이동 방식을 확인합니다.",
+                0, 32, 610, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
+
+            Button refresh = MakePageButton("새로 고침", 590, 24, 102, false);
+            refresh.Click += delegate { FillMonitors(); };
+            page.Controls.Add(refresh);
+
+            _monitorList = new ListView();
+            _monitorList.Location = new Point(S(0), S(78));
+            _monitorList.Size = new Size(S(690), S(210));
+            _monitorList.View = View.Details;
+            _monitorList.FullRowSelect = true;
+            _monitorList.MultiSelect = false;
+            _monitorList.BorderStyle = BorderStyle.FixedSingle;
+            _monitorList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+            _monitorList.BackColor = UiPalette.Surface;
+            _monitorList.ForeColor = UiPalette.Text;
+            _monitorList.Columns.Add("번호", S(54));
+            _monitorList.Columns.Add("디스플레이", S(172));
+            _monitorList.Columns.Add("해상도", S(120));
+            _monitorList.Columns.Add("작업 영역", S(154));
+            _monitorList.Columns.Add("상태", S(104));
+            page.Controls.Add(_monitorList);
+
+            PreviewPanel monitorPreview = new PreviewPanel();
+            monitorPreview.Location = new Point(S(0), S(312));
+            monitorPreview.Size = new Size(S(260), S(130));
+            monitorPreview.SetAction(SnapAction.NextDisplay);
+            page.Controls.Add(monitorPreview);
+
+            page.Controls.Add(MakeLabel("모니터 이동 방식", 286, 316, 220, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(
+                "다음/이전 모니터로 이동할 때 현재 창이 화면에서 차지하던 위치와 크기 비율을 유지합니다. 서로 다른 배율의 모니터에서도 같은 위치에 자연스럽게 옮기도록 적용합니다.",
+                286, 350, 396, 82, 8.8f, FontStyle.Regular, UiPalette.TextMuted));
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        private void BuildAboutPage()
         {
-            base.OnPaint(e);
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Panel page = CreatePage("about");
+            int aboutPixels = S(64);
+            Icon icon = AppIcon.LoadSized(aboutPixels);
+            _aboutIcon = icon.ToBitmap();
+            icon.Dispose();
 
-            DrawCard(e.Graphics, new RectangleF(S(16), S(92), S(480), S(466)), 14f * _scale);
-            DrawCard(e.Graphics, new RectangleF(S(508), S(92), S(276), S(466)), 14f * _scale);
+            PictureBox appIcon = new PictureBox();
+            appIcon.Location = new Point(S(0), S(4));
+            appIcon.Size = new Size(aboutPixels, aboutPixels);
+            appIcon.SizeMode = PictureBoxSizeMode.Normal;
+            appIcon.Image = _aboutIcon;
+            page.Controls.Add(appIcon);
 
-            using (Pen accent = new Pen(UiPalette.Primary, Math.Max(2f, 2f * _scale)))
-            {
-                e.Graphics.DrawLine(accent, S(34), S(151), S(478), S(151));
-                e.Graphics.DrawLine(accent, S(526), S(169), S(768), S(169));
-            }
+            page.Controls.Add(MakeLabel("EbenTiler for Windows", 82, 4, 430, 30, 15f, FontStyle.Bold, UiPalette.Text));
+            string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            page.Controls.Add(MakeLabel("버전 " + version, 82, 38, 260, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeSeparator(0, 94, 690));
+            page.Controls.Add(MakeLabel("지원 환경", 0, 118, 140, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel("Windows 10 · 11  /  .NET Framework 4.8", 0, 150, 520, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeLabel("프로그램 위치", 0, 198, 150, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(Application.ExecutablePath, 0, 228, 690, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeLabel("설정 위치", 0, 274, 150, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel(Config.FilePath, 0, 304, 690, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeLabel("오픈소스", 0, 350, 140, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel("MIT 라이선스", 0, 380, 180, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
+
+            Button github = MakePageButton("GitHub 열기", 548, 370, 144, false);
+            github.Click += delegate { OpenTarget("https://github.com/Eben-Builds/EbenTiler-for-Windows"); };
+            page.Controls.Add(github);
         }
 
-        private void DrawCard(Graphics g, RectangleF rect, float radius)
+        private Control MakeSeparator(int x, int y, int width)
         {
-            RectangleF shadow = rect;
-            shadow.Offset(0f, Math.Max(1f, 2f * _scale));
+            Panel line = new Panel();
+            line.Location = new Point(S(x), S(y));
+            line.Size = new Size(S(width), Math.Max(1, S(1)));
+            line.BackColor = UiPalette.Border;
+            return line;
+        }
 
-            using (SolidBrush shadowBrush = new SolidBrush(Color.FromArgb(12, 30, 73, 120)))
-            {
-                UiDrawing.FillRoundedRectangle(g, shadowBrush, shadow, radius);
-            }
-            using (SolidBrush fill = new SolidBrush(UiPalette.Surface))
-            using (Pen border = new Pen(UiPalette.Border, 1f))
-            {
-                UiDrawing.FillRoundedRectangle(g, fill, rect, radius);
-                UiDrawing.DrawRoundedRectangle(g, border, rect, radius);
-            }
+        private Button MakePageButton(string text, int x, int y, int width, bool primary)
+        {
+            RoundedButton button = new RoundedButton();
+            button.Text = text;
+            button.Location = new Point(S(x), S(y));
+            button.Size = new Size(S(width), S(34));
+            button.PrimaryStyle = primary;
+            button.CornerRadius = S(8);
+            button.SurroundingBackColor = UiPalette.Surface;
+            button.Font = MakeFont(9f, FontStyle.Bold);
+            return button;
         }
 
         private Button MakeButton(string text, int x, int y, int width, bool primary, bool onCard)
@@ -337,63 +535,113 @@ namespace EbenTilerWindows
             return button;
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_headerIcon != null)
+                {
+                    _headerIcon.Dispose();
+                    _headerIcon = null;
+                }
+                if (_aboutIcon != null)
+                {
+                    _aboutIcon.Dispose();
+                    _aboutIcon = null;
+                }
+            }
+            base.Dispose(disposing);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+            DrawCard(e.Graphics, new RectangleF(S(16), S(92), S(170), S(482)), 14f * _scale);
+            DrawCard(e.Graphics, new RectangleF(S(196), S(92), S(748), S(482)), 14f * _scale);
+        }
+
+        private void DrawCard(Graphics g, RectangleF rect, float radius)
+        {
+            RectangleF shadow = rect;
+            shadow.Offset(0f, Math.Max(1f, 2f * _scale));
+            using (SolidBrush shadowBrush = new SolidBrush(Color.FromArgb(12, 30, 73, 120)))
+            {
+                UiDrawing.FillRoundedRectangle(g, shadowBrush, shadow, radius);
+            }
+            using (SolidBrush fill = new SolidBrush(UiPalette.Surface))
+            using (Pen border = new Pen(UiPalette.Border, 1f))
+            {
+                UiDrawing.FillRoundedRectangle(g, fill, rect, radius);
+                UiDrawing.DrawRoundedRectangle(g, border, rect, radius);
+            }
+        }
+
         private void FillList()
         {
+            if (_list == null) return;
+
             string selectedName = null;
-            if (_list.SelectedItems.Count > 0)
-            {
-                selectedName = (string)_list.SelectedItems[0].Tag;
-            }
+            if (_list.SelectedItems.Count > 0) selectedName = (string)_list.SelectedItems[0].Tag;
 
             _list.BeginUpdate();
             _list.Items.Clear();
-
             SnapAction[] ordered = SnapActions.Ordered;
             for (int i = 0; i < ordered.Length; i++)
             {
                 SnapAction action = ordered[i];
                 Hotkey hotkey = _config.Get(action);
-
                 ListViewItem item = new ListViewItem(SnapActions.Label(action));
                 item.SubItems.Add(hotkey.IsEmpty ? "(없음)" : hotkey.ToDisplayString());
                 item.SubItems.Add(SnapActions.Group(action));
                 item.Tag = action.ToString();
                 _list.Items.Add(item);
-
-                if (selectedName != null && selectedName == action.ToString())
-                {
-                    item.Selected = true;
-                }
+                if (selectedName != null && selectedName == action.ToString()) item.Selected = true;
             }
-
-            if (_list.SelectedItems.Count == 0 && _list.Items.Count > 0)
-            {
-                _list.Items[0].Selected = true;
-            }
+            if (_list.SelectedItems.Count == 0 && _list.Items.Count > 0) _list.Items[0].Selected = true;
             _list.EndUpdate();
+        }
+
+        private void FillMonitors()
+        {
+            if (_monitorList == null) return;
+            _monitorList.BeginUpdate();
+            _monitorList.Items.Clear();
+            Screen[] screens = Screen.AllScreens;
+            Array.Sort(screens, delegate(Screen a, Screen b)
+            {
+                if (a.Bounds.X != b.Bounds.X) return a.Bounds.X.CompareTo(b.Bounds.X);
+                return a.Bounds.Y.CompareTo(b.Bounds.Y);
+            });
+
+            for (int i = 0; i < screens.Length; i++)
+            {
+                Screen screen = screens[i];
+                ListViewItem item = new ListViewItem((i + 1).ToString());
+                item.SubItems.Add(screen.DeviceName);
+                item.SubItems.Add(screen.Bounds.Width + " × " + screen.Bounds.Height);
+                item.SubItems.Add(screen.WorkingArea.Width + " × " + screen.WorkingArea.Height);
+                item.SubItems.Add(screen.Primary ? "주 모니터" : "연결됨");
+                _monitorList.Items.Add(item);
+            }
+            _monitorList.EndUpdate();
         }
 
         private bool TryGetSelectedAction(out SnapAction action)
         {
             action = SnapAction.LeftHalf;
-            if (_list.SelectedItems.Count == 0)
-            {
-                return false;
-            }
+            if (_list == null || _list.SelectedItems.Count == 0) return false;
             return SnapActions.TryParse((string)_list.SelectedItems[0].Tag, out action);
         }
 
         private void OnSelectionChanged(object sender, EventArgs e)
         {
             SnapAction action;
-            if (!TryGetSelectedAction(out action))
-            {
-                return;
-            }
+            if (!TryGetSelectedAction(out action)) return;
             Hotkey hotkey = _config.Get(action);
             _capture.Captured = hotkey;
             _winModifier.Checked = hotkey.Win;
-
             _preview.SetAction(action);
             _previewNote.Text = SnapActions.Label(action) + "\r\n" + PreviewPanel.Describe(action);
         }
@@ -435,10 +683,7 @@ namespace EbenTilerWindows
             List<SnapAction> conflicts = new List<SnapAction>();
             foreach (KeyValuePair<SnapAction, Hotkey> pair in _config.Hotkeys)
             {
-                if (pair.Key != action && pair.Value != null && pair.Value.SameAs(hotkey))
-                {
-                    conflicts.Add(pair.Key);
-                }
+                if (pair.Key != action && pair.Value != null && pair.Value.SameAs(hotkey)) conflicts.Add(pair.Key);
             }
 
             if (conflicts.Count > 0)
@@ -446,7 +691,7 @@ namespace EbenTilerWindows
                 string names = "";
                 for (int i = 0; i < conflicts.Count; i++)
                 {
-                    if (i > 0) { names += ", "; }
+                    if (i > 0) names += ", ";
                     names += SnapActions.Label(conflicts[i]);
                 }
 
@@ -454,15 +699,9 @@ namespace EbenTilerWindows
                     hotkey.ToDisplayString() + " 는 이미 " + names + " 에 쓰이고 있습니다.\n" +
                     "그쪽 단축키를 비우고 이 기능에 지정할까요?",
                     "EbenTiler for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (answer != DialogResult.Yes)
-                {
-                    return;
-                }
+                if (answer != DialogResult.Yes) return;
 
-                for (int i = 0; i < conflicts.Count; i++)
-                {
-                    _config.Hotkeys[conflicts[i]] = new Hotkey();
-                }
+                for (int i = 0; i < conflicts.Count; i++) _config.Hotkeys[conflicts[i]] = new Hotkey();
             }
 
             _config.Hotkeys[action] = hotkey;
@@ -472,10 +711,7 @@ namespace EbenTilerWindows
         private void OnClear(object sender, EventArgs e)
         {
             SnapAction action;
-            if (!TryGetSelectedAction(out action))
-            {
-                return;
-            }
+            if (!TryGetSelectedAction(out action)) return;
             _config.Hotkeys[action] = new Hotkey();
             _capture.Captured = new Hotkey();
             _winModifier.Checked = false;
@@ -487,22 +723,71 @@ namespace EbenTilerWindows
             DialogResult answer = MessageBox.Show(this,
                 "모든 단축키를 처음 상태로 되돌릴까요?", "EbenTiler for Windows",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (answer != DialogResult.Yes)
-            {
-                return;
-            }
+            if (answer != DialogResult.Yes) return;
 
             Config defaults = Config.CreateDefault();
             _config.Hotkeys = defaults.Hotkeys;
             FillList();
         }
 
+        private void OnResetAllSettings(object sender, EventArgs e)
+        {
+            DialogResult answer = MessageBox.Show(this,
+                "단축키와 레이아웃 설정을 모두 처음 상태로 되돌릴까요?",
+                "EbenTiler for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (answer != DialogResult.Yes) return;
+
+            Config defaults = Config.CreateDefault();
+            _config.Hotkeys = defaults.Hotkeys;
+            _config.Gap = defaults.Gap;
+            _config.CycleHalves = defaults.CycleHalves;
+            if (_gap != null) _gap.Value = defaults.Gap;
+            if (_cycleHalves != null) _cycleHalves.Checked = defaults.CycleHalves;
+            FillList();
+        }
+
         private void OnSave(object sender, EventArgs e)
         {
-            _config.CycleHalves = _cycleHalves.Checked;
-            _config.Gap = (int)_gap.Value;
+            _config.CycleHalves = _cycleHalves != null && _cycleHalves.Checked;
+            _config.Gap = _gap != null ? (int)_gap.Value : 0;
+
+            if (_startupToggle != null && _startupToggle.Checked != Startup.IsEnabled())
+            {
+                if (!Startup.SetEnabled(_startupToggle.Checked))
+                {
+                    MessageBox.Show(this,
+                        "Windows 시작 프로그램 설정을 변경하지 못했습니다. 다시 시도해 주세요.",
+                        "EbenTiler for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        private void OpenTarget(string target)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(target)) return;
+                if (!target.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                    && !Directory.Exists(target)
+                    && !File.Exists(target))
+                {
+                    return;
+                }
+
+                ProcessStartInfo info = new ProcessStartInfo();
+                info.FileName = target;
+                info.UseShellExecute = true;
+                Process.Start(info);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(this, "해당 위치를 열지 못했습니다.", "EbenTiler for Windows",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
     }
 }

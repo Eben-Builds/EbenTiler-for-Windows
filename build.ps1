@@ -26,6 +26,24 @@ if (-not (Test-Path $outDir)) {
     New-Item -ItemType Directory -Path $outDir | Out-Null
 }
 
+# Fail early with a useful message when the local build output is still running.
+if (Test-Path $exePath) {
+    $probe = $null
+    try {
+        $probe = [System.IO.File]::Open(
+            $exePath,
+            [System.IO.FileMode]::Open,
+            [System.IO.FileAccess]::ReadWrite,
+            [System.IO.FileShare]::None)
+    }
+    catch [System.IO.IOException] {
+        throw "build\EbenTiler.exe is currently in use. Exit EbenTiler from the tray, or run 'Get-Process EbenTiler -ErrorAction SilentlyContinue | Stop-Process -Force', then build again."
+    }
+    finally {
+        if ($null -ne $probe) { $probe.Dispose() }
+    }
+}
+
 # Generate the EXE/installer icon from the same visual definition used by the website favicon.
 if (-not (Test-Path $iconScript)) {
     throw "App icon generator was not found: $iconScript"

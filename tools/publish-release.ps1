@@ -9,10 +9,14 @@ $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $root
 
 function Invoke-Git {
-    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
-    & git @Arguments
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$GitArgs
+    )
+
+    & git @GitArgs
     if ($LASTEXITCODE -ne 0) {
-        throw "git command failed: git $($Arguments -join ' ')"
+        throw "git command failed: git $($GitArgs -join ' ')"
     }
 }
 
@@ -39,7 +43,7 @@ if ($branch -ne 'main') {
 }
 
 Write-Host 'Fetching the latest protected main and existing tags...'
-Invoke-Git fetch origin main --tags
+Invoke-Git -GitArgs @('fetch', 'origin', 'main', '--tags')
 
 $head = (& git rev-parse HEAD).Trim()
 $remoteMain = (& git rev-parse origin/main).Trim()
@@ -88,9 +92,9 @@ Write-Host 'Mode: unsigned unless a valid code-signing identity is configured in
 Write-Host 'The GitHub Release will disclose the unsigned state and publish a SHA-256 checksum.'
 Write-Host ''
 
-Invoke-Git tag -a $tag -m "EbenTiler $Version"
+Invoke-Git -GitArgs @('tag', '-a', $tag, '-m', "EbenTiler $Version")
 try {
-    Invoke-Git push origin $tag
+    Invoke-Git -GitArgs @('push', 'origin', $tag)
 }
 catch {
     Write-Warning "The local tag $tag was created, but push failed. The tag was not deleted automatically."

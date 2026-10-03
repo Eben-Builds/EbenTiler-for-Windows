@@ -11,6 +11,8 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $srcDir = Join-Path $root 'src'
 $outDir = Join-Path $root 'build'
 $exePath = Join-Path $outDir 'EbenTiler.exe'
+$appConfigPath = Join-Path $root 'app.config'
+$runtimeConfigPath = Join-Path $outDir 'EbenTiler.exe.config'
 $iconPath = Join-Path $root 'assets\app.ico'
 $iconScript = Join-Path $root 'tools\make-appicon.ps1'
 
@@ -42,6 +44,10 @@ if (Test-Path $exePath) {
     finally {
         if ($null -ne $probe) { $probe.Dispose() }
     }
+}
+
+if (-not (Test-Path $appConfigPath)) {
+    throw "Runtime configuration was not found: $appConfigPath"
 }
 
 # Generate the EXE/installer icon from the same visual definition used by the website favicon.
@@ -79,6 +85,10 @@ if ($LASTEXITCODE -ne 0) {
     throw "Compilation failed (exit $LASTEXITCODE)"
 }
 
+# .NET Framework reads DPI behavior from EbenTiler.exe.config next to the executable.
+Copy-Item -Path $appConfigPath -Destination $runtimeConfigPath -Force
+
 $size = [Math]::Round((Get-Item $exePath).Length / 1KB, 1)
 Write-Host ''
 Write-Host "Build complete: $exePath ($size KB)"
+Write-Host "Runtime config: $runtimeConfigPath"

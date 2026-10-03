@@ -205,6 +205,7 @@ namespace EbenTilerWindows
             Config config = Config.Load();
             using (SettingsForm form = new SettingsForm(config))
             {
+                SettingsWelcomeGuide.Attach(form);
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     config.CopyFrom(form.ResultConfig);

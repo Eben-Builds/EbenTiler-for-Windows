@@ -1,6 +1,13 @@
-# EbenTiler 코드 서명 정책
+# EbenTiler Code signing policy
 
 이 문서는 EbenTiler의 **개발용 unsigned 빌드와 일반 사용자용 signed release를 분리**하는 기준을 정리합니다.
+
+## 현재 상태
+
+- EbenTiler는 공개 MIT OSS입니다.
+- 정식 공개 릴리스는 유효한 Authenticode 서명 없이는 게시하지 않습니다.
+- SignPath Foundation은 우선 검토 대상이지만 **아직 승인되거나 연결된 상태가 아닙니다.**
+- 승인 전에는 SignPath가 EbenTiler의 서명을 제공하는 것처럼 표시하지 않습니다.
 
 ## 핵심 원칙
 
@@ -10,6 +17,25 @@
 - 랜딩페이지는 자체 unsigned 설치 파일을 호스팅하지 않고 GitHub의 최신 정식 Release 자산으로 연결합니다.
 - `EbenTiler.exe`, 설치 프로그램, 제거 프로그램을 서명하고 SHA-256을 함께 검증합니다.
 - 인증서 개인키, 비밀번호, API 키는 저장소나 릴리스 자산, 로그에 포함하지 않습니다.
+
+## 프로젝트 역할
+
+현재 EbenTiler는 1인 유지보수 프로젝트입니다.
+
+- **Committer / Reviewer:** `Eben-Builds`
+- **Release Approver:** `Eben-Builds`
+- 외부 기여자가 생기면 외부 Pull Request는 maintainer 검토 후 반영합니다.
+- 코드서명 요청은 maintainer가 소스, 빌드 결과와 릴리스 버전을 확인한 뒤 승인합니다.
+
+저장소와 코드서명 서비스 계정에는 MFA를 사용합니다.
+
+## 개인정보 정책
+
+EbenTiler 앱은 텔레메트리, 광고, 분석 SDK 또는 원격 API를 사용하지 않으며 앱 자체가 사용자 데이터를 외부 시스템으로 전송하지 않습니다.
+
+상세 내용: [`PRIVACY.md`](../PRIVACY.md)
+
+> This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
 ## 2026년 코드 서명 키 보관
 
@@ -30,6 +56,20 @@ EbenTiler 저장소는 공개 OSS입니다. 따라서 다음 순서로 검토합
 3. **Microsoft Store/MSIX**: 향후 배포 채널을 Store 중심으로 바꿀 필요가 생길 때 검토
 
 코드서명 문제 하나 때문에 현재의 가벼운 Inno Setup 구조를 무리하게 갈아엎지는 않습니다.
+
+### SignPath Foundation 적용 시 추가되는 항목
+
+SignPath Foundation 승인을 받은 경우에만 홈페이지/다운로드/릴리스 화면에 다음 고지를 추가합니다.
+
+`Free code signing provided by SignPath.io, certificate by SignPath Foundation`
+
+승인 후에는 SignPath 프로젝트의 Artifact Configuration에서 다음을 강제합니다.
+
+- Product name: `EbenTiler for Windows`
+- 모든 서명 대상의 제품 버전 일치
+- EbenTiler 프로젝트가 직접 빌드한 바이너리만 서명
+- GitHub-hosted runner에서 만들어진 GitHub Actions artifact만 서명 요청
+- 정식 release signing request는 maintainer의 수동 승인 후 진행
 
 ## CI 분리
 
@@ -74,6 +114,8 @@ EbenTiler 저장소는 공개 OSS입니다. 따라서 다음 순서로 검토합
 3. 정식 릴리스에서 둘 다 없으면 실패
 
 HSM/클라우드 서명 공급자를 붙일 때는 Release workflow에서 공급자의 KSP/클라이언트를 준비한 뒤 최종 인증서 thumbprint를 `EBENTILER_SIGNING_CERT_SHA1`로 넘깁니다.
+
+SignPath Foundation이 승인되면 위 로컬 인증서 경로를 억지로 사용하지 않고 SignPath의 GitHub trusted-build 흐름에 맞춰 `GitHub Actions artifact → signing request → signed artifact → 검증 → Release` 순서로 별도 연결합니다.
 
 ## 릴리스 검증
 

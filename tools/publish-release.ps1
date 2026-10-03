@@ -59,11 +59,12 @@ if ($appVersion -ne $Version) {
 }
 
 $installerScript = Get-Content -LiteralPath (Join-Path $root 'installer\EbenTiler.iss') -Raw
-if ($installerScript -notmatch '#define AppVersion\s+"' + [regex]::Escape($Version) + '"') {
+$installerVersionPattern = '#define AppVersion\s+"' + [regex]::Escape($Version) + '"'
+if ($installerScript -notmatch $installerVersionPattern) {
     throw "installer/EbenTiler.iss does not declare AppVersion $Version."
 }
 
-$existingLocal = & git show-ref --tags --verify --quiet "refs/tags/$tag"
+& git rev-parse -q --verify "refs/tags/$tag" *> $null
 if ($LASTEXITCODE -eq 0) {
     throw "Tag already exists locally: $tag"
 }

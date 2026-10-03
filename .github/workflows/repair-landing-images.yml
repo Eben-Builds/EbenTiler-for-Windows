@@ -1,0 +1,55 @@
+name: Repair landing image binaries
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.repair/trigger.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  repair-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Decode and validate supplied images
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p website
+
+          cat .repair/hero.part* | tr -d '\r\n' | base64 -d > website/hero-ebentiler.webp
+          cat .repair/thirds.part* | tr -d '\r\n' | base64 -d > website/thirds-ebentiler.webp
+
+          python3 - <<'PY'
+          from pathlib import Path
+          expected = {
+              'website/hero-ebentiler.webp': ('7f08a6480574b0cbe3abadb2cd592d9278d55224f4309598c32f4af49495b0be', 65018),
+              'website/thirds-ebentiler.webp': ('01f48a1e7220afe59a6cfc90842f9497632ca77bcb02a5ed9eb61fb34a817360', 40416),
+          }
+          import hashlib
+          for name, (sha, size) in expected.items():
+              data = Path(name).read_bytes()
+              assert len(data) == size, (name, len(data), size)
+              assert data[:4] == b'RIFF' and data[8:12] == b'WEBP', name
+              assert hashlib.sha256(data).hexdigest() == sha, name
+          PY
+
+      - name: Commit repaired binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .repair
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A website/hero-ebentiler.webp website/thirds-ebentiler.webp .repair
+          git commit -m 'Repair supplied landing image binaries'
+          git push origin main

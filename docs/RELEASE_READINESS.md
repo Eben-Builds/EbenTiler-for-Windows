@@ -4,11 +4,9 @@
 
 ## 1. GitHub Rulesets
 
-현재 저장소에는 Ruleset이 없으므로 GitHub 웹에서 아래 두 개를 먼저 만듭니다.
+2026-10-03 기준 아래 두 Ruleset이 저장소에 **Active** 상태로 적용되어 있습니다.
 
 ### Protect main
-
-경로: `Repository > Settings > Rules > Rulesets > New branch ruleset`
 
 - 이름: `Protect main`
 - Enforcement status: `Active`
@@ -20,19 +18,18 @@
 
 ### Protect release tags
 
-경로: `Repository > Settings > Rules > Rulesets > New tag ruleset`
-
 - 이름: `Protect release tags`
 - Enforcement status: `Active`
 - Target pattern: `v*`
 - `Restrict updates`: 켬
 - `Restrict deletions`: 켬
+- `Block force pushes` / `Non-fast-forward`: 켬
 
-`Restrict creations`는 저장소 소유자가 태그를 만들 수 있도록 bypass actor를 정확히 설정한 경우에만 켭니다. 정식 릴리스 workflow 자체도 저장소 owner가 만든 `vMAJOR.MINOR.PATCH` 태그만 허용하고, 태그가 `main`의 커밋인지 다시 검증합니다.
+`Restrict creations`는 현재 켜지 않습니다. 정식 릴리스 workflow 자체가 저장소 owner가 만든 `vMAJOR.MINOR.PATCH` 태그만 허용하고, 태그가 `main`의 커밋인지 다시 검증합니다.
 
 ## 2. GitHub Topics
 
-발견성을 위해 저장소 About의 Topics에 다음을 권장합니다.
+저장소 About에 다음 Topics가 적용되어 있습니다.
 
 `windows`, `window-manager`, `window-tiling`, `productivity`, `hotkeys`, `desktop-app`, `winforms`, `dotnet-framework`, `multi-monitor`, `open-source`
 
@@ -53,9 +50,7 @@
 
 EbenTiler는 공개 MIT OSS이고 소스/빌드 스크립트를 직접 관리하며, 앱 자체는 원격 API·텔레메트리·사용자 데이터 전송 기능이 없습니다. 구조상 SignPath Foundation의 무료 OSS 코드서명 후보로 검토할 수 있습니다.
 
-다만 승인 여부는 SignPath Foundation이 결정하며, 현재 조건에는 프로젝트가 실제 배포 형태로 이미 공개되어 있어야 한다는 항목도 있습니다. 이 조건을 맞추기 위해 unsigned 설치파일을 성급하게 정식 배포하지 않습니다. 신청 전에 SignPath 쪽에 현재 공개 저장소와 릴리스 준비 상태로 가능한지 먼저 확인합니다.
-
-SignPath를 실제 적용하게 되면 프로젝트 홈페이지/다운로드 페이지의 `Code signing policy`에도 SignPath가 요구하는 문구, 역할, 개인정보 정책과 면책 고지를 추가합니다. 승인 전에는 SignPath가 현재 EbenTiler의 서명을 제공하는 것처럼 표시하지 않습니다.
+2026-10-03 신청을 제출했으며 승인 여부는 SignPath Foundation이 결정합니다. 승인 전에는 SignPath가 현재 EbenTiler의 서명을 제공하는 것처럼 표시하지 않습니다.
 
 참고:
 - https://signpath.org/terms.html
@@ -68,16 +63,35 @@ SignPath를 실제 적용하게 되면 프로젝트 홈페이지/다운로드 �
 - 기존 공개 Git 히스토리는 파괴적인 rewrite 없이 유지
 - `.env`, PFX/P12/PEM/KEY 등 민감 파일은 저장소에 커밋하지 않음
 
-## 5. v1.0.0 생성 조건
+## 5. UI / DPI 최종 확인
+
+설정 > 일반에 `시작 가이드 다시 보기`가 있고, 수동으로 다시 연 가이드는 첫 실행 전용 `다시 표시하지 않기` 상태를 변경하지 않습니다.
+
+실제 Windows 디스플레이 배율에서 다음을 각각 확인합니다.
+
+- 100%
+- 125%
+- 150%
+
+각 배율에서 아래 스크립트를 실행하면 첫 실행 가이드, 설정 > 일반, 설정에서 다시 연 가이드를 실제 창으로 띄워 크기를 검증하고 PNG를 저장합니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\capture-dpi-ui.ps1
+```
+
+최종 판정에는 생성된 PNG에서 글자 잘림, 겹침, 버튼 잘림이 없는지 눈으로 확인하는 절차가 포함됩니다.
+
+## 6. v1.0.0 생성 조건
 
 다음이 모두 완료될 때만 `v1.0.0` 태그를 만듭니다.
 
-- `main` Ruleset 활성화
-- `v*` tag Ruleset 활성화
-- 코드서명 공급자/인증서 연결
-- 실제 Windows에서 설정 UI와 첫 실행 가이드 최종 확인
-- 정식 Release workflow의 Authenticode 검증 통과
-- GitHub Release에 `EbenTiler-Setup.exe`와 `.sha256` 게시
-- 랜딩페이지 다운로드가 해당 signed Release를 가리키는지 확인
+- [x] `main` Ruleset 활성화
+- [x] `v*` tag Ruleset 활성화
+- [x] GitHub Topics 설정
+- [ ] 코드서명 공급자/인증서 연결 또는 공개 배포 정책 최종 결정
+- [ ] 실제 Windows 100% / 125% / 150%에서 설정 UI와 첫 실행 가이드 최종 확인
+- [ ] 정식 Release workflow의 Authenticode 검증 통과
+- [ ] GitHub Release에 `EbenTiler-Setup.exe`와 `.sha256` 게시
+- [ ] 랜딩페이지 다운로드가 해당 signed Release를 가리키는지 확인
 
 이 조건 전에는 `v1.0.0` 태그를 만들지 않습니다.

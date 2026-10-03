@@ -19,7 +19,7 @@
 
       link.dataset.busy = 'true';
       const original = link.innerHTML;
-      link.innerHTML = `<span class="win-symbol" aria-hidden="true">${windowsLogo}</span> 안전한 릴리스로 이동 중…`;
+      link.innerHTML = `<span class="win-symbol" aria-hidden="true">${windowsLogo}</span> 최신 릴리스로 이동 중…`;
       window.setTimeout(() => {
         link.innerHTML = original;
         delete link.dataset.busy;

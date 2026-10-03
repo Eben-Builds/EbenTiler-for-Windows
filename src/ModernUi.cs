@@ -194,6 +194,7 @@ namespace EbenTilerWindows
         private bool _hover;
         private bool _selected;
 
+        // 이전 버전과의 소스 호환을 위해 남겨 두되 실제 렌더링은 벡터 아이콘을 사용한다.
         public string Glyph { get; set; }
         public bool Selected
         {
@@ -257,17 +258,93 @@ namespace EbenTilerWindows
                 }
             }
 
-            Rectangle glyphRect = new Rectangle(16, 0, 28, Height);
-            Rectangle textRect = new Rectangle(46, 0, Math.Max(1, Width - 54), Height);
-            if (!string.IsNullOrEmpty(Glyph))
-            {
-                TextRenderer.DrawText(g, Glyph, Font, glyphRect, textColor,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
-                    | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
-            }
+            int iconSize = Math.Max(17, Math.Min(21, Font.Height + 4));
+            Rectangle iconRect = new Rectangle(19, Math.Max(0, (Height - iconSize) / 2), iconSize, iconSize);
+            DrawNavigationIcon(g, iconRect, textColor);
+
+            Rectangle textRect = new Rectangle(48, 0, Math.Max(1, Width - 56), Height);
             TextRenderer.DrawText(g, Text, Font, textRect, textColor,
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter
                 | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
+        }
+
+        private void DrawNavigationIcon(Graphics g, Rectangle bounds, Color color)
+        {
+            float x = bounds.X + 1.5f;
+            float y = bounds.Y + 1.5f;
+            float w = Math.Max(10f, bounds.Width - 3f);
+            float h = Math.Max(10f, bounds.Height - 3f);
+            float stroke = Math.Max(1.35f, bounds.Width / 13f);
+
+            using (Pen pen = new Pen(color, stroke))
+            using (SolidBrush brush = new SolidBrush(color))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                pen.LineJoin = LineJoin.Round;
+
+                if (Text == "일반")
+                {
+                    // Fluent 계열의 조절 슬라이더 아이콘.
+                    float y1 = y + h * 0.26f;
+                    float y2 = y + h * 0.50f;
+                    float y3 = y + h * 0.74f;
+                    g.DrawLine(pen, x, y1, x + w, y1);
+                    g.DrawLine(pen, x, y2, x + w, y2);
+                    g.DrawLine(pen, x, y3, x + w, y3);
+                    g.FillEllipse(brush, x + w * 0.24f - stroke * 1.3f, y1 - stroke * 1.3f, stroke * 2.6f, stroke * 2.6f);
+                    g.FillEllipse(brush, x + w * 0.68f - stroke * 1.3f, y2 - stroke * 1.3f, stroke * 2.6f, stroke * 2.6f);
+                    g.FillEllipse(brush, x + w * 0.43f - stroke * 1.3f, y3 - stroke * 1.3f, stroke * 2.6f, stroke * 2.6f);
+                    return;
+                }
+
+                if (Text == "단축키")
+                {
+                    RectangleF keyboard = new RectangleF(x, y + h * 0.12f, w, h * 0.76f);
+                    UiDrawing.DrawRoundedRectangle(g, pen, keyboard, 2.8f);
+                    float key = Math.Max(1.4f, w * 0.10f);
+                    float gap = w * 0.08f;
+                    for (int row = 0; row < 2; row++)
+                    {
+                        for (int col = 0; col < 4; col++)
+                        {
+                            float kx = x + w * 0.15f + col * (key + gap);
+                            float ky = y + h * (0.30f + row * 0.22f);
+                            g.FillRectangle(brush, kx, ky, key, key);
+                        }
+                    }
+                    g.FillRectangle(brush, x + w * 0.27f, y + h * 0.70f, w * 0.46f, Math.Max(1.4f, stroke));
+                    return;
+                }
+
+                if (Text == "레이아웃")
+                {
+                    RectangleF outer = new RectangleF(x, y, w, h);
+                    UiDrawing.DrawRoundedRectangle(g, pen, outer, 2.6f);
+                    float splitX = x + w * 0.45f;
+                    float splitY = y + h * 0.52f;
+                    g.DrawLine(pen, splitX, y, splitX, y + h);
+                    g.DrawLine(pen, splitX, splitY, x + w, splitY);
+                    return;
+                }
+
+                if (Text == "모니터")
+                {
+                    RectangleF screen = new RectangleF(x, y, w, h * 0.68f);
+                    UiDrawing.DrawRoundedRectangle(g, pen, screen, 2.7f);
+                    float center = x + w / 2f;
+                    float standTop = y + h * 0.68f;
+                    g.DrawLine(pen, center, standTop, center, y + h * 0.86f);
+                    g.DrawLine(pen, center - w * 0.22f, y + h * 0.90f, center + w * 0.22f, y + h * 0.90f);
+                    return;
+                }
+
+                // 정보: 둥근 정보 마크.
+                g.DrawEllipse(pen, x, y, w, h);
+                float centerX = x + w / 2f;
+                g.FillEllipse(brush, centerX - stroke * 0.8f, y + h * 0.22f, stroke * 1.6f, stroke * 1.6f);
+                g.DrawLine(pen, centerX, y + h * 0.45f, centerX, y + h * 0.72f);
+            }
         }
     }
 

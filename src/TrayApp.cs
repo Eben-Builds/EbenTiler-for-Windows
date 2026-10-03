@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace EbenTilerWindows
@@ -16,6 +17,12 @@ namespace EbenTilerWindows
         private readonly ToolStripMenuItem _startupItem;
         private ContextMenuStrip _menu;
         private SettingsForm _settingsForm;
+        private int _menuDpi;
+        private Font _menuRegularFont;
+        private Font _menuBoldFont;
+
+        [DllImport("user32.dll")]
+        private static extern uint GetDpiForWindow(IntPtr hwnd);
 
         public TrayApp()
         {
@@ -45,7 +52,15 @@ namespace EbenTilerWindows
             exitItem.Click += delegate { ExitApp(); };
             menu.Items.Add(exitItem);
 
-            menu.Opening += delegate { _startupItem.Checked = Startup.IsEnabled(); };
+            // WinForms의 자동 DPI 리사이징을 사용하지 않으므로 트레이 메뉴는 열릴 때마다
+            // 현재 메뉴 창의 DPI를 기준으로 명시적으로 크기를 맞춘다.
+            ApplyMenuScale(menu);
+            menu.Opening += delegate
+            {
+                _startupItem.Checked = Startup.IsEnabled();
+                ApplyMenuScale(menu);
+            };
+            menu.Opened += delegate { ApplyMenuScale(menu); };
             _menu = menu;
 
             _tray = new NotifyIcon();
@@ -86,6 +101,78 @@ namespace EbenTilerWindows
             item.Padding = new Padding(8, 5, 8, 5);
             item.AutoToolTip = false;
             return item;
+        }
+
+        private void ApplyMenuScale(ContextMenuStrip menu)
+        {
+            int dpi = GetMenuDpi(menu);
+            if (dpi <= 0) dpi = 96;
+            if (_menuDpi == dpi) return;
+
+            float scale = dpi / 96f;
+            int Scale(int value)
+            {
+                return Math.Max(1, (int)Math.Round(value * scale));
+            }
+
+            Font regular = new Font("Malgun Gothic", 12f * scale, FontStyle.Regular, GraphicsUnit.Pixel);
+            Font bold = new Font("Malgun Gothic", 12f * scale, FontStyle.Bold, GraphicsUnit.Pixel);
+            Font oldRegular = _menuRegularFont;
+            Font oldBold = _menuBoldFont;
+
+            menu.SuspendLayout();
+            try
+            {
+                menu.Font = regular;
+                menu.Padding = new Padding(Scale(6));
+                menu.MinimumSize = new Size(Scale(220), 0);
+
+                foreach (ToolStripItem item in menu.Items)
+                {
+                    ToolStripMenuItem menuItem = item as ToolStripMenuItem;
+                    if (menuItem != null)
+                    {
+                        bool isBold = menuItem.Font != null && menuItem.Font.Bold;
+                        menuItem.Font = isBold ? bold : regular;
+                        menuItem.Padding = new Padding(Scale(8), Scale(5), Scale(8), Scale(5));
+                    }
+                    else if (item is ToolStripSeparator)
+                    {
+                        item.Margin = new Padding(Scale(4), Scale(2), Scale(4), Scale(2));
+                    }
+                }
+            }
+            finally
+            {
+                menu.ResumeLayout(true);
+            }
+
+            _menuRegularFont = regular;
+            _menuBoldFont = bold;
+            _menuDpi = dpi;
+
+            if (oldRegular != null) oldRegular.Dispose();
+            if (oldBold != null) oldBold.Dispose();
+        }
+
+        private static int GetMenuDpi(ContextMenuStrip menu)
+        {
+            if (menu != null && menu.IsHandleCreated)
+            {
+                try
+                {
+                    uint dpi = GetDpiForWindow(menu.Handle);
+                    if (dpi > 0) return (int)dpi;
+                }
+                catch (EntryPointNotFoundException)
+                {
+                }
+            }
+
+            using (Graphics g = Graphics.FromHwnd(IntPtr.Zero))
+            {
+                return (int)Math.Round(g.DpiX);
+            }
         }
 
         private void OnTrayMouseUp(object sender, MouseEventArgs e)
@@ -162,6 +249,8 @@ namespace EbenTilerWindows
             _tray.Visible = false;
             _tray.Dispose();
             if (_menu != null) _menu.Dispose();
+            if (_menuRegularFont != null) _menuRegularFont.Dispose();
+            if (_menuBoldFont != null) _menuBoldFont.Dispose();
             _hotkeys.Dispose();
             ExitThread();
         }

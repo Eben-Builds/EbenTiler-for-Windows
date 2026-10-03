@@ -4,10 +4,16 @@ using System.Windows.Forms;
 
 namespace EbenTilerWindows
 {
-    /// <summary>첫 실행 때 한 번만 보여 주는 최소 안내 화면.</summary>
+    /// <summary>처음 사용하는 사람을 위한 최소 안내 화면.</summary>
     public sealed class WelcomeForm : Form
     {
         private readonly float _scale;
+        private CheckBox _doNotShowAgain;
+
+        public bool DoNotShowAgain
+        {
+            get { return _doNotShowAgain != null && _doNotShowAgain.Checked; }
+        }
 
         public WelcomeForm()
         {
@@ -54,14 +60,14 @@ namespace EbenTilerWindows
             BackColor = UiPalette.Canvas;
             ForeColor = UiPalette.Text;
             Font = MakeFont(9f, FontStyle.Regular);
-            ClientSize = new Size(S(650), S(438));
+            ClientSize = new Size(S(650), S(454));
             KeyPreview = true;
             DoubleBuffered = true;
 
             PictureBox iconBox = new PictureBox();
             iconBox.Location = new Point(S(28), S(24));
             iconBox.Size = new Size(S(48), S(48));
-            iconBox.SizeMode = PictureBoxSizeMode.StretchImage;
+            iconBox.SizeMode = PictureBoxSizeMode.Normal;
             Icon icon = AppIcon.LoadSized(S(48));
             iconBox.Image = icon.ToBitmap();
             icon.Dispose();
@@ -95,7 +101,18 @@ namespace EbenTilerWindows
                 "작업표시줄 오른쪽 EbenTiler 아이콘에서 언제든 단축키와 시작 옵션을 바꿀 수 있습니다.",
                 30, 360, 590, 24, 8.8f, FontStyle.Regular, UiPalette.TextMuted));
 
-            RoundedButton settings = MakeButton("단축키 설정", 370, 392, 116, false);
+            _doNotShowAgain = new CheckBox();
+            _doNotShowAgain.Text = "다시 표시하지 않기";
+            _doNotShowAgain.Location = new Point(S(30), S(408));
+            _doNotShowAgain.Size = new Size(S(190), S(28));
+            _doNotShowAgain.Font = MakeFont(8.8f, FontStyle.Regular);
+            _doNotShowAgain.ForeColor = UiPalette.TextMuted;
+            _doNotShowAgain.BackColor = UiPalette.Canvas;
+            _doNotShowAgain.Checked = true;
+            _doNotShowAgain.AccessibleName = "시작 가이드를 다시 표시하지 않기";
+            Controls.Add(_doNotShowAgain);
+
+            RoundedButton settings = MakeButton("단축키 설정", 370, 402, 116, false);
             settings.Click += delegate
             {
                 DialogResult = DialogResult.Yes;
@@ -103,7 +120,7 @@ namespace EbenTilerWindows
             };
             Controls.Add(settings);
 
-            RoundedButton start = MakeButton("바로 시작", 496, 392, 126, true);
+            RoundedButton start = MakeButton("바로 시작", 496, 402, 126, true);
             start.Click += delegate
             {
                 DialogResult = DialogResult.OK;

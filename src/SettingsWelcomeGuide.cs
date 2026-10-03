@@ -22,24 +22,24 @@ namespace EbenTilerWindows
             MoveResetSection(generalPage, scale);
 
             Panel separator = new Panel();
-            separator.Location = new Point(S(0, scale), S(384, scale));
+            separator.Location = new Point(S(0, scale), S(382, scale));
             separator.Size = new Size(S(690, scale), Math.Max(1, S(1, scale)));
             separator.BackColor = UiPalette.Border;
             generalPage.Controls.Add(separator);
 
             Label title = MakeLabel(
-                "시작 가이드", 0, 316, 150, 22, 10.5f, FontStyle.Bold, UiPalette.Text, scale);
+                "시작 가이드", 0, 312, 150, 22, 10.5f, FontStyle.Bold, UiPalette.Text, scale);
             generalPage.Controls.Add(title);
 
             Label description = MakeLabel(
                 "처음 실행할 때 보았던 핵심 단축키 안내를 다시 확인합니다.",
-                0, 346, 500, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted, scale);
+                0, 340, 500, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted, scale);
             generalPage.Controls.Add(description);
 
             RoundedButton button = new RoundedButton();
             button.Name = ButtonName;
             button.Text = "시작 가이드 다시 보기";
-            button.Location = new Point(S(526, scale), S(336, scale));
+            button.Location = new Point(S(526, scale), S(332, scale));
             button.Size = new Size(S(166, scale), S(34, scale));
             button.PrimaryStyle = false;
             button.CornerRadius = S(8, scale);
@@ -64,15 +64,15 @@ namespace EbenTilerWindows
                 Control control = page.Controls[i];
                 if (control is Label && string.Equals(control.Text, "초기화", StringComparison.Ordinal))
                 {
-                    control.Location = new Point(S(0, scale), S(404, scale));
+                    control.Location = new Point(S(0, scale), S(398, scale));
                 }
                 else if (control is Label && control.Text.StartsWith("단축키와 레이아웃 설정을", StringComparison.Ordinal))
                 {
-                    control.Location = new Point(S(0, scale), S(428, scale));
+                    control.Location = new Point(S(0, scale), S(422, scale));
                 }
                 else if (control is Button && string.Equals(control.Text, "앱 설정 초기화", StringComparison.Ordinal))
                 {
-                    control.Location = new Point(S(548, scale), S(410, scale));
+                    control.Location = new Point(S(548, scale), S(408, scale));
                 }
             }
         }

@@ -126,7 +126,7 @@ jobs:
           path: release-artifacts
 
       - name: Publish GitHub Release
-        shell: powershell
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

@@ -249,14 +249,8 @@ namespace EbenTilerWindows
                 UiDrawing.FillRoundedRectangle(g, fillBrush, rect, 8f);
             }
 
-            if (_selected)
-            {
-                RectangleF accent = new RectangleF(5f, 9f, 3f, Math.Max(10f, Height - 18f));
-                using (SolidBrush accentBrush = new SolidBrush(UiPalette.Primary))
-                {
-                    UiDrawing.FillRoundedRectangle(g, accentBrush, accent, 2f);
-                }
-            }
+            // UI 지침: 선택 상태는 배경색과 아이콘/텍스트 색으로만 표현한다.
+            // 선택 강조용 세로바, 가로바, 밑줄, 사이드 레일은 사용하지 않는다.
 
             int iconSize = Math.Max(17, Math.Min(21, Font.Height + 4));
             Rectangle iconRect = new Rectangle(19, Math.Max(0, (Height - iconSize) / 2), iconSize, iconSize);
@@ -285,16 +279,24 @@ namespace EbenTilerWindows
 
                 if (Text == "일반")
                 {
-                    // Fluent 계열의 조절 슬라이더 아이콘.
-                    float y1 = y + h * 0.26f;
-                    float y2 = y + h * 0.50f;
-                    float y3 = y + h * 0.74f;
-                    g.DrawLine(pen, x, y1, x + w, y1);
-                    g.DrawLine(pen, x, y2, x + w, y2);
-                    g.DrawLine(pen, x, y3, x + w, y3);
-                    g.FillEllipse(brush, x + w * 0.24f - stroke * 1.3f, y1 - stroke * 1.3f, stroke * 2.6f, stroke * 2.6f);
-                    g.FillEllipse(brush, x + w * 0.68f - stroke * 1.3f, y2 - stroke * 1.3f, stroke * 2.6f, stroke * 2.6f);
-                    g.FillEllipse(brush, x + w * 0.43f - stroke * 1.3f, y3 - stroke * 1.3f, stroke * 2.6f, stroke * 2.6f);
+                    // 일반 설정을 바로 연상할 수 있는 톱니형 설정 아이콘.
+                    float cx = x + w / 2f;
+                    float cy = y + h / 2f;
+                    float outer = Math.Min(w, h) * 0.46f;
+                    float ring = outer * 0.58f;
+                    for (int i = 0; i < 8; i++)
+                    {
+                        double angle = Math.PI * 2.0 * i / 8.0;
+                        float sx = cx + (float)Math.Cos(angle) * ring;
+                        float sy = cy + (float)Math.Sin(angle) * ring;
+                        float ex = cx + (float)Math.Cos(angle) * outer;
+                        float ey = cy + (float)Math.Sin(angle) * outer;
+                        g.DrawLine(pen, sx, sy, ex, ey);
+                    }
+                    float ringSize = ring * 2f;
+                    g.DrawEllipse(pen, cx - ring, cy - ring, ringSize, ringSize);
+                    float hub = Math.Max(stroke * 1.35f, outer * 0.20f);
+                    g.DrawEllipse(pen, cx - hub, cy - hub, hub * 2f, hub * 2f);
                     return;
                 }
 

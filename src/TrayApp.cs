@@ -212,7 +212,6 @@ namespace EbenTilerWindows
                     });
                 }
                 catch (InvalidOperationException) { }
-                catch (ObjectDisposedException) { }
             });
         }
 

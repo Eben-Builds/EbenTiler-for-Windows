@@ -10,7 +10,6 @@ on:
       - 'assets/**'
       - 'installer/**'
       - 'tools/make-appicon.ps1'
-      - 'tools/prepare-code-signing.ps1'
       - 'tools/verify-installer.ps1'
       - 'tools/verify-release.ps1'
       - 'build.ps1'
@@ -29,11 +28,6 @@ jobs:
   build-installer:
     runs-on: windows-2025
     timeout-minutes: 15
-    env:
-      EBENTILER_SIGNING_CERT_SHA1: ${{ secrets.EBENTILER_SIGNING_CERT_SHA1 }}
-      SIGNING_PFX_BASE64: ${{ secrets.EBENTILER_SIGNING_PFX_BASE64 }}
-      SIGNING_PFX_PASSWORD: ${{ secrets.EBENTILER_SIGNING_PFX_PASSWORD }}
-      EBENTILER_TIMESTAMP_URL: https://timestamp.digicert.com
 
     steps:
       - name: Checkout
@@ -45,11 +39,8 @@ jobs:
         shell: powershell
         run: choco install innosetup --version=6.7.1 -y --no-progress
 
-      - name: Prepare configured code-signing identity
-        shell: powershell
-        run: .\tools\prepare-code-signing.ps1
-
-      - name: Build EbenTiler installer
+      # main CI is intentionally unsigned and never receives release signing secrets.
+      - name: Build unsigned EbenTiler installer
         shell: powershell
         run: .\build-installer.ps1
 
@@ -63,7 +54,7 @@ jobs:
           $actual = (Get-FileHash '.\dist\EbenTiler-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($expected -ne $actual) { throw "Installer SHA256 mismatch: $actual" }
 
-      - name: Exercise release verification
+      - name: Exercise release verification without signing requirement
         shell: powershell
         run: .\tools\verify-release.ps1
 
@@ -71,11 +62,12 @@ jobs:
         shell: powershell
         run: .\tools\verify-installer.ps1
 
-      - name: Upload installer
+      - name: Upload unsigned CI installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: EbenTiler-Setup
+          name: EbenTiler-Unsigned-CI
           path: |
             dist\EbenTiler-Setup.exe
             dist\EbenTiler-Setup.exe.sha256
           if-no-files-found: error
+          retention-days: 7

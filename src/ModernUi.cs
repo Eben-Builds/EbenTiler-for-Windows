@@ -75,10 +75,12 @@ namespace EbenTilerWindows
 
         public bool PrimaryStyle { get; set; }
         public int CornerRadius { get; set; }
+        public Color SurroundingBackColor { get; set; }
 
         public RoundedButton()
         {
             CornerRadius = 8;
+            SurroundingBackColor = Color.Empty;
             FlatStyle = FlatStyle.Flat;
             FlatAppearance.BorderSize = 0;
             UseVisualStyleBackColor = false;
@@ -120,7 +122,15 @@ namespace EbenTilerWindows
         protected override void OnPaint(PaintEventArgs pevent)
         {
             Graphics g = pevent.Graphics;
+            Color surrounding = !SurroundingBackColor.IsEmpty
+                ? SurroundingBackColor
+                : (Parent != null ? Parent.BackColor : UiPalette.Canvas);
+
+            // 이전 hover/pressed 프레임의 안티앨리어싱 픽셀이 모서리에 남지 않도록
+            // 컨트롤 전체를 실제 배경색으로 먼저 지운 뒤 둥근 버튼을 새로 그린다.
+            g.Clear(surrounding);
             g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
             Color fill;
             Color border;
@@ -146,12 +156,18 @@ namespace EbenTilerWindows
                 text = UiPalette.Text;
             }
 
-            RectangleF rect = new RectangleF(0.5f, 0.5f, Width - 1.5f, Height - 1.5f);
+            RectangleF rect = new RectangleF(
+                1f, 1f,
+                Math.Max(1f, Width - 2f),
+                Math.Max(1f, Height - 2f));
+            float radius = Math.Max(2f, CornerRadius - 0.5f);
+
             using (SolidBrush brush = new SolidBrush(fill))
             using (Pen pen = new Pen(border, 1f))
             {
-                UiDrawing.FillRoundedRectangle(g, brush, rect, CornerRadius);
-                UiDrawing.DrawRoundedRectangle(g, pen, rect, CornerRadius);
+                pen.Alignment = PenAlignment.Inset;
+                UiDrawing.FillRoundedRectangle(g, brush, rect, radius);
+                UiDrawing.DrawRoundedRectangle(g, pen, rect, radius);
             }
 
             TextRenderer.DrawText(
@@ -159,10 +175,16 @@ namespace EbenTilerWindows
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
                 | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
 
-            if (Focused && ShowFocusCues)
+            if (Focused && ShowFocusCues && Width > 10 && Height > 10)
             {
-                Rectangle focus = Rectangle.Inflate(ClientRectangle, -4, -4);
-                ControlPaint.DrawFocusRectangle(g, focus, text, fill);
+                RectangleF focusRect = new RectangleF(4f, 4f, Width - 8f, Height - 8f);
+                Color focusColor = PrimaryStyle ? Color.FromArgb(220, 255, 255, 255) : UiPalette.Primary;
+                using (Pen focusPen = new Pen(focusColor, 1f))
+                {
+                    focusPen.DashStyle = DashStyle.Dot;
+                    UiDrawing.DrawRoundedRectangle(
+                        g, focusPen, focusRect, Math.Max(2f, radius - 3f));
+                }
             }
         }
     }

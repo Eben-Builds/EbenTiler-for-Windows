@@ -1,175 +1,178 @@
 # EbenTiler for Windows
 
-단축키로 창을 화면 절반·사분면·3분할에 순식간에 붙여 주는 Windows 상주 프로그램.
+**English** | [한국어](README.ko.md)
 
-- 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
-- 실행 파일 하나, 약 100KB
-- 알림 영역에 상주, 설정 창에서 단축키 자유롭게 변경
-- 새 정식 버전이 있으면 최대 하루 한 번 알림으로 안내하며 자동 다운로드·설치는 하지 않음
+A lightweight Windows tray utility that snaps the active window to halves, quarters, thirds, and more with keyboard shortcuts.
+
+- No separate runtime installation required (.NET Framework 4.8 is included with Windows 10/11)
+- Single executable, about 100 KB
+- Runs in the notification area with fully configurable hotkeys
+- Checks for new stable releases at most once per day and notifies you without automatic downloads or installation
 
 [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Code signing policy](docs/CODE_SIGNING.md)
 
-## 기본 단축키
+## Default shortcuts
 
-| 단축키 | 하는 일 |
+| Shortcut | Action |
 | --- | --- |
-| `Ctrl + Alt + ←` | 왼쪽 절반 |
-| `Ctrl + Alt + →` | 오른쪽 절반 |
-| `Ctrl + Alt + ↑` | 위쪽 절반 |
-| `Ctrl + Alt + ↓` | 아래쪽 절반 |
-| `Ctrl + Alt + U` | 왼쪽 위 1/4 |
-| `Ctrl + Alt + I` | 오른쪽 위 1/4 |
-| `Ctrl + Alt + J` | 왼쪽 아래 1/4 |
-| `Ctrl + Alt + K` | 오른쪽 아래 1/4 |
-| `Ctrl + Alt + D` / `F` / `H` | 왼쪽 / 가운데 / 오른쪽 1/3 |
-| `Ctrl + Alt + E` / `T` | 왼쪽 2/3 / 오른쪽 2/3 |
-| `Ctrl + Alt + Enter` | 전체 화면(최대화) |
-| `Ctrl + Alt + Shift + ↑` | 세로만 최대 (가로 폭 유지) |
-| `Ctrl + Alt + C` | 화면 가운데로 |
-| `Ctrl + Alt + =` / `-` | 크기 키우기 / 줄이기 |
-| `Ctrl + Alt + Backspace` | 배치 전 원래 크기로 복원 |
-| `Ctrl + Alt + Shift + →` / `←` | 다음 / 이전 모니터로 이동 |
+| `Ctrl + Alt + ←` | Left half |
+| `Ctrl + Alt + →` | Right half |
+| `Ctrl + Alt + ↑` | Top half |
+| `Ctrl + Alt + ↓` | Bottom half |
+| `Ctrl + Alt + U` | Top-left quarter |
+| `Ctrl + Alt + I` | Top-right quarter |
+| `Ctrl + Alt + J` | Bottom-left quarter |
+| `Ctrl + Alt + K` | Bottom-right quarter |
+| `Ctrl + Alt + D` / `F` / `H` | Left / center / right third |
+| `Ctrl + Alt + E` / `T` | Left 2/3 / right 2/3 |
+| `Ctrl + Alt + Enter` | Maximize |
+| `Ctrl + Alt + Shift + ↑` | Vertical maximize while keeping width |
+| `Ctrl + Alt + C` | Center on screen |
+| `Ctrl + Alt + =` / `-` | Grow / shrink |
+| `Ctrl + Alt + Backspace` | Restore the pre-snap position and size |
+| `Ctrl + Alt + Shift + →` / `←` | Move to next / previous monitor |
 
-`Ctrl + 방향키`를 쓰지 않는 이유: 거의 모든 텍스트 편집기와 브라우저에서 단어 단위 커서 이동에 쓰이는 조합이라,
-전역 단축키로 뺏으면 타이핑이 망가진다. 설정 창에서 원하는 조합으로 바꿀 수 있다.
+Why not use `Ctrl + Arrow`? Most editors and browsers already use those shortcuts for word-by-word cursor movement. Taking them globally would interfere with normal typing. You can change every shortcut in Settings.
 
-### 같은 키를 연달아 누르면 폭이 바뀐다
+### Repeating a shortcut cycles the width
 
-`Ctrl + Alt + ←` 를 세 번 연달아 누르면 왼쪽 **1/2 → 1/3 → 2/3** 순으로 폭이 바뀐다.
-2초 안에 다시 누를 때만 순환하고, 그 뒤에는 다시 1/2 부터 시작한다.
-설정 창에서 끌 수 있다.
+Press `Ctrl + Alt + ←` repeatedly and the left-side layout cycles through **1/2 → 1/3 → 2/3**.
+The cycle only continues when the shortcut is pressed again within two seconds; otherwise it starts again from 1/2.
+This behavior can be disabled in Settings.
 
-## 설치
+## Installation
 
-일반 사용자는 `EbenTiler-Setup.exe`를 더블클릭하면 된다.
-관리자 권한이 필요하지 않고 현재 사용자 계정에만 설치된다.
+For normal use, download and double-click `EbenTiler-Setup.exe`.
+Administrator privileges are not required, and the app installs only for the current Windows user.
 
-- 프로그램: `%LOCALAPPDATA%\Programs\EbenTiler\EbenTiler.exe`
-- 시작 메뉴 바로 가기 등록
-- 설치 화면에서 Windows 시작 시 자동 실행 여부 선택
-- 설치 후 바로 실행 가능
-- 제거: Windows **설정 > 앱 > 설치된 앱 > EbenTiler for Windows > 제거**
+- Program path: `%LOCALAPPDATA%\Programs\EbenTiler\EbenTiler.exe`
+- Adds a Start menu shortcut
+- Lets you choose whether EbenTiler starts with Windows
+- Can launch immediately after installation
+- Uninstall from **Settings > Apps > Installed apps > EbenTiler for Windows > Uninstall**
 
-자세한 설치/인스톨러 빌드/코드 서명 안내는 [`INSTALL.md`](INSTALL.md)를 참고한다.
+See [`INSTALL.md`](INSTALL.md) for detailed installation, installer build, and code-signing information.
 
-개발 중 직접 설치 스크립트를 써야 한다면 기존 PowerShell 방식도 사용할 수 있다.
+For development, the PowerShell installer is also available:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File install.ps1
 powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
 ```
 
-설정까지 남기고 제거하려면 `-KeepConfig`, 자동 시작을 등록하지 않으려면 설치 시 `-NoStartup`을 붙인다.
+Use `-KeepConfig` when uninstalling if you want to preserve settings. Use `-NoStartup` during installation to avoid registering startup launch.
 
-## 빌드
+## Build
 
-.NET SDK 를 설치할 필요 없다. Windows 에 기본으로 들어 있는 .NET Framework 4.8 컴파일러로 바로 빌드한다.
+The .NET SDK is not required. EbenTiler builds with the .NET Framework 4.8 compiler available on Windows.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-결과물은 `build\EbenTiler.exe` 하나다. 원하는 곳에 두고 실행하면 된다.
+The output is:
 
-정식 설치 프로그램은 다음 명령으로 만든다.
+```text
+build\EbenTiler.exe
+```
+
+To build the installer:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build-installer.ps1
 ```
 
-결과물:
+Outputs:
 
 ```text
 dist\EbenTiler-Setup.exe
 dist\EbenTiler-Setup.exe.sha256
 ```
 
-## 실행
+## Running EbenTiler
 
-설치했다면 이미 실행 중이다. 설치 없이 그냥 써 보려면:
+If you installed EbenTiler, it should already be running. To try it without installing:
 
 ```powershell
 build\EbenTiler.exe
 ```
 
-알림 영역(작업표시줄 오른쪽)에 아이콘이 생긴다. **아이콘이 안 보이면 `∧` 를 눌러 숨김 목록을 확인**하면 된다.
-Windows 는 처음 보는 프로그램의 아이콘을 기본으로 숨김 처리한다.
+An icon appears in the Windows notification area. **If you do not see it, click `∧` to check the hidden tray icons.** Windows may hide icons from newly installed apps by default.
 
-아이콘을 **왼쪽으로 누르든 오른쪽으로 누르든** 메뉴가 뜬다.
+Left-clicking or right-clicking the tray icon opens the menu.
 
-- `단축키 설정...` : 설정 창
-- `Windows 시작할 때 함께 실행` : 자동 시작 등록/해제. 현재 켜져 있으면 앞에 체크 표시가 붙는다.
-- `종료`
+- `Hotkey settings...` opens Settings
+- `Start with Windows` toggles startup registration and shows a check mark when enabled
+- `Exit` closes EbenTiler
 
-메뉴를 열 때마다 실제 등록 상태를 다시 읽어 체크를 맞추므로, 설정을 다른 데서 바꿔도 표시가 어긋나지 않는다.
+The tray menu re-reads the actual startup registration state whenever it opens, so the check mark stays in sync even if the setting changes elsewhere.
 
-### 처음 실행할 때
+### First run
 
-처음 사용하는 사람에게는 핵심 단축키를 설명하는 시작 가이드가 표시된다.
-`다시 표시하지 않기`가 기본으로 선택되어 있어 보통 한 번만 나타난다. 체크를 풀고 닫으면 다음 실행 때 다시 볼 수 있다.
+New users see a short welcome guide explaining the core shortcuts.
+`Do not show again` is selected by default, so the guide normally appears once. Clear that option before closing if you want to see it again next time.
 
-### 업데이트 확인
+### Update checks
 
-EbenTiler는 최대 24시간에 한 번 GitHub의 공개 최신 Release 정보를 확인한다.
-현재 버전보다 새 정식 버전이 있으면 Windows 알림으로 한 번 알려 준다.
+EbenTiler checks GitHub's public latest Release metadata at most once every 24 hours.
+If a newer stable version exists, Windows shows a one-time notification.
 
-알림을 누르면 `설정 > 정보`가 열리며, 여기서 `업데이트 확인`을 직접 눌러 언제든 다시 확인할 수 있다.
-업데이트 파일을 백그라운드에서 자동 다운로드하거나 자동 설치하지 않는다. 새 버전이 있으면 사용자가 직접 GitHub Release 페이지를 열어 확인한다.
+Clicking the notification opens `Settings > About`, where you can also press `Check for updates` manually at any time.
+EbenTiler does not download or install updates in the background. When a new version is available, the user chooses whether to open the GitHub Release page.
 
-## 명령줄에서 쓰기
+## Command line usage
 
-스크립트나 다른 도구에서 창 배치를 시킬 수도 있다.
+EbenTiler can also be controlled from scripts or other tools.
 
 ```powershell
-EbenTiler.exe --apply LeftHalf                 # 지금 활성 창을 왼쪽 절반에
-EbenTiler.exe --apply TopRight --hwnd 0x3B078E # 창을 직접 지정
-EbenTiler.exe --info                           # 활성 창 위치와 화면 작업 영역 확인
-EbenTiler.exe --list                           # 쓸 수 있는 명령 목록
-EbenTiler.exe --settings                       # 설정 창만 열기
-EbenTiler.exe --check                          # 단축키가 다른 프로그램과 겹치는지 확인
-EbenTiler.exe --startup on|off|status          # 윈도우 시작 시 자동 실행 등록/해제/확인
-EbenTiler.exe --out result.txt --info          # 결과를 파일로도 저장
+EbenTiler.exe --apply LeftHalf                 # Snap the active window to the left half
+EbenTiler.exe --apply TopRight --hwnd 0x3B078E # Target a specific window
+EbenTiler.exe --info                           # Show active-window and work-area information
+EbenTiler.exe --list                           # List available commands
+EbenTiler.exe --settings                       # Open Settings only
+EbenTiler.exe --check                          # Check for hotkey registration conflicts
+EbenTiler.exe --startup on|off|status          # Enable/disable/query startup registration
+EbenTiler.exe --out result.txt --info          # Also write the result to a file
 ```
 
-`--check` 는 이런 식으로 알려 준다. 단축키가 안 먹을 때 제일 먼저 확인하면 된다.
+`--check` reports registration status like this:
 
 ```text
 total=21
 assigned=21
 unassigned=0
 failed=1
-conflict=오른쪽 1/3 (Ctrl + Alt + H)
+conflict=Right third (Ctrl + Alt + H)
 ```
 
-`EbenTiler.exe` 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않을 때가 있다.
-스크립트에서 결과를 읽어야 하면 `--out <파일>` 을 함께 쓰면 된다.
+Because `EbenTiler.exe` is a GUI application, standard output may not always be available through a pipe. Use `--out <file>` when a script needs to read the result reliably.
 
-## 설정 창
+## Settings
 
-알림 영역 아이콘을 눌러 `단축키 설정...` 을 고르면 열린다.
+Open the tray menu and choose the hotkey settings entry.
 
-- 왼쪽 목록에서 기능을 고르고, 아래 입력칸에 원하는 키 조합을 **실제로 눌러** 지정한다.
-- 오른쪽 **미리보기**에 고른 기능이 창을 화면 어디에 놓는지 그림으로 나온다.
-  크기 조절이나 모니터 이동처럼 자리만으로 설명이 안 되는 것은 점선(바뀌기 전)과 화살표로 함께 보여 준다.
-- 같은 조합을 이미 다른 기능이 쓰고 있으면 물어보고 그쪽을 비운다.
-- 보조키(Ctrl/Alt/Shift/Win) 없는 조합은 막는다. 그렇게 등록하면 다른 프로그램에서 그 키를 아예 못 쓰게 된다.
-- `정보` 페이지에서 현재 버전과 업데이트 상태를 확인할 수 있다.
+- Select an action on the left, then **press the key combination you want** in the input field.
+- The **preview** on the right shows where the selected action will place the window.
+  Actions that cannot be explained by position alone, such as resize or monitor movement, use outlines and arrows.
+- If another action already uses the same shortcut, EbenTiler asks before clearing the existing assignment.
+- Shortcuts without a modifier (`Ctrl`, `Alt`, `Shift`, or `Win`) are blocked because a global registration would prevent other programs from using that key normally.
+- The `About` page shows the current version and update status.
 
-## 아이콘
+## Icon
 
-`assets\app.ico` 를 빌드 때 실행 파일에 박는다. 16 / 24 / 32 / 48 / 64 / 128 / 256 픽셀이 한 파일에 들어 있고,
-**크기마다 따로 그렸다.** 큰 그림 하나를 줄여 쓰면 알림 영역(16픽셀)에서 뭉개지기 때문이다.
+`assets\app.ico` is embedded into the executable at build time. It contains separate artwork for 16 / 24 / 32 / 48 / 64 / 128 / 256 pixel sizes.
+Each size is drawn separately so the notification-area icon stays sharp instead of becoming a blurry downscaled version of one large image.
 
-모양은 창 두 장이 겹친 것이다. 창을 정리하기 전 모습을 그대로 아이콘으로 삼았다.
-색은 파랑과 흰색만 쓴다. 검정 테두리는 어두운 작업표시줄에서 배경에 묻혀 사라지기 때문이다.
+The icon represents two overlapping windows, matching the idea of arranging windows before they are tiled.
+It uses blue and white only so it remains visible on dark taskbars.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\make-appicon.ps1   # 아이콘 다시 만들기
+powershell -ExecutionPolicy Bypass -File tools\make-appicon.ps1   # Rebuild the icon
 ```
 
-## 설정 파일
+## Configuration file
 
-`%APPDATA%\EbenTiler\config.ini` 에 저장된다. 직접 편집해도 된다.
+Settings are stored in `%APPDATA%\EbenTiler\config.ini` and can also be edited manually.
 
 ```ini
 [Hotkeys]
@@ -178,61 +181,61 @@ TopLeft=Ctrl+Alt+U
 Maximize=Ctrl+Alt+Enter
 
 [Options]
-Gap=0                  ; 창 사이와 화면 가장자리에 남길 여백(픽셀)
-CycleHalves=true       ; 같은 단축키 연타 시 1/2 -> 1/3 -> 2/3 순환
-ShowWelcomeGuide=false ; 다음 실행 때 시작 가이드를 표시할지 여부
+Gap=0                  ; Gap around and between windows, in pixels
+CycleHalves=true       ; Repeating the same shortcut cycles 1/2 -> 1/3 -> 2/3
+ShowWelcomeGuide=false ; Whether to show the welcome guide on the next launch
 ```
 
-값을 비워 두면 그 기능의 단축키는 등록하지 않는다.
+Leave a hotkey value empty to disable that action's global shortcut.
 
-업데이트 확인 상태는 별도 `%APPDATA%\EbenTiler\update-state.ini`에 마지막 확인 시각과 이미 알린 릴리스 태그만 저장한다.
+Update-check state is stored separately in `%APPDATA%\EbenTiler\update-state.ini`. It contains only the last check time and the release tag that has already been notified.
 
-## 개인정보 / Privacy
+## Privacy
 
-EbenTiler 앱은 개인정보, 사용 통계, 창 제목, 입력 내용이나 파일 내용을 수집하지 않으며 텔레메트리·광고·분석 SDK를 사용하지 않는다.
+EbenTiler does not collect personal information, usage analytics, window titles, keyboard input, or file contents, and it does not use telemetry, advertising, or analytics SDKs.
 
-새 버전 알림을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에서 최신 버전 정보만 확인한다. 앱은 업데이트 파일을 자동 다운로드하거나 자동 설치하지 않는다.
+For update notifications, it checks only the latest public release metadata from GitHub at most once every 24 hours. It does not automatically download or install update files.
 
-상세한 네트워크 동작과 로컬 저장 정보는 [`PRIVACY.md`](PRIVACY.md)를 참고한다.
+See [`PRIVACY.md`](PRIVACY.md) for network behavior and locally stored information.
 
-## 검증
+## Verification
 
-실제 창을 띄워 놓고 자동으로 확인하는 스크립트가 들어 있다.
+The repository includes scripts that verify behavior against real Windows windows and UI.
 
 ```powershell
-# 배치 계산이 실제 창 위치와 맞는지 (13가지 배치 + 최대화/복원/크기조절/가운데정렬)
+# Verify placement calculations against real window positions
 powershell -ExecutionPolicy Bypass -File tools\verify.ps1
 
-# 전역 단축키를 실제 키 입력으로 눌러 보고 확인
+# Trigger and verify global hotkeys with real key input
 powershell -ExecutionPolicy Bypass -File tools\verify-hotkeys.ps1
 
-# 설정 파일 반영, 여백, 세로만 최대, 모니터 이동, 중복 실행 방지, 자동 실행 등록
+# Verify configuration, gaps, vertical maximize, monitor movement, single-instance behavior, and startup
 powershell -ExecutionPolicy Bypass -File tools\verify-more.ps1
 
-# 설정 창을 실제 마우스 클릭과 키 입력으로 조작해서 저장까지 확인
+# Operate the Settings UI with real mouse/keyboard input and verify persistence
 powershell -ExecutionPolicy Bypass -File tools\verify-settings.ps1
 
-# 알림 영역 아이콘을 눌러 메뉴를 띄우고 체크 표시와 토글 동작 확인
+# Open the tray menu and verify check marks and toggle behavior
 powershell -ExecutionPolicy Bypass -File tools\verify-tray-menu.ps1
 
-# 설정 창 미리보기가 기능마다 제대로 그려지는지 캡처
+# Capture Settings previews for each action
 powershell -ExecutionPolicy Bypass -File tools\capture-preview.ps1
 
-# 설정 창과 알림 영역 화면 캡처
+# Capture Settings and tray UI
 powershell -ExecutionPolicy Bypass -File tools\capture-ui.ps1
 
-# 창 두 개를 좌우로 붙인 화면 캡처
+# Capture a two-window side-by-side demo
 powershell -ExecutionPolicy Bypass -File tools\capture-demo.ps1
 ```
 
-인스톨러 릴리스 검증:
+Installer and release verification:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\verify-installer.ps1
 powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1
 ```
 
-unsigned 공개 릴리스는 설치/제거와 SHA-256 검증을 통과한 뒤 게시한다. 코드서명 신원이 연결된 signed 릴리스는 Authenticode까지 추가 검증한다.
+Unsigned public releases are published only after install/uninstall smoke tests and SHA-256 verification. Signed releases also require Authenticode validation.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSigning
@@ -240,36 +243,33 @@ powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSi
 
 ## Code signing policy
 
-SignPath Foundation 또는 다른 공개 코드서명 수단이 연결되기 전에는 검증된 unsigned GitHub Release를 공개할 수 있다. 이 경우 Release와 랜딩페이지에 코드서명 전 상태와 Windows의 `알 수 없는 게시자`/SmartScreen 경고 가능성을 명확히 표시한다.
+Until SignPath Foundation or another public code-signing provider is connected, EbenTiler may publish verified unsigned GitHub Releases. In that case, the Release page and landing page clearly disclose that the installer is unsigned and that Windows may display an `Unknown publisher` or SmartScreen warning.
 
-코드서명 신원이 준비되면 이후 릴리스부터 Authenticode 서명과 Code Signing EKU 검증을 필수로 적용한다. 최초 공개 unsigned 버전이 `v1.0.0`이면 첫 signed 버전은 기존 사용자가 업데이트로 감지할 수 있도록 `v1.0.1` 이상을 사용한다.
+Once a code-signing identity is available, subsequent releases will require Authenticode signing and Code Signing EKU verification. Version numbers will always move forward so existing users can detect signed releases as updates instead of replacing an older release in place.
 
-SignPath Foundation은 공개 OSS 코드서명의 우선 검토 대상이지만 **현재 EbenTiler는 아직 SignPath 승인을 받거나 연동한 상태가 아니다.** 승인 전에는 SignPath가 현재 서명을 제공하는 것처럼 표시하지 않는다.
+SignPath Foundation is the preferred option currently under review for public OSS signing, but **EbenTiler has not yet been approved by or integrated with SignPath.** Until approval, the project does not claim that SignPath currently signs EbenTiler builds.
 
-상세 정책과 공급자 선택 기준은 [`docs/CODE_SIGNING.md`](docs/CODE_SIGNING.md)를 참고한다.
+See [`docs/CODE_SIGNING.md`](docs/CODE_SIGNING.md) for the detailed policy and provider-selection criteria.
 
-## 알아 둘 점
+## Notes
 
-- **관리자 권한으로 실행 중인 창은 옮길 수 없다.** Windows 가 낮은 권한 프로그램이 높은 권한 창을 조작하는 것을 막기 때문이다.
-  그런 창까지 배치하려면 `EbenTiler.exe` 도 관리자 권한으로 실행해야 한다.
-- 다른 프로그램이 이미 선점한 단축키는 등록에 실패한다. 이때는 시작 직후 알림으로 어떤 것이 실패했는지 알려 주고,
-  `EbenTiler.exe --check` 로 언제든 다시 확인할 수 있다. 설정 창에서 다른 조합으로 바꾸면 된다.
-  게임 런처나 독(dock) 프로그램이 `Ctrl+Alt+숫자`, `Ctrl+Alt+G` 같은 조합을 자주 가져간다.
-- 창 위치는 DWM 이 알려 주는 **실제로 보이는 테두리** 기준으로 맞춘다. Windows 10/11 창 바깥의 투명한 여백만큼 어긋나 보이는 문제가 없다.
-- 모니터마다 배율이 다른 환경을 위해 per-monitor DPI 인식으로 동작한다.
+- **Windows running as administrator cannot be moved by a lower-privilege EbenTiler process.** To arrange elevated windows, run `EbenTiler.exe` with matching administrator privileges.
+- A shortcut may fail to register when another program already owns it. EbenTiler reports failed registrations after startup, and `EbenTiler.exe --check` can be used at any time to inspect them. Change the shortcut in Settings if needed. Game launchers and dock utilities commonly reserve combinations such as `Ctrl+Alt+number` or `Ctrl+Alt+G`.
+- Window placement uses the **actual visible frame bounds** reported by DWM, avoiding offsets caused by the transparent resize border around Windows 10/11 windows.
+- EbenTiler is per-monitor DPI aware for setups where displays use different scaling factors.
 
-## 구조
+## Project structure
 
-| 파일 | 하는 일 |
+| File | Responsibility |
 | --- | --- |
-| `src/Native.cs` | Win32 API 선언, DPI 인식 설정 |
-| `src/SnapAction.cs` | 배치 명령 목록, 한국어 이름, 기본 단축키 |
-| `src/Hotkey.cs` | 단축키 문자열 해석과 표시 |
-| `src/Config.cs` | 설정 파일 읽기/쓰기 |
-| `src/WindowManager.cs` | 창 찾기, 위치 계산, 이동, 원래 크기 기억 |
-| `src/HotkeyManager.cs` | 전역 단축키 등록과 수신 |
-| `src/TrayApp.cs` | 알림 영역 상주, 메뉴, 새 버전 알림 |
-| `src/UpdateChecker.cs` | GitHub 공개 Release 버전 확인과 24시간 상태 기록 |
-| `src/SettingsUpdateSection.cs` | 설정 > 정보의 수동 업데이트 확인 UI |
-| `src/SettingsForm.cs` | 설정 창 |
-| `src/Program.cs` | 진입점, 명령줄 모드 |
+| `src/Native.cs` | Win32 API declarations and DPI-awareness setup |
+| `src/SnapAction.cs` | Snap action definitions, display names, default shortcuts |
+| `src/Hotkey.cs` | Shortcut parsing and display |
+| `src/Config.cs` | Configuration file read/write |
+| `src/WindowManager.cs` | Window discovery, placement calculations, movement, restore state |
+| `src/HotkeyManager.cs` | Global hotkey registration and dispatch |
+| `src/TrayApp.cs` | Tray application, menus, update notifications |
+| `src/UpdateChecker.cs` | GitHub Release checks and 24-hour update state |
+| `src/SettingsUpdateSection.cs` | Manual update UI under Settings > About |
+| `src/SettingsForm.cs` | Settings window |
+| `src/Program.cs` | Entry point and command-line mode |

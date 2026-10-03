@@ -127,14 +127,15 @@ namespace EbenTilerWindows
             KeyPreview = true;
             DoubleBuffered = true;
 
-            Icon visibleIcon = AppIcon.LoadLarge();
+            int headerIconPixels = S(48);
+            Icon visibleIcon = AppIcon.LoadSized(headerIconPixels);
             _headerIcon = visibleIcon.ToBitmap();
             visibleIcon.Dispose();
 
             PictureBox iconBox = new PictureBox();
-            iconBox.Location = new Point(S(22), S(20));
-            iconBox.Size = new Size(S(44), S(44));
-            iconBox.SizeMode = PictureBoxSizeMode.Zoom;
+            iconBox.Location = new Point(S(22), S(18));
+            iconBox.Size = new Size(headerIconPixels, headerIconPixels);
+            iconBox.SizeMode = PictureBoxSizeMode.Normal;
             iconBox.Image = _headerIcon;
             iconBox.AccessibleName = "EbenTiler 앱 아이콘";
             Controls.Add(iconBox);
@@ -168,15 +169,26 @@ namespace EbenTilerWindows
             _list.FullRowSelect = true;
             _list.MultiSelect = false;
             _list.HideSelection = false;
+            _list.Scrollable = true;
             _list.BorderStyle = BorderStyle.None;
             _list.BackColor = UiPalette.Surface;
             _list.ForeColor = UiPalette.Text;
             _list.HeaderStyle = ColumnHeaderStyle.Nonclickable;
             _list.AccessibleName = "기능 목록";
             _list.TabIndex = 0;
-            _list.Columns.Add("기능", S(190));
-            _list.Columns.Add("단축키", S(165));
-            _list.Columns.Add("분류", S(74));
+
+            int[] listColumnWidths = new int[] { S(184), S(160), S(72) };
+            _list.Columns.Add("기능", listColumnWidths[0]);
+            _list.Columns.Add("단축키", listColumnWidths[1]);
+            _list.Columns.Add("분류", listColumnWidths[2]);
+            _list.ColumnWidthChanging += delegate(object sender, ColumnWidthChangingEventArgs e)
+            {
+                if (e.ColumnIndex >= 0 && e.ColumnIndex < listColumnWidths.Length)
+                {
+                    e.NewWidth = listColumnWidths[e.ColumnIndex];
+                    e.Cancel = true;
+                }
+            };
             _list.SelectedIndexChanged += OnSelectionChanged;
             Controls.Add(_list);
 
@@ -199,15 +211,15 @@ namespace EbenTilerWindows
             _winModifier.ForeColor = UiPalette.Text;
             Controls.Add(_winModifier);
 
-            Button assign = MakeButton("이 단축키로 지정", 34, 522, 146, true);
+            Button assign = MakeButton("이 단축키로 지정", 34, 522, 146, true, true);
             assign.Click += OnAssign;
             Controls.Add(assign);
 
-            Button clear = MakeButton("단축키 지우기", 190, 522, 126, false);
+            Button clear = MakeButton("단축키 지우기", 190, 522, 126, false, true);
             clear.Click += OnClear;
             Controls.Add(clear);
 
-            Button reset = MakeButton("전체 기본값 복원", 326, 522, 152, false);
+            Button reset = MakeButton("전체 기본값 복원", 326, 522, 152, false, true);
             reset.Click += OnResetDefaults;
             Controls.Add(reset);
 
@@ -259,11 +271,11 @@ namespace EbenTilerWindows
             _gap.ValueChanged += delegate { _preview.Invalidate(); };
             Controls.Add(_gap);
 
-            Button save = MakeButton("저장", 594, 574, 90, true);
+            Button save = MakeButton("저장", 594, 574, 90, true, false);
             save.Click += OnSave;
             Controls.Add(save);
 
-            Button cancel = MakeButton("취소", 694, 574, 84, false);
+            Button cancel = MakeButton("취소", 694, 574, 84, false, false);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
             Controls.Add(cancel);
 
@@ -312,7 +324,7 @@ namespace EbenTilerWindows
             }
         }
 
-        private Button MakeButton(string text, int x, int y, int width, bool primary)
+        private Button MakeButton(string text, int x, int y, int width, bool primary, bool onCard)
         {
             RoundedButton button = new RoundedButton();
             button.Text = text;
@@ -320,6 +332,7 @@ namespace EbenTilerWindows
             button.Size = new Size(S(width), S(34));
             button.PrimaryStyle = primary;
             button.CornerRadius = S(8);
+            button.SurroundingBackColor = onCard ? UiPalette.Surface : UiPalette.Canvas;
             button.Font = MakeFont(9f, FontStyle.Bold);
             return button;
         }

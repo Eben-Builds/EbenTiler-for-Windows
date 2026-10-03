@@ -12,12 +12,14 @@ namespace EbenTilerWindows
         public Dictionary<SnapAction, Hotkey> Hotkeys;
         public int Gap;
         public bool CycleHalves;
+        public bool ShowWelcomeGuide;
 
         public Config()
         {
             Hotkeys = new Dictionary<SnapAction, Hotkey>();
             Gap = 0;
             CycleHalves = true;
+            ShowWelcomeGuide = true;
         }
 
         public static string Directory
@@ -83,6 +85,10 @@ namespace EbenTilerWindows
                     {
                         config.CycleHalves = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || value == "1";
                     }
+                    else if (string.Equals(key, "ShowWelcomeGuide", StringComparison.OrdinalIgnoreCase))
+                    {
+                        config.ShowWelcomeGuide = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || value == "1";
+                    }
                 }
             }
             catch (IOException) { }
@@ -118,6 +124,7 @@ namespace EbenTilerWindows
                 sb.AppendLine("[Options]");
                 sb.AppendLine("Gap=" + Gap.ToString(CultureInfo.InvariantCulture));
                 sb.AppendLine("CycleHalves=" + (CycleHalves ? "true" : "false"));
+                sb.AppendLine("ShowWelcomeGuide=" + (ShowWelcomeGuide ? "true" : "false"));
 
                 File.WriteAllText(FilePath, sb.ToString(), new UTF8Encoding(false));
             }
@@ -137,6 +144,7 @@ namespace EbenTilerWindows
             if (other == null) return;
             Gap = other.Gap;
             CycleHalves = other.CycleHalves;
+            ShowWelcomeGuide = other.ShowWelcomeGuide;
             Hotkeys = other.Hotkeys;
         }
 
@@ -145,6 +153,7 @@ namespace EbenTilerWindows
             Config copy = new Config();
             copy.Gap = Gap;
             copy.CycleHalves = CycleHalves;
+            copy.ShowWelcomeGuide = ShowWelcomeGuide;
             foreach (KeyValuePair<SnapAction, Hotkey> pair in Hotkeys)
             {
                 Hotkey source = pair.Value;

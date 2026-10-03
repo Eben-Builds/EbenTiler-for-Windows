@@ -47,6 +47,7 @@ Name: "startup"; Description: "Windows 시작 시 EbenTiler 자동 실행"; Grou
 
 [Files]
 Source: "..\build\EbenTiler.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\EbenTiler.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]

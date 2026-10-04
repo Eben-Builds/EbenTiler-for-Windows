@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Tessdeck 설치 파일 다운로드와 Windows의 PC 보호 화면 안내입니다.">
+  <meta name="theme-color" content="#f8fbff">
+  <title>Tessdeck 다운로드 · 설치 전 안내</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css?v=20261004-1">
+  <link rel="stylesheet" href="./download.css?v=20261004-1">
+  <script src="./app.js?v=20261004-1" defer></script>
+</head>
+<body class="download-guide-page">
+  <a class="skip-link" href="#main">본문으로 바로가기</a>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="./index.html" aria-label="Tessdeck 홈으로">
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="td-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#10489c"/><stop offset="1" stop-color="#021130"/></linearGradient><linearGradient id="td-back" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#9ec4ff"/></linearGradient><linearGradient id="td-front" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3de0ff"/><stop offset="1" stop-color="#0052ee"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#td-bg)" stroke="#1e9dff" stroke-width="1.5"/><rect x="13" y="15" width="32" height="30" rx="7" fill="url(#td-back)" stroke="#fff" stroke-opacity=".92" stroke-width="1.2"/><rect x="25" y="27" width="31" height="28" rx="7" fill="url(#td-front)" stroke="#37ebff" stroke-width="1.4"/><path d="M31 29h18" stroke="#dcffff" stroke-opacity=".72" stroke-width="1.1" stroke-linecap="round"/></svg>
+        <span>Tessdeck</span>
+      </a>
+      <a class="download-back" href="./index.html">← 제품 소개로 돌아가기</a>
+    </div>
+  </header>
+
+  <main id="main" class="download-guide-main">
+    <section class="download-guide-hero">
+      <div class="shell download-guide-grid">
+        <div class="download-guide-copy">
+          <span class="eyebrow">Windows 다운로드</span>
+          <h1>설치 전에<br><span>이 화면만 확인해 주세요.</span></h1>
+          <p class="lead">Tessdeck은 현재 코드 서명 절차를 준비 중이라 처음 실행할 때 Windows의 <strong>“PC 보호”</strong> 화면이 표시될 수 있습니다. 놀라지 않도록 실행 방법을 먼저 안내합니다.</p>
+
+          <div class="download-trust-card">
+            <div class="trust-badge" aria-hidden="true">✓</div>
+            <div>
+              <strong>왜 경고가 표시되나요?</strong>
+              <p>현재 공개 설치 파일에 Authenticode 코드 서명이 아직 적용되지 않아 Windows가 게시자를 확인하지 못할 수 있기 때문입니다. 이 경고 자체가 악성 프로그램이라는 뜻은 아닙니다.</p>
+            </div>
+          </div>
+
+          <div class="download-primary-actions">
+            <a class="button button-primary download-button" href="https://github.com/Eben-Builds/Tessdeck-for-Windows/releases/latest">
+              <span class="win-symbol" aria-hidden="true">⊞</span> 설치 파일 다운로드
+            </a>
+            <a class="button button-ghost" href="https://github.com/Eben-Builds/Tessdeck-for-Windows/releases/latest">최신 Release 보기</a>
+          </div>
+          <p class="download-meta">Windows 10·11 · 약 2MB · 관리자 권한 없이 설치 · 계정 없음 · 텔레메트리 없음</p>
+        </div>
+
+        <aside class="smartscreen-card" aria-label="Windows의 PC 보호 화면 안내 예시">
+          <div class="smartscreen-topbar"><span>Windows 보안 안내</span><span aria-hidden="true">×</span></div>
+          <div class="smartscreen-body">
+            <div class="shield-icon" aria-hidden="true">🛡</div>
+            <p class="smartscreen-label">Windows의 PC 보호</p>
+            <h2>Microsoft Defender SmartScreen에서 인식되지 않은 앱의 시작을 차단할 수 있습니다.</h2>
+            <p class="smartscreen-muted">표시 문구와 모양은 Windows 버전에 따라 조금 다를 수 있습니다.</p>
+            <div class="smartscreen-link">추가 정보</div>
+            <div class="smartscreen-buttons"><span>실행 안 함</span><b>실행</b></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="download-guide-section">
+      <div class="shell">
+        <div class="section-heading">
+          <span>실행 방법</span>
+          <h2>PC 보호 화면이 나오면 이렇게 하세요.</h2>
+          <p>파일 이름과 출처를 확인한 뒤 아래 순서로 진행합니다. Tessdeck v1.1.0부터 설치 파일 이름은 <code>Tessdeck-Setup.exe</code>이며, 이전 v1.0.1 릴리스는 기존 브랜드명으로 보관됩니다.</p>
+        </div>
+
+        <div class="install-steps">
+          <article class="install-step">
+            <div class="install-step-number">1</div>
+            <div>
+              <h3>Tessdeck-Setup.exe 실행</h3>
+              <p>다운로드한 설치 파일의 이름이 <strong>Tessdeck-Setup.exe</strong>인지 먼저 확인합니다.</p>
+            </div>
+          </article>
+          <article class="install-step">
+            <div class="install-step-number">2</div>
+            <div>
+              <h3>“추가 정보” 클릭</h3>
+              <p>Windows의 PC 보호 화면이 표시되면 화면 안의 <strong>추가 정보</strong>를 누릅니다.</p>
+            </div>
+          </article>
+          <article class="install-step">
+            <div class="install-step-number">3</div>
+            <div>
+              <h3>확인 후 “실행” 클릭</h3>
+              <p>앱 이름과 파일 출처를 확인한 뒤 <strong>실행</strong>을 누르면 설치를 계속할 수 있습니다.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="download-safety-grid">
+          <article class="download-info-card">
+            <span class="small-label">파일 확인</span>
+            <h3>무결성이 궁금하다면 SHA-256도 확인할 수 있습니다.</h3>
+            <p>GitHub Release에는 설치 파일과 함께 SHA-256 체크섬 파일을 제공합니다.</p>
+            <a href="https://github.com/Eben-Builds/Tessdeck-for-Windows/releases/latest/download/Tessdeck-Setup.exe.sha256">SHA-256 체크섬 보기 →</a>
+          </article>
+          <article class="download-info-card">
+            <span class="small-label">소스 공개</span>
+            <h3>코드는 GitHub에서 공개되어 있습니다.</h3>
+            <p>Tessdeck은 MIT 오픈소스이며 개인정보·사용 통계·창 제목·입력 내용을 수집하지 않습니다.</p>
+            <a href="https://github.com/Eben-Builds/Tessdeck-for-Windows">GitHub 저장소 보기 →</a>
+          </article>
+        </div>
+
+        <div class="download-caution">
+          <strong>참고</strong>
+          <p>회사·학교 PC처럼 보안 정책으로 실행이 차단된 환경에서는 정책을 우회하지 말고 관리자에게 확인해 주세요. 코드 서명이 적용된 이후 릴리스에서는 이 안내도 그 상태에 맞게 변경됩니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="download-section download-guide-cta">
+      <div class="shell download-panel">
+        <div><span class="small-label">준비되셨나요?</span><h2>Tessdeck을 다운로드하세요.</h2><p>설치 후에는 트레이 아이콘에서 설정과 단축키를 바로 바꿀 수 있습니다.</p></div>
+        <div class="download-side">
+          <a class="button button-primary download-button" href="https://github.com/Eben-Builds/Tessdeck-for-Windows/releases/latest/download/Tessdeck-Setup.exe"><span class="win-symbol" aria-hidden="true">⊞</span> 설치 파일 다운로드</a>
+          <small>현재 공개 릴리스는 코드 서명 전입니다.</small>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell footer-inner"><div class="brand footer-brand"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="td-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#10489c"/><stop offset="1" stop-color="#021130"/></linearGradient><linearGradient id="td-back" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#9ec4ff"/></linearGradient><linearGradient id="td-front" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3de0ff"/><stop offset="1" stop-color="#0052ee"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#td-bg)" stroke="#1e9dff" stroke-width="1.5"/><rect x="13" y="15" width="32" height="30" rx="7" fill="url(#td-back)" stroke="#fff" stroke-opacity=".92" stroke-width="1.2"/><rect x="25" y="27" width="31" height="28" rx="7" fill="url(#td-front)" stroke="#37ebff" stroke-width="1.4"/><path d="M31 29h18" stroke="#dcffff" stroke-opacity=".72" stroke-width="1.1" stroke-linecap="round"/></svg><span>Tessdeck</span></div><span>윈도우용</span><nav><a href="https://github.com/Eben-Builds/Tessdeck-for-Windows">소스 코드</a><a href="https://github.com/Eben-Builds/Tessdeck-for-Windows/blob/main/PRIVACY.md">개인정보</a><a href="https://github.com/Eben-Builds/Tessdeck-for-Windows/blob/main/SECURITY.md">보안</a><a href="https://github.com/Eben-Builds/Tessdeck-for-Windows/blob/main/LICENSE">라이선스</a></nav></div>
+  </footer>
+</body>
+</html>

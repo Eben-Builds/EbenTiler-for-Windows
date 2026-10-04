@@ -1,13 +1,13 @@
 # SignPath Foundation 신청 준비
 
-이 문서는 EbenTiler의 SignPath Foundation 무료 OSS 코드서명 신청과 현재 공개 배포 상태를 함께 정리합니다.
+이 문서는 Tessdeck의 SignPath Foundation 무료 OSS 코드서명 신청과 현재 공개 배포 상태를 함께 정리합니다.
 
-> 현재 상태: **2026-10-03 신청 제출, 승인 대기 중**. 이 문서는 SignPath가 EbenTiler를 승인했다는 의미가 아닙니다.
+> 현재 상태: **2026-10-03 신청 제출, 승인 대기 중**. 이 문서는 SignPath가 Tessdeck를 승인했다는 의미가 아닙니다.
 
 ## 프로젝트 정보
 
-- Project: `EbenTiler for Windows`
-- Repository: `https://github.com/Eben-Builds/EbenTiler-for-Windows`
+- Project: `Tessdeck for Windows`
+- Repository: `https://github.com/Eben-Builds/Tessdeck-for-Windows`
 - License: MIT
 - Platform: Windows 10 / 11 x64
 - Runtime: .NET Framework 4.8
@@ -16,7 +16,7 @@
 
 ## 한 줄 설명
 
-EbenTiler는 전역 단축키로 현재 Windows 창을 화면 절반, 사분면, 3분할, 2/3 및 여러 모니터에 빠르게 배치하는 경량 오픈소스 Windows 유틸리티입니다.
+Tessdeck는 전역 단축키로 현재 Windows 창을 화면 절반, 사분면, 3분할, 2/3 및 여러 모니터에 빠르게 배치하는 경량 오픈소스 Windows 유틸리티입니다.
 
 ## 사용자 데이터 / 개인정보
 
@@ -26,9 +26,9 @@ EbenTiler는 전역 단축키로 현재 Windows 창을 화면 절반, 사분면,
 - 사용자 파일/입력 내용/창 제목 수집 없음
 - 최대 24시간에 한 번 GitHub 공개 Release API에서 최신 버전 정보만 조회
 - 업데이트 파일 자동 다운로드/자동 설치 없음
-- 앱 설정은 `%APPDATA%\EbenTiler\config.ini`에 로컬 저장
-- 업데이트 확인 상태는 `%APPDATA%\EbenTiler\update-state.ini`에 로컬 저장
-- 업데이트 배지 상태는 `%APPDATA%\EbenTiler\update-badge.ini`에 로컬 저장
+- 앱 설정은 `%APPDATA%\Tessdeck\config.ini`에 로컬 저장
+- 업데이트 확인 상태는 `%APPDATA%\Tessdeck\update-state.ini`에 로컬 저장
+- 업데이트 배지 상태는 `%APPDATA%\Tessdeck\update-badge.ini`에 로컬 저장
 
 Privacy policy: [`PRIVACY.md`](../PRIVACY.md)
 
@@ -95,10 +95,10 @@ SignPath의 organization/project/signing-policy/artifact-configuration 식별자
 
 ## Artifact Configuration에서 확인할 항목
 
-- Product name은 `EbenTiler for Windows`로 제한
+- Product name은 `Tessdeck for Windows`로 제한
 - release 전체의 product version 일치
-- EbenTiler가 직접 빌드한 `EbenTiler.exe`와 installer만 프로젝트 인증서로 서명
-- 외부/제3자 바이너리를 EbenTiler 프로젝트 서명으로 다시 서명하지 않음
+- Tessdeck가 직접 빌드한 `Tessdeck.exe`와 installer만 프로젝트 인증서로 서명
+- 외부/제3자 바이너리를 Tessdeck 프로젝트 서명으로 다시 서명하지 않음
 - release source는 해당 GitHub repository로 제한
 - release branch/tag 정책을 명확히 제한
 
@@ -111,7 +111,7 @@ SignPath의 organization/project/signing-policy/artifact-configuration 식별자
 
 ## Released 상태
 
-EbenTiler는 SignPath 승인 여부와 독립적으로 공개 GitHub Release를 제공할 수 있도록 정책을 변경했습니다.
+Tessdeck는 SignPath 승인 여부와 독립적으로 공개 GitHub Release를 제공할 수 있도록 정책을 변경했습니다.
 
 코드서명 전 Release는 다음을 지킵니다.
 

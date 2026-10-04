@@ -81,7 +81,7 @@ namespace EbenTilerWindows
             _tray = new NotifyIcon();
             _trayIcon = TrayUpdateIcon.Create(false);
             _tray.Icon = _trayIcon;
-            _tray.Text = "EbenTiler for Windows";
+            _tray.Text = "Tessdeck for Windows";
             _tray.ContextMenuStrip = menu;
             _tray.Visible = true;
             _tray.MouseUp += OnTrayMouseUp;
@@ -261,8 +261,8 @@ namespace EbenTilerWindows
             if (oldIcon != null) oldIcon.Dispose();
 
             _tray.Text = hasUpdate
-                ? "EbenTiler for Windows · 업데이트 " + tagName
-                : "EbenTiler for Windows";
+                ? "Tessdeck for Windows · 업데이트 " + tagName
+                : "Tessdeck for Windows";
             _updateItem.Visible = hasUpdate;
             _updateItem.Text = hasUpdate ? "업데이트 있음 · " + tagName : "업데이트 있음";
         }
@@ -272,7 +272,7 @@ namespace EbenTilerWindows
             if (result == null || result.Status != UpdateCheckStatus.UpdateAvailable) return;
 
             _updateNotificationPending = true;
-            _tray.BalloonTipTitle = "EbenTiler 업데이트가 있습니다";
+            _tray.BalloonTipTitle = "Tessdeck 업데이트가 있습니다";
             _tray.BalloonTipText = "새 버전 " + result.TagName + "을 사용할 수 있습니다. 눌러서 업데이트 정보를 확인하세요.";
             _tray.BalloonTipIcon = ToolTipIcon.Info;
             _tray.ShowBalloonTip(10000);

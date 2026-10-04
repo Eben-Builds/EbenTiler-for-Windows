@@ -55,7 +55,7 @@ namespace EbenTilerWindows
                 if (!Directory.Exists(Config.Directory)) Directory.CreateDirectory(Config.Directory);
                 File.WriteAllText(
                     FilePath,
-                    "; EbenTiler pending update badge\r\nAvailableTag=" + tagName + "\r\n",
+                    "; Tessdeck pending update badge\r\nAvailableTag=" + tagName + "\r\n",
                     new UTF8Encoding(false));
             }
             catch (IOException) { return; }

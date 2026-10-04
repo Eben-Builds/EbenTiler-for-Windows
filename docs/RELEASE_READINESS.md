@@ -1,4 +1,4 @@
-# Tessdeck v1.1.2 릴리스 준비 상태
+# Tessdeck v1.1.2 공개 릴리스 상태
 
 이 문서는 EbenTiler에서 Tessdeck으로의 v1.1.0 리브랜딩, 기존 공개 Release 이력, 코드서명 전후 전환 조건을 기록합니다.
 
@@ -192,7 +192,7 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 
 2026-10-05 `v1.1.1` Release가 실제 게시되었고, 최신 Release는 `Tessdeck 1.1.1 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 랜딩페이지의 `releases/latest/download/Tessdeck-Setup.exe` 경로가 자동으로 이 버전을 가리킵니다.
 
-## 11. v1.1.2 업그레이드 호환성 패치 준비 상태
+## 11. v1.1.2 업그레이드 호환성 패치 공개 상태
 
 v1.1.1 공개 후 실제 공개 설치파일끼리 업그레이드하는 자동 검증을 추가했습니다. 이 검증에서 기존 릴리스는 설정은 유지할 수 있었지만 자동시작 상태가 꺼질 수 있고, v1.0.1은 기존 EbenTiler 기본 설치 폴더를 재사용하는 문제가 확인되었습니다. v1.1.2에서는 이 호환성 경로를 수정했습니다.
 
@@ -209,10 +209,12 @@ v1.1.1 공개 후 실제 공개 설치파일끼리 업그레이드하는 자동 
 - [x] Windows Installer CI 통과
 - [x] Visual Brand Check 통과
 - [x] Upgrade Compatibility Check 3개 matrix 모두 통과
-- [ ] `v1.1.2` 태그 생성
-- [ ] Release workflow 성공
-- [ ] `Tessdeck-Setup.exe` / SHA-256 공개
-- [ ] 최신 랜딩페이지 다운로드가 `v1.1.2`를 가리키는지 확인
+- [x] `v1.1.2` 태그 생성
+- [x] Release workflow 성공
+- [x] `Tessdeck-Setup.exe` / SHA-256 공개
+- [x] 최신 랜딩페이지 다운로드가 `v1.1.2`를 가리키는지 확인
+
+2026-10-05 `v1.1.2` Release가 실제 게시되었고, 최신 Release는 `Tessdeck 1.1.2 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 랜딩페이지의 `releases/latest/download/Tessdeck-Setup.exe` 경로가 자동으로 이 버전을 가리킵니다.
 
 ## 12. v1.1.2 이후 코드서명 승인 시
 

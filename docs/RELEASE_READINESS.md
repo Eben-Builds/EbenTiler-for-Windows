@@ -1,4 +1,4 @@
-# Tessdeck v1.1.0 공개 릴리스 상태
+# Tessdeck v1.1.1 릴리스 준비 상태
 
 이 문서는 EbenTiler에서 Tessdeck으로의 v1.1.0 리브랜딩, 기존 공개 Release 이력, 코드서명 전후 전환 조건을 기록합니다.
 
@@ -144,7 +144,7 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 
 2026-10-03 실제 Windows에서 테스트용 `v9.9.9` 상태로 트레이 `!` 배지와 `업데이트 있음 · v9.9.9` 메뉴를 확인했고, 해당 메뉴를 누르면 `설정 > 정보`로 바로 이동하는 동작까지 확인했습니다.
 
-첫 공개 다운로드 가능 unsigned Release는 EbenTiler `v1.0.1`입니다. Tessdeck 첫 공개 버전은 `v1.1.0`으로 준비하며, 이후 코드서명이 연결되면 같은 버전 파일을 교체하지 않고 `v1.1.1` 이상으로 올려 기존 사용자가 새 버전으로 인식하도록 합니다.
+첫 공개 다운로드 가능 unsigned Release는 EbenTiler `v1.0.1`이며, Tessdeck 첫 공개 버전 `v1.1.0`도 정상 게시되었습니다. 브랜드 아이콘과 설치 화면 개선은 기존 Release 파일을 교체하지 않고 `v1.1.1` 패치 릴리스로 배포합니다.
 
 ## 8. v1.0.1 unsigned 공개 Release 상태
 
@@ -174,11 +174,27 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [x] `Tessdeck-Setup.exe` 및 `Tessdeck-Setup.exe.sha256` 첨부
 - [x] 랜딩페이지 다운로드 경로를 Tessdeck 최신 Release 직링크로 전환
 
-## 10. v1.1.0 이후 코드서명 승인 시
+## 10. v1.1.1 브랜드 품질 패치 준비 상태
+
+- [x] 공식 Tessdeck 아이콘을 Windows 멀티사이즈 ICO로 생성
+- [x] 실제 ICO의 16×16 / 32×32 프레임을 PNG로 추출해 식별성 확인
+- [x] 실제 Windows 설정창 캡처에서 Tessdeck 아이콘과 UI 확인
+- [x] 실제 Windows 작업표시줄 영역 캡처에서 앱 아이콘 확인
+- [x] Inno Setup 기본 그림을 Tessdeck 전용 설치 이미지로 교체
+- [x] 실제 설치 마법사 캡처에서 Tessdeck 브랜드 이미지 확인
+- [x] Windows Installer CI에서 빌드 / SHA-256 / 설치 / 제거 smoke test 통과
+- [x] Visual Brand Check workflow 통과
+- [x] `Tessdeck-Visual-Brand-Check` 아티팩트 생성
+- [ ] `v1.1.1` 태그 생성
+- [ ] Release workflow 성공
+- [ ] `Tessdeck-Setup.exe` / SHA-256 공개
+- [ ] 최신 랜딩페이지 다운로드가 `v1.1.1`을 가리키는지 확인
+
+## 11. v1.1.1 이후 코드서명 승인 시
 
 SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release에서:
 
-- 앱 버전을 `1.1.1` 이상으로 올림
+- 앱 버전을 `1.1.2` 이상으로 올림
 - Authenticode 서명 적용
 - `tools/verify-release.ps1 -RequireCodeSigning` 통과
 - signed 설치 파일 게시

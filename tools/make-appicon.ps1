@@ -173,8 +173,65 @@ function New-IcoFile {
     }
 }
 
+function New-InstallerBrandImages {
+    param([string]$AssetsDir)
+
+    $smallPath = Join-Path $AssetsDir 'installer-small.png'
+    $largePath = Join-Path $AssetsDir 'installer-large.png'
+
+    $small = Render-Icon 58
+    try {
+        $small.Save($smallPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally {
+        $small.Dispose()
+    }
+
+    $large = New-Object System.Drawing.Bitmap 164, 314, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $g = [System.Drawing.Graphics]::FromImage($large)
+    try {
+        $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+        $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+
+        $rect = New-Object System.Drawing.Rectangle 0, 0, 164, 314
+        $bg = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+            $rect,
+            ([System.Drawing.Color]::FromArgb(255, 10, 53, 120)),
+            ([System.Drawing.Color]::FromArgb(255, 2, 13, 38)),
+            [System.Drawing.Drawing2D.LinearGradientMode]::Vertical)
+        $g.FillRectangle($bg, $rect)
+        $bg.Dispose()
+
+        $icon = Render-Icon 112
+        try {
+            $g.DrawImage($icon, 26, 74, 112, 112)
+        }
+        finally {
+            $icon.Dispose()
+        }
+
+        $accent = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(170, 43, 196, 255)), 2
+        $g.DrawLine($accent, 34, 218, 130, 218)
+        $accent.Dispose()
+
+        $glow = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(28, 47, 198, 255))
+        $g.FillEllipse($glow, 40, 226, 84, 34)
+        $glow.Dispose()
+    }
+    finally {
+        $g.Dispose()
+    }
+
+    $large.Save($largePath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $large.Dispose()
+
+    Write-Host "Installer brand image: $smallPath"
+    Write-Host "Installer brand image: $largePath"
+}
+
 $icoPath = Join-Path $assetsDir 'app.ico'
 New-IcoFile -Sizes @(16, 20, 24, 32, 40, 48, 64, 96, 128, 256) -Path $icoPath
+New-InstallerBrandImages -AssetsDir $assetsDir
 Write-Host ("Tessdeck icon generated: {0} ({1:N0} bytes)" -f $icoPath, (Get-Item $icoPath).Length)
 
 if (-not $NoPreview) {

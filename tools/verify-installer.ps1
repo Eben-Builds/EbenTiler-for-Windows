@@ -1,15 +1,15 @@
 param(
-    [string]$Installer = '.\dist\EbenTiler-Setup.exe'
+    [string]$Installer = '.\dist\Tessdeck-Setup.exe'
 )
 
 $ErrorActionPreference = 'Stop'
 
 $installerPath = [IO.Path]::GetFullPath((Join-Path (Get-Location) $Installer))
-$installDir = Join-Path $env:LOCALAPPDATA 'Programs\EbenTiler'
-$installedExe = Join-Path $installDir 'EbenTiler.exe'
-$installedRuntimeConfig = Join-Path $installDir 'EbenTiler.exe.config'
+$installDir = Join-Path $env:LOCALAPPDATA 'Programs\Tessdeck'
+$installedExe = Join-Path $installDir 'Tessdeck.exe'
+$installedRuntimeConfig = Join-Path $installDir 'Tessdeck.exe.config'
 $uninstaller = Join-Path $installDir 'unins000.exe'
-$configDir = Join-Path $env:APPDATA 'EbenTiler'
+$configDir = Join-Path $env:APPDATA 'Tessdeck'
 $configFile = Join-Path $configDir 'config.ini'
 $updateStateFile = Join-Path $configDir 'update-state.ini'
 $updateBadgeFile = Join-Path $configDir 'update-badge.ini'
@@ -23,7 +23,7 @@ function Get-StartupValue {
     }
 
     $properties = Get-ItemProperty -Path $runKey -ErrorAction Stop
-    $property = $properties.PSObject.Properties['EbenTiler']
+    $property = $properties.PSObject.Properties['Tessdeck']
     if ($null -eq $property) {
         return $null
     }
@@ -109,7 +109,7 @@ try {
     Set-Content -Path $configFile -Value 'Gap=0' -Encoding UTF8
     Set-Content -Path $updateStateFile -Value 'LastCheckUtc=2026-10-03T00:00:00.0000000Z' -Encoding UTF8
     Set-Content -Path $updateBadgeFile -Value 'AvailableTag=v9.9.9' -Encoding UTF8
-    Set-Content -Path $sentinelFile -Value 'This file is not owned by EbenTiler.' -Encoding UTF8
+    Set-Content -Path $sentinelFile -Value 'This file is not owned by Tessdeck.' -Encoding UTF8
 
     $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
         '/VERYSILENT',
@@ -134,16 +134,16 @@ try {
     }
 
     if (Test-Path $configFile) {
-        throw 'EbenTiler-owned config.ini remains after uninstall.'
+        throw 'Tessdeck-owned config.ini remains after uninstall.'
     }
     if (Test-Path $updateStateFile) {
-        throw 'EbenTiler-owned update-state.ini remains after uninstall.'
+        throw 'Tessdeck-owned update-state.ini remains after uninstall.'
     }
     if (Test-Path $updateBadgeFile) {
-        throw 'EbenTiler-owned update-badge.ini remains after uninstall.'
+        throw 'Tessdeck-owned update-badge.ini remains after uninstall.'
     }
     if (-not (Test-Path $sentinelFile)) {
-        throw 'Uninstaller removed an unrelated file from the EbenTiler config directory.'
+        throw 'Uninstaller removed an unrelated file from the Tessdeck config directory.'
     }
 
     Write-Host 'Installer smoke test passed: install, DPI runtime config, CLI launch, startup on/off, app-owned update state cleanup, uninstall.'

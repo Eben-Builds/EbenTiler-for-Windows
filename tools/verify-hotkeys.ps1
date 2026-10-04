@@ -9,6 +9,29 @@ $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $exe  = Join-Path $root 'build\Tessdeck.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
+$configDir = Join-Path $env:APPDATA 'Tessdeck'
+$configPath = Join-Path $configDir 'config.ini'
+$backupPath = Join-Path $env:TEMP ('tessdeck-hotkeys-config-' + [Guid]::NewGuid().ToString('N') + '.ini')
+$hadConfig = Test-Path $configPath
+if ($hadConfig) { Copy-Item $configPath $backupPath -Force }
+
+function Restore-TestConfig {
+    if ($hadConfig) {
+        New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+        Copy-Item $backupPath $configPath -Force
+        Remove-Item $backupPath -Force -ErrorAction SilentlyContinue
+    }
+    elseif (Test-Path $configPath) {
+        Remove-Item $configPath -Force
+    }
+}
+
+trap {
+    Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Restore-TestConfig
+    throw
+}
+
 Add-Type -Namespace HK -Name U -MemberDefinition @'
 [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, IntPtr extra);
 [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
@@ -96,6 +119,17 @@ function Parse-Xywh {
 }
 
 Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force
+New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+@'
+[Options]
+Gap=0
+CycleHalves=true
+CycleRatio1=50
+CycleRatio2=40
+CycleRatio3=60
+ShowWelcomeGuide=false
+'@ | Set-Content -LiteralPath $configPath -Encoding UTF8
+
 $app = Start-Process -FilePath $exe -PassThru
 Start-Sleep -Seconds 2
 if ($app.HasExited) { throw "Tessdeck.exe 가 바로 종료되었습니다." }
@@ -173,11 +207,31 @@ Send-Hotkey 0x25
 $c2 = (Parse-Xywh (Get-Rect $handleArg)['window']).Width
 Send-Hotkey 0x25
 $c3 = (Parse-Xywh (Get-Rect $handleArg)['window']).Width
-if ($c1 -gt $c2 -and $c3 -gt $c1) {
-    Write-Host ("[통과] 폭 순환 (1/2->1/3->2/3)  {0} -> {1} -> {2}" -f $c1, $c2, $c3) -ForegroundColor Green
+$expectC1 = [int][Math]::Round($work.Width * 0.50)
+$expectC2 = [int][Math]::Round($work.Width * 0.40)
+$expectC3 = [int][Math]::Round($work.Width * 0.60)
+if ([Math]::Abs($c1 - $expectC1) -le 2 -and [Math]::Abs($c2 - $expectC2) -le 2 -and [Math]::Abs($c3 - $expectC3) -le 2) {
+    Write-Host ("[통과] 사용자 폭 순환 (50->40->60%) {0} -> {1} -> {2}" -f $c1, $c2, $c3) -ForegroundColor Green
     $pass++
 } else {
-    Write-Host ("[실패] 폭 순환                  {0} -> {1} -> {2}" -f $c1, $c2, $c3) -ForegroundColor Red
+    Write-Host ("[실패] 사용자 폭 순환 {0} -> {1} -> {2} / 기대 {3} -> {4} -> {5}" -f $c1, $c2, $c3, $expectC1, $expectC2, $expectC3) -ForegroundColor Red
+    $fail++
+}
+
+Send-Hotkey 0x26
+$v1 = (Parse-Xywh (Get-Rect $handleArg)['window']).Height
+Send-Hotkey 0x26
+$v2 = (Parse-Xywh (Get-Rect $handleArg)['window']).Height
+Send-Hotkey 0x26
+$v3 = (Parse-Xywh (Get-Rect $handleArg)['window']).Height
+$expectV1 = [int][Math]::Round($work.Height * 0.50)
+$expectV2 = [int][Math]::Round($work.Height * 0.40)
+$expectV3 = [int][Math]::Round($work.Height * 0.60)
+if ([Math]::Abs($v1 - $expectV1) -le 2 -and [Math]::Abs($v2 - $expectV2) -le 2 -and [Math]::Abs($v3 - $expectV3) -le 2) {
+    Write-Host ("[통과] 사용자 높이 순환 (50->40->60%) {0} -> {1} -> {2}" -f $v1, $v2, $v3) -ForegroundColor Green
+    $pass++
+} else {
+    Write-Host ("[실패] 사용자 높이 순환 {0} -> {1} -> {2} / 기대 {3} -> {4} -> {5}" -f $v1, $v2, $v3, $expectV1, $expectV2, $expectV3) -ForegroundColor Red
     $fail++
 }
 
@@ -206,6 +260,7 @@ Write-Host ("결과: 통과 {0} / 실패 {1}" -f $pass, $fail)
 $win | Stop-Process -Force -ErrorAction SilentlyContinue
 $app | Stop-Process -Force -ErrorAction SilentlyContinue
 Remove-Item $handleFile -Force -ErrorAction SilentlyContinue
-Write-Host "정리 완료 (검증용 창과 Tessdeck.exe 종료)"
+Restore-TestConfig
+Write-Host "정리 완료 (검증용 창과 Tessdeck.exe 종료, 원래 설정 복구)"
 
 if ($fail -gt 0) { exit 1 } else { exit 0 }

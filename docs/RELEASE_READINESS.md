@@ -209,12 +209,19 @@ v1.1.1 공개 후 실제 공개 설치파일끼리 업그레이드하는 자동 
 - [x] Windows Installer CI 통과
 - [x] Visual Brand Check 통과
 - [x] Upgrade Compatibility Check 3개 matrix 모두 통과
+- [x] 실제 Windows PC 로컬 업그레이드 QA 통과
+  - v1.1.1 → v1.1.2 실제 설치 확인
+  - 실행 파일 버전 1.1.2.0 확인
+  - 기존 설정 24개 전부 보존 확인
+  - Windows 자동시작 ON 상태 유지 확인
+  - 자동시작 경로가 현재 Tessdeck.exe를 가리키는지 확인
+  - 기존 EbenTiler 설치 경로 및 자동시작 Registry 값 제거 확인
 - [x] `v1.1.2` 태그 생성
 - [x] Release workflow 성공
 - [x] `Tessdeck-Setup.exe` / SHA-256 공개
 - [x] 최신 랜딩페이지 다운로드가 `v1.1.2`를 가리키는지 확인
 
-2026-10-05 `v1.1.2` Release가 실제 게시되었고, 최신 Release는 `Tessdeck 1.1.2 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 랜딩페이지의 `releases/latest/download/Tessdeck-Setup.exe` 경로가 자동으로 이 버전을 가리킵니다.
+2026-10-05 `v1.1.2` Release가 실제 게시되었고, 최신 Release는 `Tessdeck 1.1.2 (unsigned)`입니다. 같은 날 실제 Windows PC에서 v1.1.1 → v1.1.2 업그레이드를 수행했고, 로컬 QA 최종 결과는 `Local upgrade QA: PASS`였습니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 랜딩페이지의 `releases/latest/download/Tessdeck-Setup.exe` 경로가 자동으로 이 버전을 가리킵니다.
 
 ## 12. v1.1.2 이후 코드서명 승인 시
 

@@ -12,6 +12,7 @@ on:
       - 'tools/make-appicon.ps1'
       - 'tools/verify-installer.ps1'
       - 'tools/verify-release.ps1'
+      - 'tools/verify-local-upgrade.ps1'
       - 'build.ps1'
       - 'build-installer.ps1'
       - 'LICENSE'
@@ -34,6 +35,21 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+
+      - name: Validate local upgrade QA helper
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path '.\tools\verify-local-upgrade.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'verify-local-upgrade.ps1 contains PowerShell syntax errors.'
+          }
 
       - name: Install pinned Inno Setup
         shell: powershell

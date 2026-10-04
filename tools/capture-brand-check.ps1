@@ -124,13 +124,14 @@ $uiOut = Join-Path $OutDir 'windows-ui'
 & powershell -NoProfile -ExecutionPolicy Bypass -File $uiScript $uiOut
 if ($LASTEXITCODE -ne 0) { throw "Windows UI capture failed." }
 
-foreach ($requiredShot in @('settings.png','tray.png')) {
+foreach ($requiredShot in @('settings.png','layout.png','tray.png')) {
     if (-not (Test-Path (Join-Path $uiOut $requiredShot))) {
         throw "Missing Windows UI capture: $requiredShot"
     }
 }
 
 $report.Add("Settings window capture: OK")
+$report.Add("Layout settings capture: OK")
 $report.Add("Tray region capture: OK")
 
 $setup = Start-Process -FilePath $installer -ArgumentList '/SP-' -PassThru

@@ -6,8 +6,8 @@
 
 - `index.html`: 랜딩페이지 본문
 - `styles.css`: 전체 디자인과 반응형 스타일
-- `hero-ebentiler.webp`: 메인 히어로 이미지
-- `thirds-ebentiler.webp`: 3분할 기능 예시 이미지
+- `hero-tessdeck.webp`: 메인 히어로 이미지
+- `thirds-tessdeck.webp`: 3분할 기능 예시 이미지
 - `app.js`: 다운로드 버튼을 최신 GitHub Release의 설치 파일로 연결하고 상태를 표시
 - `favicon.svg`: Tessdeck 파비콘
 - `_headers`: 정적 호스팅용 보안 헤더
@@ -16,7 +16,7 @@
 
 랜딩페이지는 일반 CI의 임시 Actions artifact를 직접 배포하지 않습니다.
 
-모든 `윈도우용 다운로드` 링크는 GitHub 최신 공개 Release의 `Tessdeck-Setup.exe`를 직접 가리킵니다. 공개 Release는 태그/버전/`main` 포함 여부, 설치/제거 smoke test, SHA-256 검증을 통과한 결과물만 게시됩니다. 공개 Release는 `.github/workflows/release.yml`에서 태그/버전/`main` 포함 여부, 설치/제거 smoke test, SHA-256 검증을 통과한 경우에만 게시됩니다.
+모든 `윈도우용 다운로드` 링크는 GitHub 최신 공개 Release의 `Tessdeck-Setup.exe`를 직접 가리킵니다. 공개 Release는 `.github/workflows/release.yml`에서 태그/버전/`main` 포함 여부, 설치/제거 smoke test, SHA-256 검증을 통과한 결과물만 게시됩니다.
 
 코드서명 신원이 연결되어 있으면 같은 Release 경로에서 Authenticode 서명과 검증까지 수행합니다. 아직 코드서명이 연결되지 않은 경우에는 Release 제목과 설명, 랜딩페이지에서 unsigned 상태와 Windows의 게시자/SmartScreen 경고 가능성을 명확하게 고지합니다.
 

@@ -2,6 +2,10 @@
 
 **English** | [한국어](README.ko.md)
 
+<p align="center">
+  <img src="website/hero-tessdeck.webp" alt="Tessdeck window layout preview" width="960">
+</p>
+
 A lightweight Windows tray utility that snaps the active window to halves, quarters, thirds, and more with keyboard shortcuts.
 
 > **v1.1.0 rebrand:** Tessdeck was previously released as EbenTiler. Existing settings are migrated automatically on first run.

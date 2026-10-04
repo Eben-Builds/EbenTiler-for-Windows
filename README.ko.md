@@ -2,9 +2,15 @@
 
 [English](README.md) | **한국어**
 
+<p align="center">
+  <img src="website/hero-tessdeck.webp" alt="Tessdeck 창 배치 미리보기" width="960">
+</p>
+
 단축키로 창을 화면 절반·사분면·3분할에 순식간에 붙여 주는 Windows 상주 프로그램.
 
-> **v1.1.0 리브랜딩:** 기존 EbenTiler 사용자의 설정은 Tessdeck 첫 실행 시 자동으로 이전됩니다.\n\n- 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
+> **v1.1.0 리브랜딩:** 기존 EbenTiler 사용자의 설정은 Tessdeck 첫 실행 시 자동으로 이전됩니다.
+
+- 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
 - 실행 파일 하나, 약 100KB
 - 알림 영역에 상주, 설정 창에서 단축키 자유롭게 변경
 - 새 정식 버전이 있으면 최대 하루 한 번 알림으로 안내하며 자동 다운로드·설치는 하지 않음

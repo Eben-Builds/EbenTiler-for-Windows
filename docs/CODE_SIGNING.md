@@ -1,12 +1,12 @@
-# EbenTiler Code signing policy
+# Tessdeck Code signing policy
 
-이 문서는 EbenTiler의 **unsigned 공개 릴리스와 signed 공개 릴리스를 안전하게 구분**하는 기준을 정리합니다.
+이 문서는 Tessdeck의 **unsigned 공개 릴리스와 signed 공개 릴리스를 안전하게 구분**하는 기준을 정리합니다.
 
 ## 현재 상태
 
-- EbenTiler는 공개 MIT OSS입니다.
+- Tessdeck는 공개 MIT OSS입니다.
 - SignPath Foundation은 우선 검토 대상이지만 **아직 승인되거나 연결된 상태가 아닙니다.**
-- 승인 전에는 SignPath가 EbenTiler의 서명을 제공하는 것처럼 표시하지 않습니다.
+- 승인 전에는 SignPath가 Tessdeck의 서명을 제공하는 것처럼 표시하지 않습니다.
 - 코드서명 신원이 연결되기 전에도 GitHub Release를 공개할 수 있습니다. 이 경우 설치 파일은 unsigned임을 Release와 랜딩페이지에 명확히 표시합니다.
 
 ## 핵심 원칙
@@ -21,7 +21,7 @@
 
 ## 프로젝트 역할
 
-현재 EbenTiler는 1인 유지보수 프로젝트입니다.
+현재 Tessdeck는 1인 유지보수 프로젝트입니다.
 
 - **Committer / Reviewer:** `Eben-Builds`
 - **Release Approver:** `Eben-Builds`
@@ -32,7 +32,7 @@
 
 ## 개인정보 정책
 
-EbenTiler는 개인정보, 사용 기록, 창 제목, 입력 내용 또는 파일 내용을 수집하지 않습니다. 새 버전 확인을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에서 최신 버전 정보만 조회하며, 업데이트 파일을 자동 다운로드하거나 자동 설치하지 않습니다.
+Tessdeck는 개인정보, 사용 기록, 창 제목, 입력 내용 또는 파일 내용을 수집하지 않습니다. 새 버전 확인을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에서 최신 버전 정보만 조회하며, 업데이트 파일을 자동 다운로드하거나 자동 설치하지 않습니다.
 
 상세 내용: [`PRIVACY.md`](../PRIVACY.md)
 
@@ -40,7 +40,7 @@ EbenTiler는 개인정보, 사용 기록, 창 제목, 입력 내용 또는 파�
 
 새 공개 코드서명 인증서는 export 가능한 PFX 파일을 기본 전제로 설계하지 않습니다. 개인키는 하드웨어 토큰, HSM, 클라우드 HSM 또는 서명 서비스에서 보호하는 방식을 우선합니다.
 
-EbenTiler 빌드는 공급자에 종속되지 않도록 구성합니다. 공급자가 Windows 인증서 저장소/KSP에서 인증서를 사용할 수 있게 하고 `EBENTILER_SIGNING_CERT_SHA1`에 thumbprint를 제공하면 SignTool이 실제 서명을 수행합니다.
+Tessdeck 빌드는 공급자에 종속되지 않도록 구성합니다. 공급자가 Windows 인증서 저장소/KSP에서 인증서를 사용할 수 있게 하고 `EBENTILER_SIGNING_CERT_SHA1`에 thumbprint를 제공하면 SignTool이 실제 서명을 수행합니다.
 
 기존에 보유한 export 가능한 PFX가 있는 경우에만 `EBENTILER_SIGNING_PFX_BASE64`와 `EBENTILER_SIGNING_PFX_PASSWORD`를 호환 경로로 사용할 수 있습니다.
 
@@ -48,7 +48,7 @@ EbenTiler 빌드는 공급자에 종속되지 않도록 구성합니다. 공급�
 
 ## 공개 OSS에서의 선택지
 
-EbenTiler 저장소는 공개 OSS입니다. 따라서 다음 순서로 검토합니다.
+Tessdeck 저장소는 공개 OSS입니다. 따라서 다음 순서로 검토합니다.
 
 1. **SignPath Foundation**: 프로젝트가 무료 OSS 코드서명 조건을 충족하는지 우선 검토
 2. **OV 코드서명 + HSM/클라우드 서명 서비스**: SignPath가 맞지 않거나 별도 publisher identity가 필요한 경우 검토
@@ -64,9 +64,9 @@ SignPath Foundation 승인을 받은 경우에만 홈페이지/다운로드/릴�
 
 승인 후에는 SignPath 프로젝트의 Artifact Configuration에서 다음을 강제합니다.
 
-- Product name: `EbenTiler for Windows`
+- Product name: `Tessdeck for Windows`
 - 모든 서명 대상의 제품 버전 일치
-- EbenTiler 프로젝트가 직접 빌드한 바이너리만 서명
+- Tessdeck 프로젝트가 직접 빌드한 바이너리만 서명
 - GitHub-hosted runner에서 만들어진 GitHub Actions artifact만 서명 요청
 - 정식 release signing request는 maintainer의 수동 승인 후 진행
 
@@ -88,7 +88,7 @@ SignPath Foundation 승인을 받은 경우에만 홈페이지/다운로드/릴�
 
 - 정적 웹 자산만 검증/게시
 - 설치 파일을 빌드하거나 `site` 브랜치에 포함하지 않음
-- 다운로드는 최신 공개 GitHub Release의 `EbenTiler-Setup.exe`로 연결
+- 다운로드는 최신 공개 GitHub Release의 `Tessdeck-Setup.exe`로 연결
 - unsigned 공개 릴리스 기간에는 Windows 경고 가능성을 사용자에게 고지
 
 ### 공개 릴리스
@@ -136,8 +136,8 @@ powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1
 
 signed 공개 릴리스는 위 항목에 더해 다음을 확인합니다.
 
-- `EbenTiler.exe` Authenticode 유효
-- `EbenTiler-Setup.exe` Authenticode 유효
+- `Tessdeck.exe` Authenticode 유효
+- `Tessdeck-Setup.exe` Authenticode 유효
 - Code Signing EKU 확인
 
 ```powershell

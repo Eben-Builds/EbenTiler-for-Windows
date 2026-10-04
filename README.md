@@ -162,6 +162,7 @@ Open the tray menu and choose the hotkey settings entry.
   Actions that cannot be explained by position alone, such as resize or monitor movement, use outlines and arrows.
 - If another action already uses the same shortcut, Tessdeck asks before clearing the existing assignment.
 - Shortcuts without a modifier (`Ctrl`, `Alt`, `Shift`, or `Win`) are blocked because a global registration would prevent other programs from using that key normally.
+- The `Layout` page lets you choose the three ratios used when repeating a directional shortcut.
 - The `About` page shows the current version and update status.
 
 ## Icon
@@ -188,7 +189,10 @@ Maximize=Ctrl+Alt+Enter
 
 [Options]
 Gap=0                  ; Gap around and between windows, in pixels
-CycleHalves=true       ; Repeating the same shortcut cycles 1/2 -> 1/3 -> 2/3
+CycleHalves=true       ; Repeating a directional shortcut cycles the ratios below
+CycleRatio1=50         ; First ratio (20-80)
+CycleRatio2=33         ; Second ratio (20-80)
+CycleRatio3=67         ; Third ratio (20-80)
 ShowWelcomeGuide=false ; Whether to show the welcome guide on the next launch
 ```
 
@@ -220,6 +224,9 @@ powershell -ExecutionPolicy Bypass -File tools\verify-more.ps1
 
 # Operate the Settings UI with real mouse/keyboard input and verify persistence
 powershell -ExecutionPolicy Bypass -File tools\verify-settings.ps1
+
+# Verify custom split ratios through the real Layout settings UI
+powershell -ExecutionPolicy Bypass -File tools\verify-layout-settings.ps1
 
 # Open the tray menu and verify check marks and toggle behavior
 powershell -ExecutionPolicy Bypass -File tools\verify-tray-menu.ps1

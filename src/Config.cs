@@ -6,7 +6,7 @@ using System.Text;
 
 namespace EbenTilerWindows
 {
-    /// <summary>단축키와 옵션을 %APPDATA%\EbenTiler\config.ini 에 읽고 쓴다.</summary>
+    /// <summary>단축키와 옵션을 %APPDATA%\Tessdeck\config.ini 에 읽고 쓴다.</summary>
     public sealed class Config
     {
         public Dictionary<SnapAction, Hotkey> Hotkeys;
@@ -26,10 +26,35 @@ namespace EbenTilerWindows
         {
             get
             {
-                return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "EbenTiler");
+                string baseDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string directory = Path.Combine(baseDirectory, "Tessdeck");
+                CopyLegacySettingsIfNeeded(baseDirectory, directory);
+                return directory;
             }
+        }
+
+        private static void CopyLegacySettingsIfNeeded(string baseDirectory, string directory)
+        {
+            string legacyDirectory = Path.Combine(baseDirectory, "EbenTiler");
+            if (!System.IO.Directory.Exists(legacyDirectory)) return;
+
+            try
+            {
+                if (!System.IO.Directory.Exists(directory)) System.IO.Directory.CreateDirectory(directory);
+
+                string[] files = new string[] { "config.ini", "update-state.ini", "update-badge.ini" };
+                for (int i = 0; i < files.Length; i++)
+                {
+                    string source = Path.Combine(legacyDirectory, files[i]);
+                    string destination = Path.Combine(directory, files[i]);
+                    if (File.Exists(source) && !File.Exists(destination))
+                    {
+                        File.Copy(source, destination, false);
+                    }
+                }
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         public static string FilePath
@@ -108,7 +133,7 @@ namespace EbenTilerWindows
                 if (!System.IO.Directory.Exists(Directory)) System.IO.Directory.CreateDirectory(Directory);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine("; EbenTiler for Windows 설정 파일");
+                sb.AppendLine("; Tessdeck for Windows 설정 파일");
                 sb.AppendLine("; 단축키 형식 예시: Ctrl+Alt+Left, Ctrl+Alt+Shift+U, Win+Alt+Enter");
                 sb.AppendLine("; 값을 비워 두면 그 기능의 단축키는 등록하지 않는다.");
                 sb.AppendLine();

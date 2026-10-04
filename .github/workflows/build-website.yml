@@ -54,8 +54,8 @@ jobs:
           $styles = Get-Content '.\website\styles.css' -Raw
           $downloadStyles = Get-Content '.\website\download.css' -Raw
           $app = Get-Content '.\website\app.js' -Raw
-          if ($index -notmatch 'hero-ebentiler\.webp') { throw 'Landing page does not reference the hero asset.' }
-          if ($styles -notmatch 'thirds-ebentiler\.webp') { throw 'Landing page styles do not reference the thirds asset.' }
+          if ($index -notmatch 'hero-tessdeck\.webp') { throw 'Landing page does not reference the hero asset.' }
+          if ($styles -notmatch 'thirds-tessdeck\.webp') { throw 'Landing page styles do not reference the thirds asset.' }
           if ($index -notmatch 'href="\.\/download\.html"') {
             throw 'Landing page download buttons do not route through the download guide.'
           }

@@ -107,7 +107,10 @@ function Render-Icon {
         if (-not $small) {
             # Soft top highlight keeps the glass feel without hurting small-size clarity.
             $highlightPen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(180, 220, 255, 255)), ([single][Math]::Max(1.0, 1.1*$s))
-            $g.DrawLine($highlightPen, ([single](31*$s)), ([single](29*$s)), ([single](49*$s)), ([single](29*$s))
+            [single]$hx1 = 31*$s
+            [single]$hy = 29*$s
+            [single]$hx2 = 49*$s
+            $g.DrawLine($highlightPen, $hx1, $hy, $hx2, $hy)
             $highlightPen.Dispose()
         }
         $frontPath.Dispose()

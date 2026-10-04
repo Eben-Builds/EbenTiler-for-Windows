@@ -1,8 +1,10 @@
-# EbenTiler for Windows
+# Tessdeck for Windows
 
 **English** | [한국어](README.ko.md)
 
 A lightweight Windows tray utility that snaps the active window to halves, quarters, thirds, and more with keyboard shortcuts.
+
+> **v1.1.0 rebrand:** Tessdeck was previously released as EbenTiler. Existing settings are migrated automatically on first run.
 
 - No separate runtime installation required (.NET Framework 4.8 is included with Windows 10/11)
 - Single executable, about 100 KB
@@ -42,14 +44,14 @@ This behavior can be disabled in Settings.
 
 ## Installation
 
-For normal use, download and double-click `EbenTiler-Setup.exe`.
+For normal use, download and double-click `Tessdeck-Setup.exe`.
 Administrator privileges are not required, and the app installs only for the current Windows user.
 
-- Program path: `%LOCALAPPDATA%\Programs\EbenTiler\EbenTiler.exe`
+- Program path: `%LOCALAPPDATA%\Programs\Tessdeck\Tessdeck.exe`
 - Adds a Start menu shortcut
-- Lets you choose whether EbenTiler starts with Windows
+- Lets you choose whether Tessdeck starts with Windows
 - Can launch immediately after installation
-- Uninstall from **Settings > Apps > Installed apps > EbenTiler for Windows > Uninstall**
+- Uninstall from **Settings > Apps > Installed apps > Tessdeck for Windows > Uninstall**
 
 See [`INSTALL.md`](INSTALL.md) for detailed installation, installer build, and code-signing information.
 
@@ -64,7 +66,7 @@ Use `-KeepConfig` when uninstalling if you want to preserve settings. Use `-NoSt
 
 ## Build
 
-The .NET SDK is not required. EbenTiler builds with the .NET Framework 4.8 compiler available on Windows.
+The .NET SDK is not required. Tessdeck builds with the .NET Framework 4.8 compiler available on Windows.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1
@@ -73,7 +75,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 The output is:
 
 ```text
-build\EbenTiler.exe
+build\Tessdeck.exe
 ```
 
 To build the installer:
@@ -85,16 +87,16 @@ powershell -ExecutionPolicy Bypass -File build-installer.ps1
 Outputs:
 
 ```text
-dist\EbenTiler-Setup.exe
-dist\EbenTiler-Setup.exe.sha256
+dist\Tessdeck-Setup.exe
+dist\Tessdeck-Setup.exe.sha256
 ```
 
-## Running EbenTiler
+## Running Tessdeck
 
-If you installed EbenTiler, it should already be running. To try it without installing:
+If you installed Tessdeck, it should already be running. To try it without installing:
 
 ```powershell
-build\EbenTiler.exe
+build\Tessdeck.exe
 ```
 
 An icon appears in the Windows notification area. **If you do not see it, click `∧` to check the hidden tray icons.** Windows may hide icons from newly installed apps by default.
@@ -103,7 +105,7 @@ Left-clicking or right-clicking the tray icon opens the menu.
 
 - `Hotkey settings...` opens Settings
 - `Start with Windows` toggles startup registration and shows a check mark when enabled
-- `Exit` closes EbenTiler
+- `Exit` closes Tessdeck
 
 The tray menu re-reads the actual startup registration state whenever it opens, so the check mark stays in sync even if the setting changes elsewhere.
 
@@ -114,25 +116,25 @@ New users see a short welcome guide explaining the core shortcuts.
 
 ### Update checks
 
-EbenTiler checks GitHub's public latest Release metadata at most once every 24 hours.
+Tessdeck checks GitHub's public latest Release metadata at most once every 24 hours.
 If a newer stable version exists, Windows shows a one-time notification.
 
 Clicking the notification opens `Settings > About`, where you can also press `Check for updates` manually at any time.
-EbenTiler does not download or install updates in the background. When a new version is available, the user chooses whether to open the GitHub Release page.
+Tessdeck does not download or install updates in the background. When a new version is available, the user chooses whether to open the GitHub Release page.
 
 ## Command line usage
 
-EbenTiler can also be controlled from scripts or other tools.
+Tessdeck can also be controlled from scripts or other tools.
 
 ```powershell
-EbenTiler.exe --apply LeftHalf                 # Snap the active window to the left half
-EbenTiler.exe --apply TopRight --hwnd 0x3B078E # Target a specific window
-EbenTiler.exe --info                           # Show active-window and work-area information
-EbenTiler.exe --list                           # List available commands
-EbenTiler.exe --settings                       # Open Settings only
-EbenTiler.exe --check                          # Check for hotkey registration conflicts
-EbenTiler.exe --startup on|off|status          # Enable/disable/query startup registration
-EbenTiler.exe --out result.txt --info          # Also write the result to a file
+Tessdeck.exe --apply LeftHalf                 # Snap the active window to the left half
+Tessdeck.exe --apply TopRight --hwnd 0x3B078E # Target a specific window
+Tessdeck.exe --info                           # Show active-window and work-area information
+Tessdeck.exe --list                           # List available commands
+Tessdeck.exe --settings                       # Open Settings only
+Tessdeck.exe --check                          # Check for hotkey registration conflicts
+Tessdeck.exe --startup on|off|status          # Enable/disable/query startup registration
+Tessdeck.exe --out result.txt --info          # Also write the result to a file
 ```
 
 `--check` reports registration status like this:
@@ -145,7 +147,7 @@ failed=1
 conflict=Right third (Ctrl + Alt + H)
 ```
 
-Because `EbenTiler.exe` is a GUI application, standard output may not always be available through a pipe. Use `--out <file>` when a script needs to read the result reliably.
+Because `Tessdeck.exe` is a GUI application, standard output may not always be available through a pipe. Use `--out <file>` when a script needs to read the result reliably.
 
 ## Settings
 
@@ -154,7 +156,7 @@ Open the tray menu and choose the hotkey settings entry.
 - Select an action on the left, then **press the key combination you want** in the input field.
 - The **preview** on the right shows where the selected action will place the window.
   Actions that cannot be explained by position alone, such as resize or monitor movement, use outlines and arrows.
-- If another action already uses the same shortcut, EbenTiler asks before clearing the existing assignment.
+- If another action already uses the same shortcut, Tessdeck asks before clearing the existing assignment.
 - Shortcuts without a modifier (`Ctrl`, `Alt`, `Shift`, or `Win`) are blocked because a global registration would prevent other programs from using that key normally.
 - The `About` page shows the current version and update status.
 
@@ -172,7 +174,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-appicon.ps1   # Rebuild the 
 
 ## Configuration file
 
-Settings are stored in `%APPDATA%\EbenTiler\config.ini` and can also be edited manually.
+Settings are stored in `%APPDATA%\Tessdeck\config.ini` and can also be edited manually.
 
 ```ini
 [Hotkeys]
@@ -188,11 +190,11 @@ ShowWelcomeGuide=false ; Whether to show the welcome guide on the next launch
 
 Leave a hotkey value empty to disable that action's global shortcut.
 
-Update-check state is stored separately in `%APPDATA%\EbenTiler\update-state.ini`. It contains only the last check time and the release tag that has already been notified.
+Update-check state is stored separately in `%APPDATA%\Tessdeck\update-state.ini`. It contains only the last check time and the release tag that has already been notified.
 
 ## Privacy
 
-EbenTiler does not collect personal information, usage analytics, window titles, keyboard input, or file contents, and it does not use telemetry, advertising, or analytics SDKs.
+Tessdeck does not collect personal information, usage analytics, window titles, keyboard input, or file contents, and it does not use telemetry, advertising, or analytics SDKs.
 
 For update notifications, it checks only the latest public release metadata from GitHub at most once every 24 hours. It does not automatically download or install update files.
 
@@ -243,20 +245,20 @@ powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1 -RequireCodeSi
 
 ## Code signing policy
 
-Until SignPath Foundation or another public code-signing provider is connected, EbenTiler may publish verified unsigned GitHub Releases. In that case, the Release page and landing page clearly disclose that the installer is unsigned and that Windows may display an `Unknown publisher` or SmartScreen warning.
+Until SignPath Foundation or another public code-signing provider is connected, Tessdeck may publish verified unsigned GitHub Releases. In that case, the Release page and landing page clearly disclose that the installer is unsigned and that Windows may display an `Unknown publisher` or SmartScreen warning.
 
 Once a code-signing identity is available, subsequent releases will require Authenticode signing and Code Signing EKU verification. Version numbers will always move forward so existing users can detect signed releases as updates instead of replacing an older release in place.
 
-SignPath Foundation is the preferred option currently under review for public OSS signing, but **EbenTiler has not yet been approved by or integrated with SignPath.** Until approval, the project does not claim that SignPath currently signs EbenTiler builds.
+SignPath Foundation is the preferred option currently under review for public OSS signing, but **Tessdeck has not yet been approved by or integrated with SignPath.** Until approval, the project does not claim that SignPath currently signs Tessdeck builds.
 
 See [`docs/CODE_SIGNING.md`](docs/CODE_SIGNING.md) for the detailed policy and provider-selection criteria.
 
 ## Notes
 
-- **Windows running as administrator cannot be moved by a lower-privilege EbenTiler process.** To arrange elevated windows, run `EbenTiler.exe` with matching administrator privileges.
-- A shortcut may fail to register when another program already owns it. EbenTiler reports failed registrations after startup, and `EbenTiler.exe --check` can be used at any time to inspect them. Change the shortcut in Settings if needed. Game launchers and dock utilities commonly reserve combinations such as `Ctrl+Alt+number` or `Ctrl+Alt+G`.
+- **Windows running as administrator cannot be moved by a lower-privilege Tessdeck process.** To arrange elevated windows, run `Tessdeck.exe` with matching administrator privileges.
+- A shortcut may fail to register when another program already owns it. Tessdeck reports failed registrations after startup, and `Tessdeck.exe --check` can be used at any time to inspect them. Change the shortcut in Settings if needed. Game launchers and dock utilities commonly reserve combinations such as `Ctrl+Alt+number` or `Ctrl+Alt+G`.
 - Window placement uses the **actual visible frame bounds** reported by DWM, avoiding offsets caused by the transparent resize border around Windows 10/11 windows.
-- EbenTiler is per-monitor DPI aware for setups where displays use different scaling factors.
+- Tessdeck is per-monitor DPI aware for setups where displays use different scaling factors.
 
 ## Project structure
 

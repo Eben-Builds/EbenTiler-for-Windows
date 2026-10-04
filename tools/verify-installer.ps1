@@ -121,7 +121,7 @@ try {
     }
 
     $cleanupDeadline = (Get-Date).AddSeconds(5)
-    while ((Test-Path $installedExe -or Test-Path $installedRuntimeConfig) -and (Get-Date) -lt $cleanupDeadline) {
+    while (((Test-Path $installedExe) -or (Test-Path $installedRuntimeConfig)) -and (Get-Date) -lt $cleanupDeadline) {
         Start-Sleep -Milliseconds 250
     }
     if (Test-Path $installedExe) {

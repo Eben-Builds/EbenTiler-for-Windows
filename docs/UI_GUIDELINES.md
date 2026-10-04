@@ -1,6 +1,6 @@
-# EbenTiler UI Guidelines
+# Tessdeck UI Guidelines
 
-EbenTiler의 설정 UI와 랜딩페이지는 단순한 장식보다 명확한 정보 구조와 일관된 Windows 경험을 우선합니다.
+Tessdeck의 설정 UI와 랜딩페이지는 단순한 장식보다 명확한 정보 구조와 일관된 Windows 경험을 우선합니다.
 
 ## 선택 상태
 

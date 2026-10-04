@@ -12,6 +12,9 @@ namespace EbenTilerWindows
         public Dictionary<SnapAction, Hotkey> Hotkeys;
         public int Gap;
         public bool CycleHalves;
+        public int CycleRatio1;
+        public int CycleRatio2;
+        public int CycleRatio3;
         public bool ShowWelcomeGuide;
 
         public Config()
@@ -19,6 +22,9 @@ namespace EbenTilerWindows
             Hotkeys = new Dictionary<SnapAction, Hotkey>();
             Gap = 0;
             CycleHalves = true;
+            CycleRatio1 = 50;
+            CycleRatio2 = 33;
+            CycleRatio3 = 67;
             ShowWelcomeGuide = true;
         }
 
@@ -114,6 +120,18 @@ namespace EbenTilerWindows
                     {
                         config.CycleHalves = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || value == "1";
                     }
+                    else if (string.Equals(key, "CycleRatio1", StringComparison.OrdinalIgnoreCase))
+                    {
+                        config.CycleRatio1 = ParseCycleRatio(value, config.CycleRatio1);
+                    }
+                    else if (string.Equals(key, "CycleRatio2", StringComparison.OrdinalIgnoreCase))
+                    {
+                        config.CycleRatio2 = ParseCycleRatio(value, config.CycleRatio2);
+                    }
+                    else if (string.Equals(key, "CycleRatio3", StringComparison.OrdinalIgnoreCase))
+                    {
+                        config.CycleRatio3 = ParseCycleRatio(value, config.CycleRatio3);
+                    }
                     else if (string.Equals(key, "ShowWelcomeGuide", StringComparison.OrdinalIgnoreCase))
                     {
                         config.ShowWelcomeGuide = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) || value == "1";
@@ -124,6 +142,16 @@ namespace EbenTilerWindows
             catch (UnauthorizedAccessException) { }
 
             return config;
+        }
+
+        private static int ParseCycleRatio(string value, int fallback)
+        {
+            int ratio;
+            if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out ratio))
+            {
+                return fallback;
+            }
+            return Math.Max(20, Math.Min(80, ratio));
         }
 
         public void Save()
@@ -153,6 +181,9 @@ namespace EbenTilerWindows
                 sb.AppendLine("[Options]");
                 sb.AppendLine("Gap=" + Gap.ToString(CultureInfo.InvariantCulture));
                 sb.AppendLine("CycleHalves=" + (CycleHalves ? "true" : "false"));
+                sb.AppendLine("CycleRatio1=" + Math.Max(20, Math.Min(80, CycleRatio1)).ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("CycleRatio2=" + Math.Max(20, Math.Min(80, CycleRatio2)).ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("CycleRatio3=" + Math.Max(20, Math.Min(80, CycleRatio3)).ToString(CultureInfo.InvariantCulture));
                 sb.AppendLine("ShowWelcomeGuide=" + (ShowWelcomeGuide ? "true" : "false"));
 
                 File.WriteAllText(FilePath, sb.ToString(), new UTF8Encoding(false));
@@ -173,6 +204,9 @@ namespace EbenTilerWindows
             if (other == null) return;
             Gap = other.Gap;
             CycleHalves = other.CycleHalves;
+            CycleRatio1 = other.CycleRatio1;
+            CycleRatio2 = other.CycleRatio2;
+            CycleRatio3 = other.CycleRatio3;
             ShowWelcomeGuide = other.ShowWelcomeGuide;
             Hotkeys = other.Hotkeys;
         }
@@ -182,6 +216,9 @@ namespace EbenTilerWindows
             Config copy = new Config();
             copy.Gap = Gap;
             copy.CycleHalves = CycleHalves;
+            copy.CycleRatio1 = CycleRatio1;
+            copy.CycleRatio2 = CycleRatio2;
+            copy.CycleRatio3 = CycleRatio3;
             copy.ShowWelcomeGuide = ShowWelcomeGuide;
             foreach (KeyValuePair<SnapAction, Hotkey> pair in Hotkeys)
             {

@@ -15,6 +15,8 @@ if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir | Out
 
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName UIAutomationClient
+Add-Type -AssemblyName UIAutomationTypes
 
 Add-Type -Namespace Cap -Name U -MemberDefinition @'
 [DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
@@ -34,6 +36,31 @@ function Save-Region {
     $bmp.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
     $bmp.Dispose()
     Write-Host "저장: $Path"
+}
+
+function Invoke-SettingsNavigation {
+    param([IntPtr]$Handle, [string[]]$Names)
+
+    $window = [System.Windows.Automation.AutomationElement]::FromHandle($Handle)
+    $scope = [System.Windows.Automation.TreeScope]::Descendants
+
+    foreach ($name in $Names) {
+        $condition = New-Object System.Windows.Automation.PropertyCondition (
+            [System.Windows.Automation.AutomationElement]::NameProperty, $name)
+        $element = $window.FindFirst($scope, $condition)
+        if ($null -eq $element) { continue }
+
+        $pattern = $null
+        if ($element.TryGetCurrentPattern(
+            [System.Windows.Automation.InvokePattern]::Pattern,
+            [ref]$pattern)) {
+            ([System.Windows.Automation.InvokePattern]$pattern).Invoke()
+            Start-Sleep -Milliseconds 500
+            return $true
+        }
+    }
+
+    return $false
 }
 
 $settings = Start-Process -FilePath $exe -ArgumentList '--settings' -PassThru
@@ -64,6 +91,25 @@ $settingsPng = Join-Path $OutDir 'settings.png'
 $bmp.Save($settingsPng, [System.Drawing.Imaging.ImageFormat]::Png)
 $bmp.Dispose()
 Write-Host "저장: $settingsPng"
+
+if (-not (Invoke-SettingsNavigation $hwnd @('레이아웃 설정', '레이아웃'))) {
+    $settings | Stop-Process -Force -ErrorAction SilentlyContinue
+    throw "레이아웃 설정 페이지로 이동하지 못했습니다."
+}
+
+[Cap.U]::GetWindowRect($hwnd, [ref]$r) | Out-Null
+$w = $r.Right - $r.Left
+$h = $r.Bottom - $r.Top
+$layoutBmp = New-Object System.Drawing.Bitmap $w, $h
+$layoutGraphics = [System.Drawing.Graphics]::FromImage($layoutBmp)
+$layoutHdc = $layoutGraphics.GetHdc()
+[Cap.U]::PrintWindow($hwnd, $layoutHdc, 2) | Out-Null
+$layoutGraphics.ReleaseHdc($layoutHdc)
+$layoutGraphics.Dispose()
+$layoutPng = Join-Path $OutDir 'layout.png'
+$layoutBmp.Save($layoutPng, [System.Drawing.Imaging.ImageFormat]::Png)
+$layoutBmp.Dispose()
+Write-Host "저장: $layoutPng"
 
 $settings | Stop-Process -Force -ErrorAction SilentlyContinue
 

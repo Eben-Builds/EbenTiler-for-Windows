@@ -75,6 +75,9 @@ namespace EbenTilerWindows
         private HotkeyCaptureBox _capture;
         private CheckBox _winModifier;
         private CheckBox _cycleHalves;
+        private NumericUpDown _cycleRatio1;
+        private NumericUpDown _cycleRatio2;
+        private NumericUpDown _cycleRatio3;
         private NumericUpDown _gap;
         private PreviewPanel _preview;
         private Label _previewNote;
@@ -395,21 +398,35 @@ namespace EbenTilerWindows
             page.Controls.Add(MakeLabel("반복 배치", 0, 274, 130, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
 
             _cycleHalves = new CheckBox();
-            _cycleHalves.Text = "같은 방향 단축키를 연달아 누르면 1/2 → 1/3 → 2/3 으로 폭 바꾸기";
+            _cycleHalves.Text = "같은 방향 단축키를 연달아 누르면 설정한 비율로 크기 순환";
             _cycleHalves.Location = new Point(S(4), S(306));
             _cycleHalves.Size = new Size(S(560), S(28));
             _cycleHalves.FlatStyle = FlatStyle.System;
             _cycleHalves.ForeColor = UiPalette.Text;
             _cycleHalves.Checked = _config.CycleHalves;
+            _cycleHalves.CheckedChanged += delegate { UpdateCycleRatioEnabledState(); };
             page.Controls.Add(_cycleHalves);
 
-            page.Controls.Add(MakeLabel("창 사이 여백", 0, 358, 140, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel("순환 비율", 0, 348, 120, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel("같은 키를 누를 때 순서대로 적용", 104, 350, 190, 22, 8.2f, FontStyle.Regular, UiPalette.TextMuted));
+
+            _cycleRatio1 = MakeRatioInput(_config.CycleRatio1, "첫 번째 순환 비율", 322, 344);
+            _cycleRatio2 = MakeRatioInput(_config.CycleRatio2, "두 번째 순환 비율", 446, 344);
+            _cycleRatio3 = MakeRatioInput(_config.CycleRatio3, "세 번째 순환 비율", 570, 344);
+            page.Controls.Add(_cycleRatio1);
+            page.Controls.Add(_cycleRatio2);
+            page.Controls.Add(_cycleRatio3);
+            page.Controls.Add(MakeLabel("%  →", 394, 350, 48, 22, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+            page.Controls.Add(MakeLabel("%  →", 518, 350, 48, 22, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+            page.Controls.Add(MakeLabel("%", 642, 350, 28, 22, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+
+            page.Controls.Add(MakeLabel("창 사이 여백", 0, 400, 140, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
             page.Controls.Add(MakeLabel(
                 "배치된 창 사이에 둘 여백을 픽셀 단위로 지정합니다.",
-                0, 388, 430, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted));
+                126, 402, 330, 22, 8.2f, FontStyle.Regular, UiPalette.TextMuted));
 
             _gap = new NumericUpDown();
-            _gap.Location = new Point(S(548), S(364));
+            _gap.Location = new Point(S(548), S(396));
             _gap.Size = new Size(S(82), S(26));
             _gap.Minimum = 0;
             _gap.Maximum = 100;
@@ -419,8 +436,35 @@ namespace EbenTilerWindows
             _gap.ForeColor = UiPalette.Text;
             _gap.AccessibleName = "창 사이 여백";
             page.Controls.Add(_gap);
-            Label unit = MakeLabel("픽셀", 638, 366, 46, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
+            Label unit = MakeLabel("픽셀", 638, 398, 46, 24, 8.5f, FontStyle.Regular, UiPalette.TextMuted);
             page.Controls.Add(unit);
+
+            UpdateCycleRatioEnabledState();
+        }
+
+        private NumericUpDown MakeRatioInput(int value, string accessibleName, int x, int y)
+        {
+            NumericUpDown input = new NumericUpDown();
+            input.Location = new Point(S(x), S(y));
+            input.Size = new Size(S(66), S(26));
+            input.Minimum = 20;
+            input.Maximum = 80;
+            input.Value = Math.Max(20, Math.Min(80, value));
+            input.DecimalPlaces = 0;
+            input.TextAlign = HorizontalAlignment.Center;
+            input.BorderStyle = BorderStyle.FixedSingle;
+            input.BackColor = UiPalette.Surface;
+            input.ForeColor = UiPalette.Text;
+            input.AccessibleName = accessibleName;
+            return input;
+        }
+
+        private void UpdateCycleRatioEnabledState()
+        {
+            bool enabled = _cycleHalves != null && _cycleHalves.Checked;
+            if (_cycleRatio1 != null) _cycleRatio1.Enabled = enabled;
+            if (_cycleRatio2 != null) _cycleRatio2.Enabled = enabled;
+            if (_cycleRatio3 != null) _cycleRatio3.Enabled = enabled;
         }
 
         private void BuildMonitorsPage()
@@ -799,14 +843,50 @@ namespace EbenTilerWindows
             _config.Hotkeys = defaults.Hotkeys;
             _config.Gap = defaults.Gap;
             _config.CycleHalves = defaults.CycleHalves;
+            _config.CycleRatio1 = defaults.CycleRatio1;
+            _config.CycleRatio2 = defaults.CycleRatio2;
+            _config.CycleRatio3 = defaults.CycleRatio3;
             if (_gap != null) _gap.Value = defaults.Gap;
             if (_cycleHalves != null) _cycleHalves.Checked = defaults.CycleHalves;
+            if (_cycleRatio1 != null) _cycleRatio1.Value = defaults.CycleRatio1;
+            if (_cycleRatio2 != null) _cycleRatio2.Value = defaults.CycleRatio2;
+            if (_cycleRatio3 != null) _cycleRatio3.Value = defaults.CycleRatio3;
+            UpdateCycleRatioEnabledState();
             FillList();
         }
 
         private void OnSave(object sender, EventArgs e)
         {
+            int ratio1 = _cycleRatio1 != null ? (int)_cycleRatio1.Value : 50;
+            int ratio2 = _cycleRatio2 != null ? (int)_cycleRatio2.Value : 33;
+            int ratio3 = _cycleRatio3 != null ? (int)_cycleRatio3.Value : 67;
+
+            if (_cycleRatio1 != null) _cycleRatio1.BackColor = UiPalette.Surface;
+            if (_cycleRatio2 != null) _cycleRatio2.BackColor = UiPalette.Surface;
+            if (_cycleRatio3 != null) _cycleRatio3.BackColor = UiPalette.Surface;
+
+            bool duplicate12 = ratio1 == ratio2;
+            bool duplicate13 = ratio1 == ratio3;
+            bool duplicate23 = ratio2 == ratio3;
+            if (duplicate12 || duplicate13 || duplicate23)
+            {
+                Color invalid = Color.FromArgb(255, 238, 238);
+                if (_cycleRatio1 != null && (duplicate12 || duplicate13)) _cycleRatio1.BackColor = invalid;
+                if (_cycleRatio2 != null && (duplicate12 || duplicate23)) _cycleRatio2.BackColor = invalid;
+                if (_cycleRatio3 != null && (duplicate13 || duplicate23)) _cycleRatio3.BackColor = invalid;
+
+                MessageBox.Show(this,
+                    "순환 비율은 서로 다른 값으로 설정해 주세요.",
+                    "Tessdeck for Windows", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (_cycleRatio1 != null && (duplicate12 || duplicate13)) _cycleRatio1.Focus();
+                else if (_cycleRatio2 != null && duplicate23) _cycleRatio2.Focus();
+                return;
+            }
+
             _config.CycleHalves = _cycleHalves != null && _cycleHalves.Checked;
+            _config.CycleRatio1 = ratio1;
+            _config.CycleRatio2 = ratio2;
+            _config.CycleRatio3 = ratio3;
             _config.Gap = _gap != null ? (int)_gap.Value : 0;
 
             if (_startupToggle != null && _startupToggle.Checked != Startup.IsEnabled())

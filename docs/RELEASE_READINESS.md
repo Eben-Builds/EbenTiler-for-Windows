@@ -244,10 +244,12 @@ v1.2.0은 같은 방향 단축키를 반복할 때 적용하는 세 가지 분�
 - [x] README 한국어/영어에 사용자 지정 비율 및 설정 키 문서화
 - [x] `v1.0.1 / v1.1.0 / v1.1.1 / v1.1.2 → v1.2.0` Upgrade Compatibility Check 모두 통과
 - [x] 실제 Windows PC에서 `v1.1.2 → v1.2.0` 로컬 업그레이드 QA 통과
-- [ ] `v1.2.0` 태그 생성
-- [ ] Release workflow 성공
-- [ ] `Tessdeck-Setup.exe` / SHA-256 공개
-- [ ] 최신 랜딩페이지 다운로드가 `v1.2.0`을 가리키는지 확인
+- [x] `v1.2.0` 태그 생성
+- [x] Release workflow 성공
+- [x] `Tessdeck-Setup.exe` / SHA-256 공개
+- [x] 최신 랜딩페이지 다운로드가 `v1.2.0`을 가리키는지 확인
+
+2026-10-05 `v1.2.0` Release가 실제 게시되었고, GitHub 최신 Release는 `Tessdeck 1.2.0 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며, 설치파일 SHA-256은 `c16310617e1acfeeda41a706b85f9d14bbe6e6600af5c391d38c606ce9f84173`입니다. 랜딩페이지는 `releases/latest/download/Tessdeck-Setup.exe`를 사용하므로 최신 공개 Release인 v1.2.0으로 자동 연결됩니다.
 
 상세 설계는 `docs/CUSTOM_SPLIT_RATIOS_v0.1.md`를 봅니다.
 

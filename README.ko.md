@@ -1,10 +1,10 @@
-# EbenTiler for Windows
+# Tessdeck for Windows
 
 [English](README.md) | **한국어**
 
 단축키로 창을 화면 절반·사분면·3분할에 순식간에 붙여 주는 Windows 상주 프로그램.
 
-- 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
+> **v1.1.0 리브랜딩:** 기존 EbenTiler 사용자의 설정은 Tessdeck 첫 실행 시 자동으로 이전됩니다.\n\n- 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
 - 실행 파일 하나, 약 100KB
 - 알림 영역에 상주, 설정 창에서 단축키 자유롭게 변경
 - 새 정식 버전이 있으면 최대 하루 한 번 알림으로 안내하며 자동 다운로드·설치는 하지 않음
@@ -43,14 +43,14 @@
 
 ## 설치
 
-일반 사용자는 `EbenTiler-Setup.exe`를 더블클릭하면 된다.
+일반 사용자는 `Tessdeck-Setup.exe`를 더블클릭하면 된다.
 관리자 권한이 필요하지 않고 현재 사용자 계정에만 설치된다.
 
-- 프로그램: `%LOCALAPPDATA%\Programs\EbenTiler\EbenTiler.exe`
+- 프로그램: `%LOCALAPPDATA%\Programs\Tessdeck\Tessdeck.exe`
 - 시작 메뉴 바로 가기 등록
 - 설치 화면에서 Windows 시작 시 자동 실행 여부 선택
 - 설치 후 바로 실행 가능
-- 제거: Windows **설정 > 앱 > 설치된 앱 > EbenTiler for Windows > 제거**
+- 제거: Windows **설정 > 앱 > 설치된 앱 > Tessdeck for Windows > 제거**
 
 자세한 설치/인스톨러 빌드/코드 서명 안내는 [`INSTALL.md`](INSTALL.md)를 참고한다.
 
@@ -71,7 +71,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-결과물은 `build\EbenTiler.exe` 하나다. 원하는 곳에 두고 실행하면 된다.
+결과물은 `build\Tessdeck.exe` 하나다. 원하는 곳에 두고 실행하면 된다.
 
 정식 설치 프로그램은 다음 명령으로 만든다.
 
@@ -82,8 +82,8 @@ powershell -ExecutionPolicy Bypass -File build-installer.ps1
 결과물:
 
 ```text
-dist\EbenTiler-Setup.exe
-dist\EbenTiler-Setup.exe.sha256
+dist\Tessdeck-Setup.exe
+dist\Tessdeck-Setup.exe.sha256
 ```
 
 ## 실행
@@ -91,7 +91,7 @@ dist\EbenTiler-Setup.exe.sha256
 설치했다면 이미 실행 중이다. 설치 없이 그냥 써 보려면:
 
 ```powershell
-build\EbenTiler.exe
+build\Tessdeck.exe
 ```
 
 알림 영역(작업표시줄 오른쪽)에 아이콘이 생긴다. **아이콘이 안 보이면 `∧` 를 눌러 숨김 목록을 확인**하면 된다.
@@ -112,7 +112,7 @@ Windows 는 처음 보는 프로그램의 아이콘을 기본으로 숨김 처�
 
 ### 업데이트 확인
 
-EbenTiler는 최대 24시간에 한 번 GitHub의 공개 최신 Release 정보를 확인한다.
+Tessdeck는 최대 24시간에 한 번 GitHub의 공개 최신 Release 정보를 확인한다.
 현재 버전보다 새 정식 버전이 있으면 Windows 알림으로 한 번 알려 준다.
 
 알림을 누르면 `설정 > 정보`가 열리며, 여기서 `업데이트 확인`을 직접 눌러 언제든 다시 확인할 수 있다.
@@ -123,14 +123,14 @@ EbenTiler는 최대 24시간에 한 번 GitHub의 공개 최신 Release 정보�
 스크립트나 다른 도구에서 창 배치를 시킬 수도 있다.
 
 ```powershell
-EbenTiler.exe --apply LeftHalf                 # 지금 활성 창을 왼쪽 절반에
-EbenTiler.exe --apply TopRight --hwnd 0x3B078E # 창을 직접 지정
-EbenTiler.exe --info                           # 활성 창 위치와 화면 작업 영역 확인
-EbenTiler.exe --list                           # 쓸 수 있는 명령 목록
-EbenTiler.exe --settings                       # 설정 창만 열기
-EbenTiler.exe --check                          # 단축키가 다른 프로그램과 겹치는지 확인
-EbenTiler.exe --startup on|off|status          # 윈도우 시작 시 자동 실행 등록/해제/확인
-EbenTiler.exe --out result.txt --info          # 결과를 파일로도 저장
+Tessdeck.exe --apply LeftHalf                 # 지금 활성 창을 왼쪽 절반에
+Tessdeck.exe --apply TopRight --hwnd 0x3B078E # 창을 직접 지정
+Tessdeck.exe --info                           # 활성 창 위치와 화면 작업 영역 확인
+Tessdeck.exe --list                           # 쓸 수 있는 명령 목록
+Tessdeck.exe --settings                       # 설정 창만 열기
+Tessdeck.exe --check                          # 단축키가 다른 프로그램과 겹치는지 확인
+Tessdeck.exe --startup on|off|status          # 윈도우 시작 시 자동 실행 등록/해제/확인
+Tessdeck.exe --out result.txt --info          # 결과를 파일로도 저장
 ```
 
 `--check` 는 이런 식으로 알려 준다. 단축키가 안 먹을 때 제일 먼저 확인하면 된다.
@@ -143,7 +143,7 @@ failed=1
 conflict=오른쪽 1/3 (Ctrl + Alt + H)
 ```
 
-`EbenTiler.exe` 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않을 때가 있다.
+`Tessdeck.exe` 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않을 때가 있다.
 스크립트에서 결과를 읽어야 하면 `--out <파일>` 을 함께 쓰면 된다.
 
 ## 설정 창
@@ -171,7 +171,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-appicon.ps1   # 아이콘 �
 
 ## 설정 파일
 
-`%APPDATA%\EbenTiler\config.ini` 에 저장된다. 직접 편집해도 된다.
+`%APPDATA%\Tessdeck\config.ini` 에 저장된다. 직접 편집해도 된다.
 
 ```ini
 [Hotkeys]
@@ -187,11 +187,11 @@ ShowWelcomeGuide=false ; 다음 실행 때 시작 가이드를 표시할지 여�
 
 값을 비워 두면 그 기능의 단축키는 등록하지 않는다.
 
-업데이트 확인 상태는 별도 `%APPDATA%\EbenTiler\update-state.ini`에 마지막 확인 시각과 이미 알린 릴리스 태그만 저장한다.
+업데이트 확인 상태는 별도 `%APPDATA%\Tessdeck\update-state.ini`에 마지막 확인 시각과 이미 알린 릴리스 태그만 저장한다.
 
 ## 개인정보 / Privacy
 
-EbenTiler 앱은 개인정보, 사용 통계, 창 제목, 입력 내용이나 파일 내용을 수집하지 않으며 텔레메트리·광고·분석 SDK를 사용하지 않는다.
+Tessdeck 앱은 개인정보, 사용 통계, 창 제목, 입력 내용이나 파일 내용을 수집하지 않으며 텔레메트리·광고·분석 SDK를 사용하지 않는다.
 
 새 버전 알림을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에서 최신 버전 정보만 확인한다. 앱은 업데이트 파일을 자동 다운로드하거나 자동 설치하지 않는다.
 
@@ -246,16 +246,16 @@ SignPath Foundation 또는 다른 공개 코드서명 수단이 연결되기 전
 
 코드서명 신원이 준비되면 이후 릴리스부터 Authenticode 서명과 Code Signing EKU 검증을 필수로 적용한다. 최초 공개 unsigned 버전이 `v1.0.0`이면 첫 signed 버전은 기존 사용자가 업데이트로 감지할 수 있도록 `v1.0.1` 이상을 사용한다.
 
-SignPath Foundation은 공개 OSS 코드서명의 우선 검토 대상이지만 **현재 EbenTiler는 아직 SignPath 승인을 받거나 연동한 상태가 아니다.** 승인 전에는 SignPath가 현재 서명을 제공하는 것처럼 표시하지 않는다.
+SignPath Foundation은 공개 OSS 코드서명의 우선 검토 대상이지만 **현재 Tessdeck는 아직 SignPath 승인을 받거나 연동한 상태가 아니다.** 승인 전에는 SignPath가 현재 서명을 제공하는 것처럼 표시하지 않는다.
 
 상세 정책과 공급자 선택 기준은 [`docs/CODE_SIGNING.md`](docs/CODE_SIGNING.md)를 참고한다.
 
 ## 알아 둘 점
 
 - **관리자 권한으로 실행 중인 창은 옮길 수 없다.** Windows 가 낮은 권한 프로그램이 높은 권한 창을 조작하는 것을 막기 때문이다.
-  그런 창까지 배치하려면 `EbenTiler.exe` 도 관리자 권한으로 실행해야 한다.
+  그런 창까지 배치하려면 `Tessdeck.exe` 도 관리자 권한으로 실행해야 한다.
 - 다른 프로그램이 이미 선점한 단축키는 등록에 실패한다. 이때는 시작 직후 알림으로 어떤 것이 실패했는지 알려 주고,
-  `EbenTiler.exe --check` 로 언제든 다시 확인할 수 있다. 설정 창에서 다른 조합으로 바꾸면 된다.
+  `Tessdeck.exe --check` 로 언제든 다시 확인할 수 있다. 설정 창에서 다른 조합으로 바꾸면 된다.
   게임 런처나 독(dock) 프로그램이 `Ctrl+Alt+숫자`, `Ctrl+Alt+G` 같은 조합을 자주 가져간다.
 - 창 위치는 DWM 이 알려 주는 **실제로 보이는 테두리** 기준으로 맞춘다. Windows 10/11 창 바깥의 투명한 여백만큼 어긋나 보이는 문제가 없다.
 - 모니터마다 배율이 다른 환경을 위해 per-monitor DPI 인식으로 동작한다.

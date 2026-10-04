@@ -22,9 +22,6 @@ namespace EbenTilerWindows
 
         private readonly Config _config;
 
-        /// <summary>절반 단축키를 연달아 누를 때 순환할 비율.</summary>
-        private static readonly double[] CycleFractions = new double[] { 0.5, 1.0 / 3.0, 2.0 / 3.0 };
-
         public WindowManager(Config config)
         {
             _config = config;
@@ -180,12 +177,12 @@ namespace EbenTilerWindows
             }
         }
 
-        /// <summary>같은 단축키를 이어서 누르면 1/2 → 1/3 → 2/3 으로 폭을 바꾼다.</summary>
+        /// <summary>같은 단축키를 이어서 누르면 사용자가 정한 세 비율을 순서대로 적용한다.</summary>
         private double NextFraction(SnapAction action, IntPtr hwnd)
         {
             if (!_config.CycleHalves)
             {
-                return 0.5;
+                return RatioToFraction(_config.CycleRatio1);
             }
 
             bool sameContext = hwnd == _cycleWindow
@@ -194,7 +191,7 @@ namespace EbenTilerWindows
 
             if (sameContext)
             {
-                _cycleIndex = (_cycleIndex + 1) % CycleFractions.Length;
+                _cycleIndex = (_cycleIndex + 1) % 3;
             }
             else
             {
@@ -204,7 +201,16 @@ namespace EbenTilerWindows
             _cycleWindow = hwnd;
             _cycleAction = action;
             _cycleTime = DateTime.UtcNow;
-            return CycleFractions[_cycleIndex];
+
+            if (_cycleIndex == 1) return RatioToFraction(_config.CycleRatio2);
+            if (_cycleIndex == 2) return RatioToFraction(_config.CycleRatio3);
+            return RatioToFraction(_config.CycleRatio1);
+        }
+
+        private static double RatioToFraction(int ratio)
+        {
+            int safeRatio = Math.Max(20, Math.Min(80, ratio));
+            return safeRatio / 100.0;
         }
 
         private void ResetCycle()

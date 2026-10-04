@@ -240,6 +240,18 @@ powershell -ExecutionPolicy Bypass -File tools\verify-installer.ps1
 powershell -ExecutionPolicy Bypass -File tools\verify-release.ps1
 ```
 
+실제 사용 중인 PC에서 업데이트 전후 설정/자동시작/설치 경로가 유지되는지 확인하려면:
+
+```powershell
+# 업데이트 설치 전에 한 번
+powershell -ExecutionPolicy Bypass -File tools\verify-local-upgrade.ps1 -Mode Before
+
+# 설정 > 정보 > 업데이트 확인 → 새 버전 설치 후
+powershell -ExecutionPolicy Bypass -File tools\verify-local-upgrade.ps1 -Mode After
+```
+
+자동 검사는 버전, Tessdeck 설치 경로, 기존 EbenTiler 잔재, 자동시작 ON/OFF, 자동시작 실행 경로, config.ini의 기존 설정값을 비교한다. 마지막에는 사람이 설정 화면의 버전, 트레이 아이콘, 실제 단축키 동작 세 가지만 눈으로 확인하면 된다.
+
 unsigned 공개 릴리스는 설치/제거와 SHA-256 검증을 통과한 뒤 게시한다. 코드서명 신원이 연결된 signed 릴리스는 Authenticode까지 추가 검증한다.
 
 ```powershell

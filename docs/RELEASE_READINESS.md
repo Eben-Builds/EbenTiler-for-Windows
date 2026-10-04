@@ -1,6 +1,22 @@
-# EbenTiler v1.0.1 공개 릴리스 상태
+# Tessdeck v1.1.0 공개 전환 상태
 
-이 문서는 EbenTiler의 첫 공개 다운로드 가능 Release 상태와 코드서명 전후 전환 조건을 기록합니다.
+이 문서는 EbenTiler에서 Tessdeck으로의 v1.1.0 리브랜딩, 기존 공개 Release 이력, 코드서명 전후 전환 조건을 기록합니다.
+
+## 0. v1.1.0 Tessdeck 리브랜딩
+
+- `v1.0.1`: EbenTiler 이름으로 공개된 마지막 Release
+- `v1.1.0`: Tessdeck 이름으로 공개할 첫 Release
+- 저장소 이름: `Eben-Builds/Tessdeck-for-Windows`
+- 실행 파일: `Tessdeck.exe`
+- 설치 파일: `Tessdeck-Setup.exe`
+- 설정 위치: `%APPDATA%\Tessdeck`
+- 기존 `%APPDATA%\EbenTiler` 설정은 Tessdeck 첫 실행 시 자동 복사
+- 기존 Windows 시작프로그램의 `EbenTiler` 값은 Tessdeck 등록 시 정리
+- 설치 AppId는 기존 값 유지: 이전 설치를 별도 앱이 아니라 업그레이드로 인식
+- 내부 C# namespace `EbenTilerWindows`는 호환성과 변경 범위 최소화를 위해 유지
+- v1.1.0 준비 빌드에서 `Tessdeck.exe` / `Tessdeck-Setup.exe` 생성, SHA-256, 설치/제거, CLI, 시작프로그램 smoke test를 GitHub Actions에서 통과
+
+v1.1.0 Release가 실제 게시되기 전까지 랜딩페이지 다운로드 버튼은 존재하지 않는 설치파일 직링크를 사용하지 않고 GitHub Releases 페이지로 연결합니다.
 
 ## 1. GitHub Rulesets
 
@@ -54,9 +70,9 @@
 
 ### SignPath Foundation 검토
 
-EbenTiler는 공개 MIT OSS이고 소스/빌드 스크립트를 직접 관리합니다. 앱은 텔레메트리·광고·분석 SDK·사용자 데이터 전송 기능을 사용하지 않으며, 업데이트 확인 기능은 최대 24시간에 한 번 GitHub의 공개 Release 정보만 조회합니다.
+Tessdeck은 공개 MIT OSS이고 소스/빌드 스크립트를 직접 관리합니다. 앱은 텔레메트리·광고·분석 SDK·사용자 데이터 전송 기능을 사용하지 않으며, 업데이트 확인 기능은 최대 24시간에 한 번 GitHub의 공개 Release 정보만 조회합니다.
 
-2026-10-03 신청을 제출했으며 승인 여부는 SignPath Foundation이 결정합니다. 승인 전에는 SignPath가 현재 EbenTiler의 서명을 제공하는 것처럼 표시하지 않습니다.
+2026-10-03 신청을 제출했으며 승인 여부는 SignPath Foundation이 결정합니다. 승인 전에는 SignPath가 현재 Tessdeck의 서명을 제공하는 것처럼 표시하지 않습니다.
 
 참고:
 - https://signpath.org/terms.html
@@ -69,8 +85,8 @@ EbenTiler는 공개 MIT OSS이고 소스/빌드 스크립트를 직접 관리합
 - 기존 공개 Git 히스토리는 파괴적인 rewrite 없이 유지
 - `.env`, PFX/P12/PEM/KEY 등 민감 파일은 저장소에 커밋하지 않음
 - 업데이트 확인은 GitHub 공개 Release 메타데이터만 조회하며 자동 다운로드/자동 설치하지 않음
-- 업데이트 확인 시각과 마지막 알림 태그만 `%APPDATA%\EbenTiler\update-state.ini`에 로컬 저장
-- 새 버전이 실제 설치되기 전까지 보일 트레이 `!` 배지 상태만 `%APPDATA%\EbenTiler\update-badge.ini`에 로컬 저장
+- 업데이트 확인 시각과 마지막 알림 태그만 `%APPDATA%\Tessdeck\update-state.ini`에 로컬 저장
+- 새 버전이 실제 설치되기 전까지 보일 트레이 `!` 배지 상태만 `%APPDATA%\Tessdeck\update-badge.ini`에 로컬 저장
 
 ## 5. UI / DPI 최종 확인
 
@@ -103,7 +119,7 @@ powershell -ExecutionPolicy Bypass -File tools\capture-dpi-ui.ps1
 
 ## 7. 업데이트 전환 확인
 
-EbenTiler는 자동 설치 대신 다음 흐름을 사용합니다.
+Tessdeck은 자동 설치 대신 다음 흐름을 사용합니다.
 
 - 최대 24시간에 한 번 GitHub 최신 Release 정보 확인
 - 새 버전이 있을 때만 Windows 알림 표시
@@ -128,7 +144,7 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 
 2026-10-03 실제 Windows에서 테스트용 `v9.9.9` 상태로 트레이 `!` 배지와 `업데이트 있음 · v9.9.9` 메뉴를 확인했고, 해당 메뉴를 누르면 `설정 > 정보`로 바로 이동하는 동작까지 확인했습니다.
 
-첫 공개 다운로드 가능 unsigned Release는 `v1.0.1`입니다. 이후 코드서명이 연결되면 같은 버전 파일을 교체하지 않고 `v1.0.2` 이상으로 올려 기존 사용자가 새 버전으로 인식하도록 합니다.
+첫 공개 다운로드 가능 unsigned Release는 EbenTiler `v1.0.1`입니다. Tessdeck 첫 공개 버전은 `v1.1.0`으로 준비하며, 이후 코드서명이 연결되면 같은 버전 파일을 교체하지 않고 `v1.1.1` 이상으로 올려 기존 사용자가 새 버전으로 인식하도록 합니다.
 
 ## 8. v1.0.1 unsigned 공개 Release 상태
 
@@ -147,13 +163,13 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [ ] 실제 브라우저에서 랜딩페이지 `윈도우용 다운로드` 클릭 후 `EbenTiler-Setup.exe` 다운로드 확인
 - [ ] 실제 Windows 앱의 `설정 > 정보 > 업데이트 확인`에서 공개 Release 상태 확인
 
-## 9. 코드서명 승인 후
+## 9. v1.1.0 이후 코드서명 승인 시
 
 SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release에서:
 
-- 앱 버전을 `1.0.2` 이상으로 올림
+- 앱 버전을 `1.1.1` 이상으로 올림
 - Authenticode 서명 적용
 - `tools/verify-release.ps1 -RequireCodeSigning` 통과
 - signed 설치 파일 게시
 - 랜딩페이지의 `코드 서명 준비 중` 안내 제거
-- 기존 `v1.0.1` unsigned 사용자에게 업데이트 알림이 뜨는지 확인
+- 기존 `v1.0.1` EbenTiler 및 `v1.1.0` Tessdeck 사용자에게 업데이트 알림이 정상 동작하는지 확인

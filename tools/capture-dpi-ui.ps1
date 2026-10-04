@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $toolsDir
-$exe = Join-Path $root 'build\EbenTiler.exe'
+$exe = Join-Path $root 'build\Tessdeck.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
 Add-Type -AssemblyName System.Drawing
@@ -126,7 +126,7 @@ function Invoke-Button {
     Start-Sleep -Milliseconds 500
 }
 
-$configPath = Join-Path (Join-Path $env:APPDATA 'EbenTiler') 'config.ini'
+$configPath = Join-Path (Join-Path $env:APPDATA 'Tessdeck') 'config.ini'
 $configDir = Split-Path -Parent $configPath
 $backupPath = Join-Path $env:TEMP ('ebentiler-dpi-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
 $hadConfig = Test-Path $configPath
@@ -136,12 +136,12 @@ $firstProcess = $null
 $settingsProcess = $null
 
 try {
-    Get-Process EbenTiler -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force
     if (Test-Path $configPath) { Remove-Item $configPath -Force }
 
     # 1) 실제 첫 실행 가이드
     $firstProcess = Start-Process -FilePath $exe -PassThru
-    $welcomeHwnd = Wait-Window 'EbenTiler for Windows - 시작하기'
+    $welcomeHwnd = Wait-Window 'Tessdeck for Windows - 시작하기'
     if ($welcomeHwnd -eq [IntPtr]::Zero) { throw "첫 실행 시작 가이드 창을 찾지 못했습니다." }
 
     $scaleInfo = Assert-ClientSize $welcomeHwnd 650 454 '첫 실행 시작 가이드'
@@ -162,7 +162,7 @@ try {
 
     # 2) 설정 > 일반 화면과 다시 보기 버튼
     $settingsProcess = Start-Process -FilePath $exe -ArgumentList '--settings' -PassThru
-    $settingsHwnd = Wait-Window 'EbenTiler for Windows - 설정'
+    $settingsHwnd = Wait-Window 'Tessdeck for Windows - 설정'
     if ($settingsHwnd -eq [IntPtr]::Zero) { throw "설정 창을 찾지 못했습니다." }
     Assert-ClientSize $settingsHwnd 960 660 '설정 창' | Out-Null
 
@@ -177,7 +177,7 @@ try {
 
     # 3) 설정에서 다시 연 가이드는 첫 실행용 체크박스를 노출하지 않는다.
     Invoke-Button $reopen
-    $manualWelcome = Wait-Window 'EbenTiler for Windows - 시작하기'
+    $manualWelcome = Wait-Window 'Tessdeck for Windows - 시작하기'
     if ($manualWelcome -eq [IntPtr]::Zero) { throw "설정에서 시작 가이드를 다시 열지 못했습니다." }
     Assert-ClientSize $manualWelcome 650 454 '설정에서 연 시작 가이드' | Out-Null
 
@@ -197,7 +197,7 @@ try {
 finally {
     if ($null -ne $firstProcess) { $firstProcess | Stop-Process -Force -ErrorAction SilentlyContinue }
     if ($null -ne $settingsProcess) { $settingsProcess | Stop-Process -Force -ErrorAction SilentlyContinue }
-    Get-Process EbenTiler -ErrorAction SilentlyContinue | Stop-Process -Force
+    Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force
 
     if ($hadConfig) {
         if (-not (Test-Path $configDir)) { New-Item -ItemType Directory -Path $configDir -Force | Out-Null }

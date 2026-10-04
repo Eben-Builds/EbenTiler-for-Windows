@@ -126,14 +126,35 @@ $report.Add("Settings window capture: OK")
 $report.Add("Tray region capture: OK")
 
 $setup = Start-Process -FilePath $installer -ArgumentList '/SP-' -PassThru
+$setupWindowProcess = $null
 try {
-    Save-Window -Process $setup -Path (Join-Path $OutDir 'installer-wizard.png')
+    $deadline = (Get-Date).AddSeconds(12)
+    do {
+        $setupWindowProcess = Get-Process -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.MainWindowHandle -ne [IntPtr]::Zero -and
+                $_.MainWindowTitle -like '*Tessdeck*'
+            } |
+            Select-Object -First 1
+
+        if ($null -ne $setupWindowProcess) { break }
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
+
+    if ($null -eq $setupWindowProcess) {
+        throw "Visible Tessdeck installer window was not found."
+    }
+
+    Save-Window -Process $setupWindowProcess -Path (Join-Path $OutDir 'installer-wizard.png')
     $report.Add("Installer wizard capture: OK")
 }
 finally {
-    if (-not $setup.HasExited) {
-        $setup | Stop-Process -Force -ErrorAction SilentlyContinue
-    }
+    Get-Process -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.ProcessName -like 'Tessdeck-Setup*' -or
+            $_.MainWindowTitle -like '*Tessdeck*'
+        } |
+        Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
 $report.Add("")

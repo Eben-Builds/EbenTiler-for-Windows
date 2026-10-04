@@ -84,7 +84,7 @@ namespace EbenTilerWindows
                 {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(LatestReleaseApi);
                     request.Method = "GET";
-                    request.UserAgent = "EbenTiler-for-Windows/" + result.CurrentVersion;
+                    request.UserAgent = "Tessdeck-for-Windows/" + result.CurrentVersion;
                     request.Accept = "application/vnd.github+json";
                     request.Timeout = 8000;
                     request.ReadWriteTimeout = 8000;
@@ -235,7 +235,7 @@ namespace EbenTilerWindows
                 if (!Directory.Exists(Config.Directory)) Directory.CreateDirectory(Config.Directory);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine("; EbenTiler 업데이트 확인 상태");
+                sb.AppendLine("; Tessdeck 업데이트 확인 상태");
                 if (lastCheckUtc != DateTime.MinValue)
                     sb.AppendLine("LastCheckUtc=" + lastCheckUtc.ToUniversalTime().ToString("o"));
                 if (!string.IsNullOrWhiteSpace(lastNotifiedTag))

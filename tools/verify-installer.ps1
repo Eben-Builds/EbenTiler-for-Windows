@@ -120,7 +120,10 @@ try {
         throw "Uninstaller exited with code $($uninstall.ExitCode)."
     }
 
-    Start-Sleep -Milliseconds 500
+    $cleanupDeadline = (Get-Date).AddSeconds(5)
+    while ((Test-Path $installedExe -or Test-Path $installedRuntimeConfig) -and (Get-Date) -lt $cleanupDeadline) {
+        Start-Sleep -Milliseconds 250
+    }
     if (Test-Path $installedExe) {
         throw 'Installed executable remains after uninstall.'
     }

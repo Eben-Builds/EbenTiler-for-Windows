@@ -1,4 +1,4 @@
-# Tessdeck v1.1.1 공개 릴리스 상태
+# Tessdeck v1.1.2 릴리스 준비 상태
 
 이 문서는 EbenTiler에서 Tessdeck으로의 v1.1.0 리브랜딩, 기존 공개 Release 이력, 코드서명 전후 전환 조건을 기록합니다.
 
@@ -192,13 +192,35 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 
 2026-10-05 `v1.1.1` Release가 실제 게시되었고, 최신 Release는 `Tessdeck 1.1.1 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 랜딩페이지의 `releases/latest/download/Tessdeck-Setup.exe` 경로가 자동으로 이 버전을 가리킵니다.
 
-## 11. v1.1.1 이후 코드서명 승인 시
+## 11. v1.1.2 업그레이드 호환성 패치 준비 상태
+
+v1.1.1 공개 후 실제 공개 설치파일끼리 업그레이드하는 자동 검증을 추가했습니다. 이 검증에서 기존 릴리스는 설정은 유지할 수 있었지만 자동시작 상태가 꺼질 수 있고, v1.0.1은 기존 EbenTiler 기본 설치 폴더를 재사용하는 문제가 확인되었습니다. v1.1.2에서는 이 호환성 경로를 수정했습니다.
+
+- [x] `v1.0.1 EbenTiler → v1.1.2 Tessdeck` 실제 설치파일 업그레이드 통과
+- [x] `v1.1.0 Tessdeck → v1.1.2 Tessdeck` 실제 설치파일 업그레이드 통과
+- [x] `v1.1.1 Tessdeck → v1.1.2 Tessdeck` 실제 설치파일 업그레이드 통과
+- [x] v1.0.1 기본 설치 폴더 `%LOCALAPPDATA%\Programs\EbenTiler` → `%LOCALAPPDATA%\Programs\Tessdeck` 전환 확인
+- [x] 업그레이드 후 기존 `EbenTiler.exe` 및 legacy 기본 설치 폴더 제거 확인
+- [x] `%APPDATA%\EbenTiler\config.ini` → `%APPDATA%\Tessdeck\config.ini` 설정 이전 확인
+- [x] 테스트 설정 `Gap=17` 유지 확인
+- [x] 기존 Windows 자동시작 ON 상태를 `Tessdeck.exe` 새 경로로 유지 확인
+- [x] legacy `EbenTiler` 자동시작 Registry 값 제거 확인
+- [x] legacy 설정 폴더의 Tessdeck 소유가 아닌 임의 파일은 삭제하지 않음 확인
+- [x] Windows Installer CI 통과
+- [x] Visual Brand Check 통과
+- [x] Upgrade Compatibility Check 3개 matrix 모두 통과
+- [ ] `v1.1.2` 태그 생성
+- [ ] Release workflow 성공
+- [ ] `Tessdeck-Setup.exe` / SHA-256 공개
+- [ ] 최신 랜딩페이지 다운로드가 `v1.1.2`를 가리키는지 확인
+
+## 12. v1.1.2 이후 코드서명 승인 시
 
 SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release에서:
 
-- 앱 버전을 `1.1.2` 이상으로 올림
+- 앱 버전을 `1.1.3` 이상으로 올림
 - Authenticode 서명 적용
 - `tools/verify-release.ps1 -RequireCodeSigning` 통과
 - signed 설치 파일 게시
 - 랜딩페이지의 `코드 서명 준비 중` 안내 제거
-- 기존 `v1.0.1` EbenTiler, `v1.1.0` Tessdeck, `v1.1.1` Tessdeck 사용자에게 다음 버전 업데이트 알림이 정상 동작하는지 확인
+- 기존 `v1.0.1` EbenTiler 및 `v1.1.0`~`v1.1.2` Tessdeck 사용자에게 다음 버전 업데이트 알림이 정상 동작하는지 확인

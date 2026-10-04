@@ -3,19 +3,19 @@ param(
     [Parameter(Mandatory=$true)][string]$BaseInstaller,
     [Parameter(Mandatory=$true)][string]$TargetInstaller,
     [Parameter(Mandatory=$true)][string]$TargetVersion,
-    [string]$OutDir = '.\\build\\upgrade-check'
+    [string]$OutDir = '.\build\upgrade-check'
 )
 
 $ErrorActionPreference = 'Stop'
 
-$legacyInstallDir = Join-Path $env:LOCALAPPDATA 'Programs\\EbenTiler'
-$modernInstallDir = Join-Path $env:LOCALAPPDATA 'Programs\\Tessdeck'
+$legacyInstallDir = Join-Path $env:LOCALAPPDATA 'Programs\EbenTiler'
+$modernInstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Tessdeck'
 $legacyConfigDir = Join-Path $env:APPDATA 'EbenTiler'
 $modernConfigDir = Join-Path $env:APPDATA 'Tessdeck'
-$runKey = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
+$runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 
 New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
-$reportPath = Join-Path $OutDir ("upgrade-{0}-to-{1}.txt" -f ($FromVersion -replace '\\.','-'), ($TargetVersion -replace '\\.','-'))
+$reportPath = Join-Path $OutDir ("upgrade-{0}-to-{1}.txt" -f ($FromVersion -replace '\.','-'), ($TargetVersion -replace '\.','-'))
 $report = New-Object System.Collections.Generic.List[string]
 
 function Add-Report([string]$Line) {

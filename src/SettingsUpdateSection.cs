@@ -10,8 +10,8 @@ namespace EbenTilerWindows
     /// <summary>설정 > 정보에 업데이트 확인 UI를 가볍게 붙인다.</summary>
     internal static class SettingsUpdateSection
     {
-        private const string UpdateButtonName = "EbenTilerUpdateButton";
-        private const string UpdateStatusName = "EbenTilerUpdateStatus";
+        private const string UpdateButtonName = "TessdeckUpdateButton";
+        private const string UpdateStatusName = "TessdeckUpdateStatus";
 
         public static void Attach(SettingsForm form)
         {
@@ -150,7 +150,7 @@ namespace EbenTilerWindows
             if (root == null) return null;
 
             Panel panel = root as Panel;
-            if (panel != null && ContainsDirectLabel(panel, "EbenTiler for Windows")) return panel;
+            if (panel != null && ContainsDirectLabel(panel, "Tessdeck for Windows")) return panel;
 
             foreach (Control child in root.Controls)
             {
@@ -194,7 +194,7 @@ namespace EbenTilerWindows
             }
             catch (Exception)
             {
-                MessageBox.Show(owner, "업데이트 페이지를 열지 못했습니다.", "EbenTiler for Windows",
+                MessageBox.Show(owner, "업데이트 페이지를 열지 못했습니다.", "Tessdeck for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }

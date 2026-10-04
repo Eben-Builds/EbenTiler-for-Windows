@@ -6,19 +6,19 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$exePath = Join-Path $root 'build\EbenTiler.exe'
-$configPath = Join-Path $root 'build\EbenTiler.exe.config'
-$configDir = Join-Path $env:APPDATA 'EbenTiler'
+$exePath = Join-Path $root 'build\Tessdeck.exe'
+$configPath = Join-Path $root 'build\Tessdeck.exe.config'
+$configDir = Join-Path $env:APPDATA 'Tessdeck'
 $badgePath = Join-Path $configDir 'update-badge.ini'
-$backupPath = Join-Path $env:TEMP 'EbenTiler-update-badge.backup.ini'
+$backupPath = Join-Path $env:TEMP 'Tessdeck-update-badge.backup.ini'
 
-function Stop-EbenTiler {
-    Get-Process EbenTiler -ErrorAction SilentlyContinue | Stop-Process -Force
+function Stop-Tessdeck {
+    Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force
     Start-Sleep -Milliseconds 300
 }
 
 if ($Restore) {
-    Stop-EbenTiler
+    Stop-Tessdeck
 
     if (Test-Path $backupPath) {
         if (-not (Test-Path $configDir)) {
@@ -58,7 +58,7 @@ if ([Version]::TryParse($exeVersion, [ref]$current) -and $version -le $current) 
     throw "Test tag $Tag must be newer than the current app version $current."
 }
 
-Stop-EbenTiler
+Stop-Tessdeck
 
 if (Test-Path $badgePath) {
     Copy-Item -Path $badgePath -Destination $backupPath -Force
@@ -72,13 +72,13 @@ if (-not (Test-Path $configDir)) {
 }
 
 @(
-    '; EbenTiler pending update badge - local visual test'
+    '; Tessdeck pending update badge - local visual test'
     "AvailableTag=$Tag"
 ) | Set-Content -Path $badgePath -Encoding UTF8
 
 Write-Host ''
 Write-Host "Injected update badge test state: $Tag"
-Write-Host 'Starting EbenTiler...'
+Write-Host 'Starting Tessdeck...'
 Start-Process -FilePath $exePath | Out-Null
 
 Write-Host ''

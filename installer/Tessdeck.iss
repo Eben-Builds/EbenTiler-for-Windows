@@ -33,7 +33,7 @@ WizardStyle=modern
 CloseApplications=yes
 CloseApplicationsFilter=Tessdeck.exe,EbenTiler.exe
 RestartApplications=no
-UsePreviousAppDir=yes
+UsePreviousAppDir=not LegacyDefaultInstallPresent
 UsePreviousTasks=yes
 VersionInfoCompany={#AppPublisher}
 VersionInfoDescription={#AppName} Setup
@@ -45,7 +45,7 @@ SignedUninstaller=yes
 #endif
 
 [Tasks]
-Name: "startup"; Description: "Windows 시작 시 Tessdeck 자동 실행"; GroupDescription: "추가 옵션:"; Flags: checkedonce
+Name: "startup"; Description: "Windows 시작 시 Tessdeck 자동 실행"; GroupDescription: "추가 옵션:"
 
 [Files]
 Source: "..\build\Tessdeck.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -67,6 +67,9 @@ Filename: "{app}\{#AppExeName}"; Parameters: "--startup off"; Flags: runhidden w
 [InstallDelete]
 Type: files; Name: "{app}\EbenTiler.exe"
 Type: files; Name: "{app}\EbenTiler.exe.config"
+Type: files; Name: "{localappdata}\Programs\EbenTiler\EbenTiler.exe"
+Type: files; Name: "{localappdata}\Programs\EbenTiler\EbenTiler.exe.config"
+Type: files; Name: "{localappdata}\Programs\EbenTiler\LICENSE"
 Type: files; Name: "{userprograms}\EbenTiler.lnk"
 Type: files; Name: "{userprograms}\EbenTiler for Windows.lnk"
 
@@ -81,12 +84,135 @@ Type: files; Name: "{userappdata}\EbenTiler\update-badge.ini"
 Type: dirifempty; Name: "{userappdata}\EbenTiler"
 
 [Code]
+var
+  HadPreviousInstall: Boolean;
+  HadStartup: Boolean;
+
+function LegacyDefaultInstallPresent: Boolean;
+begin
+  Result := FileExists(ExpandConstant('{localappdata}\Programs\EbenTiler\EbenTiler.exe'));
+end;
+
+function StartupValueExists(const ValueName: String): Boolean;
+var
+  ValueData: String;
+begin
+  Result := RegQueryStringValue(
+    HKCU,
+    'Software\Microsoft\Windows\CurrentVersion\Run',
+    ValueName,
+    ValueData);
+end;
+
+function InitializeSetup(): Boolean;
+begin
+  HadPreviousInstall :=
+    FileExists(ExpandConstant('{localappdata}\Programs\EbenTiler\EbenTiler.exe')) or
+    FileExists(ExpandConstant('{localappdata}\Programs\Tessdeck\Tessdeck.exe'));
+
+  HadStartup :=
+    StartupValueExists('EbenTiler') or
+    StartupValueExists('Tessdeck');
+
+  Result := True;
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if HadPreviousInstall and (CurPageID = wpSelectTasks) then
+  begin
+    if HadStartup then
+      WizardSelectTasks('startup')
+    else
+      WizardSelectTasks('!startup');
+  end;
+end;
+
+procedure CopyLegacyFileIfNeeded(const FileName: String);
+var
+  LegacyDir: String;
+  NewDir: String;
+  SourcePath: String;
+  DestPath: String;
+begin
+  LegacyDir := ExpandConstant('{userappdata}\EbenTiler');
+  NewDir := ExpandConstant('{userappdata}\Tessdeck');
+  SourcePath := LegacyDir + '\' + FileName;
+  DestPath := NewDir + '\' + FileName;
+
+  if FileExists(SourcePath) and (not FileExists(DestPath)) then
+  begin
+    ForceDirectories(NewDir);
+    if FileCopy(SourcePath, DestPath, True) then
+      DeleteFile(SourcePath);
+  end;
+end;
+
+procedure MigrateLegacyConfig();
+var
+  LegacyDir: String;
+begin
+  CopyLegacyFileIfNeeded('config.ini');
+  CopyLegacyFileIfNeeded('update-state.ini');
+  CopyLegacyFileIfNeeded('update-badge.ini');
+
+  LegacyDir := ExpandConstant('{userappdata}\EbenTiler');
+  RemoveDir(LegacyDir);
+end;
+
+procedure CleanupLegacyInstallDir();
+var
+  LegacyDir: String;
+begin
+  LegacyDir := ExpandConstant('{localappdata}\Programs\EbenTiler');
+
+  if CompareText(LegacyDir, ExpandConstant('{app}')) <> 0 then
+  begin
+    DeleteFile(LegacyDir + '\unins000.exe');
+    DeleteFile(LegacyDir + '\unins000.dat');
+    RemoveDir(LegacyDir);
+  end;
+end;
+
+procedure ApplyStartupPreference();
+var
+  EnableStartup: Boolean;
+  RunValue: String;
+begin
+  if HadPreviousInstall and WizardSilent then
+    EnableStartup := HadStartup
+  else
+    EnableStartup := WizardIsTaskSelected('startup');
+
+  RunValue := '"' + ExpandConstant('{app}\{#AppExeName}') + '"';
+
+  if EnableStartup then
+    RegWriteStringValue(
+      HKCU,
+      'Software\Microsoft\Windows\CurrentVersion\Run',
+      'Tessdeck',
+      RunValue)
+  else
+    RegDeleteValue(
+      HKCU,
+      'Software\Microsoft\Windows\CurrentVersion\Run',
+      'Tessdeck');
+
+  RegDeleteValue(
+    HKCU,
+    'Software\Microsoft\Windows\CurrentVersion\Run',
+    'EbenTiler');
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    if not WizardIsTaskSelected('startup') then
-      RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'Tessdeck');
-    RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'EbenTiler');
+    MigrateLegacyConfig();
+    ApplyStartupPreference();
+  end
+  else if CurStep = ssDone then
+  begin
+    CleanupLegacyInstallDir();
   end;
 end;

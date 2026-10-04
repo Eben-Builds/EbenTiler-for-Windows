@@ -240,9 +240,10 @@ v1.2.0은 같은 방향 단축키를 반복할 때 적용하는 세 가지 분�
 - [x] Windows Installer CI 빌드 / release verification / 설치·제거 smoke test 통과
 - [x] Visual Brand Check 통과
 - [x] 실제 `layout.png`에서 컨트롤 겹침·잘림·말줄임 최종 확인
+- [x] 실제 Windows PC에서 `50 / 40 / 60` 사용자 지정 비율 동작 확인
 - [x] README 한국어/영어에 사용자 지정 비율 및 설정 키 문서화
 - [x] `v1.0.1 / v1.1.0 / v1.1.1 / v1.1.2 → v1.2.0` Upgrade Compatibility Check 모두 통과
-- [ ] 실제 Windows PC에서 `v1.1.2 → v1.2.0` 로컬 업그레이드 QA 통과
+- [x] 실제 Windows PC에서 `v1.1.2 → v1.2.0` 로컬 업그레이드 QA 통과
 - [ ] `v1.2.0` 태그 생성
 - [ ] Release workflow 성공
 - [ ] `Tessdeck-Setup.exe` / SHA-256 공개

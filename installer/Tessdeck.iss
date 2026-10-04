@@ -65,6 +65,8 @@ Filename: "{app}\{#AppExeName}"; Parameters: "--startup off"; Flags: runhidden w
 [InstallDelete]
 Type: files; Name: "{app}\EbenTiler.exe"
 Type: files; Name: "{app}\EbenTiler.exe.config"
+Type: files; Name: "{userprograms}\EbenTiler.lnk"
+Type: files; Name: "{userprograms}\EbenTiler for Windows.lnk"
 
 [UninstallDelete]
 Type: files; Name: "{userappdata}\Tessdeck\config.ini"

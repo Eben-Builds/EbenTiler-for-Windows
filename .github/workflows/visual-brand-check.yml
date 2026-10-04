@@ -1,0 +1,55 @@
+name: Visual Brand Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'installer/**'
+      - 'tools/make-appicon.ps1'
+      - 'tools/capture-ui.ps1'
+      - 'tools/capture-brand-check.ps1'
+      - 'build.ps1'
+      - 'build-installer.ps1'
+      - '.github/workflows/visual-brand-check.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visual-brand-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture-windows-brand:
+    runs-on: windows-2025
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Inno Setup
+        shell: powershell
+        run: choco install innosetup --version=6.7.1 -y --no-progress
+
+      - name: Build Tessdeck
+        shell: powershell
+        run: .\build-installer.ps1
+
+      - name: Capture Windows brand surfaces
+        shell: powershell
+        run: .\tools\capture-brand-check.ps1
+
+      - name: Upload visual verification bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Tessdeck-Visual-Brand-Check
+          path: build\brand-check
+          if-no-files-found: error
+          retention-days: 14

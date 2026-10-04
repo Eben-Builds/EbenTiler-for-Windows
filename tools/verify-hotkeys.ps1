@@ -12,6 +12,7 @@ if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 $configDir = Join-Path $env:APPDATA 'Tessdeck'
 $configPath = Join-Path $configDir 'config.ini'
 $backupPath = Join-Path $env:TEMP ('tessdeck-hotkeys-config-' + [Guid]::NewGuid().ToString('N') + '.ini')
+$hadConfigDir = Test-Path $configDir
 $hadConfig = Test-Path $configPath
 if ($hadConfig) { Copy-Item $configPath $backupPath -Force }
 
@@ -23,6 +24,13 @@ function Restore-TestConfig {
     }
     elseif (Test-Path $configPath) {
         Remove-Item $configPath -Force
+    }
+
+    if (-not $hadConfigDir -and (Test-Path $configDir)) {
+        $remaining = @(Get-ChildItem -LiteralPath $configDir -Force -ErrorAction SilentlyContinue)
+        if ($remaining.Count -eq 0) {
+            Remove-Item $configDir -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 

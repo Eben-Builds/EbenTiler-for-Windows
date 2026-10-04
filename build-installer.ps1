@@ -7,11 +7,11 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $buildScript = Join-Path $root 'build.ps1'
-$issPath = Join-Path $root 'installer\EbenTiler.iss'
-$exePath = Join-Path $root 'build\EbenTiler.exe'
+$issPath = Join-Path $root 'installer\Tessdeck.iss'
+$exePath = Join-Path $root 'build\Tessdeck.exe'
 $distDir = Join-Path $root 'dist'
-$setupPath = Join-Path $distDir 'EbenTiler-Setup.exe'
-$hashPath = Join-Path $distDir 'EbenTiler-Setup.exe.sha256'
+$setupPath = Join-Path $distDir 'Tessdeck-Setup.exe'
+$hashPath = Join-Path $distDir 'Tessdeck-Setup.exe.sha256'
 
 function Find-Iscc {
     $command = Get-Command ISCC.exe -ErrorAction SilentlyContinue
@@ -57,7 +57,7 @@ function Find-SignTool {
 
 if (-not $SkipBuild) {
     & powershell -ExecutionPolicy Bypass -File $buildScript
-    if ($LASTEXITCODE -ne 0) { throw 'EbenTiler build failed.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Tessdeck build failed.' }
 }
 
 if (-not (Test-Path $exePath)) {
@@ -112,12 +112,12 @@ if ($signingEnabled) {
     }
 
     Write-Host ''
-    Write-Host 'Signing EbenTiler.exe...'
-    & $signTool sign /sha1 $certThumbprint /fd SHA256 /tr $timestampUrl /td SHA256 /d 'EbenTiler for Windows' $exePath
-    if ($LASTEXITCODE -ne 0) { throw "EbenTiler.exe signing failed (exit $LASTEXITCODE)." }
+    Write-Host 'Signing Tessdeck.exe...'
+    & $signTool sign /sha1 $certThumbprint /fd SHA256 /tr $timestampUrl /td SHA256 /d 'Tessdeck for Windows' $exePath
+    if ($LASTEXITCODE -ne 0) { throw "Tessdeck.exe signing failed (exit $LASTEXITCODE)." }
 
     & $signTool verify /pa /v $exePath
-    if ($LASTEXITCODE -ne 0) { throw "EbenTiler.exe signature verification failed (exit $LASTEXITCODE)." }
+    if ($LASTEXITCODE -ne 0) { throw "Tessdeck.exe signature verification failed (exit $LASTEXITCODE)." }
 }
 
 if (-not (Test-Path $distDir)) {
@@ -128,14 +128,14 @@ Remove-Item $hashPath -Force -ErrorAction SilentlyContinue
 
 $isccArgs = @("/DAppVersion=$version")
 if ($signingEnabled) {
-    $signCommand = '"' + $signTool + '" sign /sha1 ' + $certThumbprint + ' /fd SHA256 /tr "' + $timestampUrl + '" /td SHA256 /d "EbenTiler for Windows" $f'
+    $signCommand = '"' + $signTool + '" sign /sha1 ' + $certThumbprint + ' /fd SHA256 /tr "' + $timestampUrl + '" /td SHA256 /d "Tessdeck for Windows" $f'
     $isccArgs += '/DEnableSigning=1'
     $isccArgs += "/Sebentiler=$signCommand"
 }
 $isccArgs += $issPath
 
 Write-Host ''
-Write-Host "Compiling installer... (EbenTiler $version)"
+Write-Host "Compiling installer... (Tessdeck $version)"
 & $iscc @isccArgs
 if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed (exit $LASTEXITCODE)." }
 
@@ -145,13 +145,13 @@ if (-not (Test-Path $setupPath)) {
 
 if ($signingEnabled) {
     Write-Host ''
-    Write-Host 'Verifying EbenTiler-Setup.exe signature...'
+    Write-Host 'Verifying Tessdeck-Setup.exe signature...'
     & $signTool verify /pa /v $setupPath
     if ($LASTEXITCODE -ne 0) { throw "Installer signature verification failed (exit $LASTEXITCODE)." }
 }
 
 $hash = Get-FileHash -Algorithm SHA256 $setupPath
-Set-Content -Path $hashPath -Value ($hash.Hash.ToLowerInvariant() + '  EbenTiler-Setup.exe') -Encoding Ascii
+Set-Content -Path $hashPath -Value ($hash.Hash.ToLowerInvariant() + '  Tessdeck-Setup.exe') -Encoding Ascii
 
 $size = [Math]::Round((Get-Item $setupPath).Length / 1MB, 2)
 Write-Host ''
@@ -162,4 +162,4 @@ if ($signingEnabled) {
 } else {
     Write-Host 'Authenticode: unsigned (no signing certificate configured).'
 }
-Write-Host 'Share EbenTiler-Setup.exe with end users.'
+Write-Host 'Share Tessdeck-Setup.exe with end users.'

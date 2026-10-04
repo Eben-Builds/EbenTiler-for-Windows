@@ -1,7 +1,7 @@
 param(
-    [string]$Executable = '.\build\EbenTiler.exe',
-    [string]$Installer = '.\dist\EbenTiler-Setup.exe',
-    [string]$HashFile = '.\dist\EbenTiler-Setup.exe.sha256',
+    [string]$Executable = '.\build\Tessdeck.exe',
+    [string]$Installer = '.\dist\Tessdeck-Setup.exe',
+    [string]$HashFile = '.\dist\Tessdeck-Setup.exe.sha256',
     [switch]$RequireCodeSigning
 )
 

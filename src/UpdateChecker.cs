@@ -31,8 +31,8 @@ namespace EbenTilerWindows
     /// </summary>
     internal static class UpdateChecker
     {
-        private const string LatestReleaseApi = "https://api.github.com/repos/Eben-Builds/EbenTiler-for-Windows/releases/latest";
-        private const string ReleasesPage = "https://github.com/Eben-Builds/EbenTiler-for-Windows/releases/latest";
+        private const string LatestReleaseApi = "https://api.github.com/repos/Eben-Builds/Tessdeck-for-Windows/releases/latest";
+        private const string ReleasesPage = "https://github.com/Eben-Builds/Tessdeck-for-Windows/releases/latest";
         private static readonly object Sync = new object();
 
         private static string StatePath

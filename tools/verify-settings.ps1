@@ -27,10 +27,17 @@ Add-Type -Namespace SetUI -Name U -MemberDefinition @'
 '@
 try { [SetUI.U]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null } catch { }
 
-$originalAppData = $env:APPDATA
-$testAppData = Join-Path $env:TEMP ('tessdeck-settings-appdata-' + [Guid]::NewGuid().ToString('N'))
-$env:APPDATA = $testAppData
-$configPath = Join-Path (Join-Path $testAppData 'Tessdeck') 'config.ini'
+$configDir = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)) 'Tessdeck'
+$configPath = Join-Path $configDir 'config.ini'
+$backupDir = Join-Path $env:TEMP ('tessdeck-settings-backup-' + [Guid]::NewGuid().ToString('N'))
+$hadConfigDir = Test-Path $configDir
+
+if ($hadConfigDir) {
+    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+    Get-ChildItem -LiteralPath $configDir -Force -ErrorAction SilentlyContinue | ForEach-Object {
+        Copy-Item -LiteralPath $_.FullName -Destination $backupDir -Recurse -Force
+    }
+}
 
 $cursorX = 0; $cursorY = 0
 [SetUI.U]::GetCursorPos([ref]$cursorX, [ref]$cursorY) | Out-Null
@@ -153,7 +160,7 @@ $wasResident = $null -ne (Get-Process Tessdeck -ErrorAction SilentlyContinue)
 $settings = $null
 try {
     Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force
-    if (Test-Path $configPath) { Remove-Item $configPath -Force }
+    if (Test-Path $configDir) { Remove-Item $configDir -Recurse -Force }
 
     $settings = Start-Process -FilePath $exe -ArgumentList '--settings' -PassThru
     Start-Sleep -Seconds 3
@@ -262,9 +269,17 @@ finally {
     if ($null -ne $settings) { $settings | Stop-Process -Force -ErrorAction SilentlyContinue }
     Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force
 
-    $env:APPDATA = $originalAppData
-    if (Test-Path $testAppData) {
-        Remove-Item $testAppData -Recurse -Force -ErrorAction SilentlyContinue
+    if (Test-Path $configDir) {
+        Remove-Item $configDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    if ($hadConfigDir) {
+        New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+        Get-ChildItem -LiteralPath $backupDir -Force -ErrorAction SilentlyContinue | ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination $configDir -Recurse -Force
+        }
+    }
+    if (Test-Path $backupDir) {
+        Remove-Item $backupDir -Recurse -Force -ErrorAction SilentlyContinue
     }
     [SetUI.U]::SetCursorPos($cursorX, $cursorY) | Out-Null
 
@@ -275,7 +290,7 @@ finally {
     }
 
     Write-Host ""
-    Write-Host "테스트용 설정을 제거하고 원래 APPDATA와 마우스 위치로 되돌렸습니다."
+    Write-Host "테스트용 설정을 제거하고 원래 Tessdeck 설정과 마우스 위치로 되돌렸습니다."
 }
 
 Write-Host ""

@@ -499,7 +499,7 @@ namespace EbenTilerWindows
             page.Controls.Add(MakeLabel("MIT 라이선스", 0, 380, 180, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
 
             Button github = MakePageButton("GitHub 열기", 548, 370, 144, false);
-            github.Click += delegate { OpenTarget("https://github.com/Eben-Builds/EbenTiler-for-Windows"); };
+            github.Click += delegate { OpenTarget("https://github.com/Eben-Builds/Tessdeck-for-Windows"); };
             page.Controls.Add(github);
         }
 

@@ -62,10 +62,10 @@ if ($appVersion -ne $Version) {
     throw "Requested release $Version does not match AssemblyFileVersion $appVersion."
 }
 
-$installerScript = Get-Content -LiteralPath (Join-Path $root 'installer\EbenTiler.iss') -Raw
+$installerScript = Get-Content -LiteralPath (Join-Path $root 'installer\Tessdeck.iss') -Raw
 $installerVersionPattern = '#define AppVersion\s+"' + [regex]::Escape($Version) + '"'
 if ($installerScript -notmatch $installerVersionPattern) {
-    throw "installer/EbenTiler.iss does not declare AppVersion $Version."
+    throw "installer/Tessdeck.iss does not declare AppVersion $Version."
 }
 
 & git rev-parse -q --verify "refs/tags/$tag" *> $null
@@ -92,7 +92,7 @@ Write-Host 'Mode: unsigned unless a valid code-signing identity is configured in
 Write-Host 'The GitHub Release will disclose the unsigned state and publish a SHA-256 checksum.'
 Write-Host ''
 
-Invoke-Git -GitArgs @('tag', '-a', $tag, '-m', "EbenTiler $Version")
+Invoke-Git -GitArgs @('tag', '-a', $tag, '-m', "Tessdeck $Version")
 try {
     Invoke-Git -GitArgs @('push', 'origin', $tag)
 }
@@ -103,4 +103,4 @@ catch {
 
 Write-Host ''
 Write-Host "Published tag: $tag"
-Write-Host 'GitHub Actions will now build, verify, and publish EbenTiler-Setup.exe plus its SHA-256 checksum.'
+Write-Host 'GitHub Actions will now build, verify, and publish Tessdeck-Setup.exe plus its SHA-256 checksum.'

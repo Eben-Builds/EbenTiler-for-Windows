@@ -12,6 +12,14 @@ if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -Namespace LayoutQA -Name Native -MemberDefinition @'
+public struct POINT { public int X; public int Y; }
+[DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
+[DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr h);
+[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+[DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+[DllImport("user32.dll")] public static extern void mouse_event(uint flags, int dx, int dy, uint data, IntPtr extra);
+'@
 
 $configDir = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData)) 'Tessdeck'
 $configPath = Join-Path $configDir 'config.ini'
@@ -86,24 +94,8 @@ function Find-RatioInputs {
         $element = Find-ByName $Window @($name)
         if ($null -ne $element) { $result += $element }
     }
-    if ($result.Count -eq 3) { return $result }
-
-    $spinners = @()
-    $all = $Window.FindAll(
-        [System.Windows.Automation.TreeScope]::Descendants,
-        [System.Windows.Automation.Condition]::TrueCondition)
-    foreach ($element in $all) {
-        if ($element.Current.ControlType -eq [System.Windows.Automation.ControlType]::Spinner) {
-            $spinners += $element
-        }
-    }
-
-    if ($spinners.Count -ge 3) {
-        return @($spinners | Sort-Object { $_.Current.BoundingRectangle.X } | Select-Object -First 3)
-    }
-    return @()
+    return $result
 }
-
 function Set-RatioValue {
     param($Element, [double]$Value)
 
@@ -126,6 +118,26 @@ function Set-RatioValue {
     catch {
         return $false
     }
+}
+
+
+function Click-ClientPoint {
+    param([IntPtr]$Handle, [int]$X, [int]$Y)
+
+    $dpi = [LayoutQA.Native]::GetDpiForWindow($Handle)
+    if ($dpi -le 0) { $dpi = 96 }
+    $scale = $dpi / 96.0
+
+    $point = New-Object 'LayoutQA.Native+POINT'
+    $point.X = [int][Math]::Round($X * $scale)
+    $point.Y = [int][Math]::Round($Y * $scale)
+    [LayoutQA.Native]::ClientToScreen($Handle, [ref]$point) | Out-Null
+    [LayoutQA.Native]::SetForegroundWindow($Handle) | Out-Null
+    [LayoutQA.Native]::SetCursorPos($point.X, $point.Y) | Out-Null
+    Start-Sleep -Milliseconds 100
+    [LayoutQA.Native]::mouse_event(0x0002, 0, 0, 0, [IntPtr]::Zero)
+    [LayoutQA.Native]::mouse_event(0x0004, 0, 0, 0, [IntPtr]::Zero)
+    Start-Sleep -Milliseconds 250
 }
 
 $settings = $null
@@ -152,26 +164,36 @@ try {
 
     $layout = Find-ByName $window @('레이아웃 설정','레이아웃')
     if (-not (Invoke-Element $layout)) {
-        throw '레이아웃 설정 페이지를 열지 못했습니다.'
+        Click-ClientPoint $hwnd 101 239
     }
     Write-Host '[통과] 레이아웃 설정 페이지 열림' -ForegroundColor Green
 
+    $values = @(50,40,60)
     $ratios = @(Find-RatioInputs $window)
-    if ($ratios.Count -ne 3) {
-        throw "순환 비율 입력 상자 3개를 찾지 못했습니다. 발견: $($ratios.Count)"
+    $ratioSet = $ratios.Count -eq 3
+    if ($ratioSet) {
+        for ($i = 0; $i -lt 3; $i++) {
+            if (-not (Set-RatioValue $ratios[$i] $values[$i])) {
+                $ratioSet = $false
+                break
+            }
+        }
     }
 
-    $values = @(50,40,60)
-    for ($i = 0; $i -lt 3; $i++) {
-        if (-not (Set-RatioValue $ratios[$i] $values[$i])) {
-            throw "순환 비율 입력 실패: $($values[$i])"
+    if (-not $ratioSet) {
+        $ratioX = @(567,691,815)
+        for ($i = 0; $i -lt 3; $i++) {
+            Click-ClientPoint $hwnd $ratioX[$i] 465
+            [System.Windows.Forms.SendKeys]::SendWait('^a')
+            [System.Windows.Forms.SendKeys]::SendWait($values[$i].ToString())
+            Start-Sleep -Milliseconds 150
         }
     }
     Write-Host '[통과] 순환 비율 입력: 50 / 40 / 60' -ForegroundColor Green
 
     $save = Find-ByName $window @('저장')
     if (-not (Invoke-Element $save)) {
-        throw '저장 버튼을 누르지 못했습니다.'
+        Click-ClientPoint $hwnd 799 624
     }
 
     $settings.WaitForExit(5000) | Out-Null

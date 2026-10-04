@@ -58,7 +58,7 @@ namespace EbenTilerWindows
 
         private void BuildUi()
         {
-            Text = "EbenTiler for Windows - 시작하기";
+            Text = "Tessdeck for Windows - 시작하기";
             ShowIcon = true;
             Icon = AppIcon.LoadLarge();
             FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -79,10 +79,10 @@ namespace EbenTilerWindows
             Icon icon = AppIcon.LoadSized(S(48));
             iconBox.Image = icon.ToBitmap();
             icon.Dispose();
-            iconBox.AccessibleName = "EbenTiler 앱 아이콘";
+            iconBox.AccessibleName = "Tessdeck 앱 아이콘";
             Controls.Add(iconBox);
 
-            Controls.Add(MakeLabel("EbenTiler를 바로 시작해 보세요", 92, 22, 510, 34, 17f, FontStyle.Bold, UiPalette.Text));
+            Controls.Add(MakeLabel("Tessdeck를 바로 시작해 보세요", 92, 22, 510, 34, 17f, FontStyle.Bold, UiPalette.Text));
             Controls.Add(MakeLabel(
                 "복잡한 설정 없이 단축키만 누르면 현재 창이 원하는 위치로 이동합니다.",
                 92, 56, 520, 25, 9.5f, FontStyle.Regular, UiPalette.TextMuted));
@@ -106,7 +106,7 @@ namespace EbenTilerWindows
                 "2초 안에 같은 절반 단축키를 다시 누르면 폭이 순서대로 바뀝니다.");
 
             Controls.Add(MakeLabel(
-                "작업표시줄 오른쪽 EbenTiler 아이콘에서 언제든 단축키와 시작 옵션을 바꿀 수 있습니다.",
+                "작업표시줄 오른쪽 Tessdeck 아이콘에서 언제든 단축키와 시작 옵션을 바꿀 수 있습니다.",
                 30, 360, 590, 24, 8.8f, FontStyle.Regular, UiPalette.TextMuted));
 
             if (_manualPreview)

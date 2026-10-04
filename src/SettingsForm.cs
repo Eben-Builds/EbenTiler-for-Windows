@@ -408,7 +408,7 @@ namespace EbenTilerWindows
             page.Controls.Add(_cycleHalves);
 
             page.Controls.Add(MakeLabel("순환 비율", 0, 348, 120, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
-            page.Controls.Add(MakeLabel("같은 키를 누를 때 순서대로 적용", 104, 350, 190, 22, 8.2f, FontStyle.Regular, UiPalette.TextMuted));
+            page.Controls.Add(MakeLabel("같은 키를 누를 때 순서대로 적용", 132, 350, 166, 22, 8.2f, FontStyle.Regular, UiPalette.TextMuted));
 
             _cycleRatio1 = MakeRatioInput(_config.CycleRatio1, "첫 번째 순환 비율", 322, 344);
             _cycleRatio2 = MakeRatioInput(_config.CycleRatio2, "두 번째 순환 비율", 446, 344);
@@ -423,7 +423,7 @@ namespace EbenTilerWindows
             page.Controls.Add(MakeLabel("창 사이 여백", 0, 400, 140, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
             page.Controls.Add(MakeLabel(
                 "배치된 창 사이에 둘 여백을 픽셀 단위로 지정합니다.",
-                126, 402, 330, 22, 8.2f, FontStyle.Regular, UiPalette.TextMuted));
+                148, 402, 322, 22, 8.2f, FontStyle.Regular, UiPalette.TextMuted));
 
             _gap = new NumericUpDown();
             _gap.Location = new Point(S(548), S(396));

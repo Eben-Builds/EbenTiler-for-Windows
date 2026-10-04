@@ -27,10 +27,10 @@ Add-Type -Namespace SetUI -Name U -MemberDefinition @'
 '@
 try { [SetUI.U]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null } catch { }
 
-$configPath = Join-Path (Join-Path $env:APPDATA 'Tessdeck') 'config.ini'
-$backupPath = Join-Path $env:TEMP ('ebentiler-set-backup-' + [Guid]::NewGuid().ToString('N') + '.ini')
-$hadConfig  = Test-Path $configPath
-if ($hadConfig) { Copy-Item $configPath $backupPath -Force }
+$originalAppData = $env:APPDATA
+$testAppData = Join-Path $env:TEMP ('tessdeck-settings-appdata-' + [Guid]::NewGuid().ToString('N'))
+$env:APPDATA = $testAppData
+$configPath = Join-Path (Join-Path $testAppData 'Tessdeck') 'config.ini'
 
 $cursorX = 0; $cursorY = 0
 [SetUI.U]::GetCursorPos([ref]$cursorX, [ref]$cursorY) | Out-Null
@@ -117,6 +117,22 @@ function Click-Element {
     Start-Sleep -Milliseconds 350
 }
 
+function Set-RangeValue {
+    param($Element, [double]$Value)
+
+    if ($null -eq $Element) { return $false }
+
+    $pattern = $null
+    if ($Element.TryGetCurrentPattern(
+        [System.Windows.Automation.RangeValuePattern]::Pattern,
+        [ref]$pattern)) {
+        ([System.Windows.Automation.RangeValuePattern]$pattern).SetValue($Value)
+        Start-Sleep -Milliseconds 150
+        return $true
+    }
+    return $false
+}
+
 function Send-Key {
     param([byte]$Key, [switch]$Ctrl, [switch]$Alt, [switch]$Shift)
     if ($Ctrl)  { [SetUI.U]::keybd_event(0x11, 0, 0, [IntPtr]::Zero) }
@@ -186,6 +202,26 @@ try {
     Click-Element $assign
     Ok "'이 단축키로 지정' 버튼 클릭"
 
+    $layoutNav = Find-Element $window '레이아웃 설정'
+    if ($null -eq $layoutNav) { throw "'레이아웃' 탐색 버튼을 찾지 못했습니다." }
+    Click-Element $layoutNav
+
+    $ratio1 = Find-Element $window '첫 번째 순환 비율'
+    $ratio2 = Find-Element $window '두 번째 순환 비율'
+    $ratio3 = Find-Element $window '세 번째 순환 비율'
+    if ($null -eq $ratio1 -or $null -eq $ratio2 -or $null -eq $ratio3) {
+        throw '순환 비율 입력 상자를 찾지 못했습니다.'
+    }
+
+    $ratioSet = (Set-RangeValue $ratio1 50) -and
+        (Set-RangeValue $ratio2 40) -and
+        (Set-RangeValue $ratio3 60)
+    if ($ratioSet) {
+        Ok "레이아웃 순환 비율 입력: 50 / 40 / 60"
+    } else {
+        Bad "레이아웃 순환 비율 입력 실패"
+    }
+
     $save = Find-Element $window '저장'
     if ($null -eq $save) { throw "'저장' 버튼을 찾지 못했습니다." }
     Click-Element $save
@@ -200,6 +236,14 @@ try {
         } else {
             $line = ($saved -split "`r?`n" | Where-Object { $_ -like 'LastThird=*' }) -join ''
             Bad "설정 파일에 반영되지 않음 (현재 '$line')"
+        }
+
+        if ($saved -match 'CycleRatio1=50' -and
+            $saved -match 'CycleRatio2=40' -and
+            $saved -match 'CycleRatio3=60') {
+            Ok "순환 비율 저장됨: 50 / 40 / 60"
+        } else {
+            Bad "순환 비율이 설정 파일에 정확히 저장되지 않음"
         }
     }
 
@@ -218,11 +262,9 @@ finally {
     if ($null -ne $settings) { $settings | Stop-Process -Force -ErrorAction SilentlyContinue }
     Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force
 
-    if ($hadConfig) {
-        Copy-Item $backupPath $configPath -Force
-        Remove-Item $backupPath -Force -ErrorAction SilentlyContinue
-    } elseif (Test-Path $configPath) {
-        Remove-Item $configPath -Force
+    $env:APPDATA = $originalAppData
+    if (Test-Path $testAppData) {
+        Remove-Item $testAppData -Recurse -Force -ErrorAction SilentlyContinue
     }
     [SetUI.U]::SetCursorPos($cursorX, $cursorY) | Out-Null
 
@@ -233,7 +275,7 @@ finally {
     }
 
     Write-Host ""
-    Write-Host "원래 설정 상태와 마우스 위치로 되돌렸습니다."
+    Write-Host "테스트용 설정을 제거하고 원래 APPDATA와 마우스 위치로 되돌렸습니다."
 }
 
 Write-Host ""

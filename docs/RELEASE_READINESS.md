@@ -163,7 +163,7 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [ ] 실제 브라우저에서 랜딩페이지 `윈도우용 다운로드` 클릭 후 `EbenTiler-Setup.exe` 다운로드 확인
 - [ ] 실제 Windows 앱의 `설정 > 정보 > 업데이트 확인`에서 공개 Release 상태 확인
 
-## 8. v1.1.0 Tessdeck 공개 Release 상태
+## 9. v1.1.0 Tessdeck 공개 Release 상태
 
 - [x] `v1.1.0` 태그가 main의 검증된 커밋을 가리킴
 - [x] Release workflow에서 버전 일치 확인
@@ -174,7 +174,7 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [x] `Tessdeck-Setup.exe` 및 `Tessdeck-Setup.exe.sha256` 첨부
 - [x] 랜딩페이지 다운로드 경로를 Tessdeck 최신 Release 직링크로 전환
 
-## 9. v1.1.0 이후 코드서명 승인 시
+## 10. v1.1.0 이후 코드서명 승인 시
 
 SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release에서:
 

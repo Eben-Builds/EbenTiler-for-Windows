@@ -1,7 +1,7 @@
 param(
     [ValidateSet('Before', 'After', 'Current')]
     [string]$Mode = 'Current',
-    [string]$ExpectedVersion = '1.1.2'
+    [string]$ExpectedVersion = '1.2.0'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -296,7 +296,7 @@ if ($Failures -eq 0) {
 
 Write-Host ''
 Write-Host 'Manual visual checks:'
-Write-Host '  1. Settings > About shows version 1.1.2.'
+Write-Host '  1. Settings > About shows version 1.2.0.'
 Write-Host '  2. Taskbar/tray shows the new Tessdeck icon.'
 Write-Host '  3. Your usual window-layout hotkeys still work.'
 Write-Host ''

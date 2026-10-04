@@ -4,7 +4,7 @@
 
 ## 현재 상태
 
-- Tessdeck는 공개 MIT OSS입니다.
+- Tessdeck은 공개 MIT OSS입니다.
 - SignPath Foundation은 우선 검토 대상이지만 **아직 승인되거나 연결된 상태가 아닙니다.**
 - 승인 전에는 SignPath가 Tessdeck의 서명을 제공하는 것처럼 표시하지 않습니다.
 - 코드서명 신원이 연결되기 전에도 GitHub Release를 공개할 수 있습니다. 이 경우 설치 파일은 unsigned임을 Release와 랜딩페이지에 명확히 표시합니다.
@@ -21,7 +21,7 @@
 
 ## 프로젝트 역할
 
-현재 Tessdeck는 1인 유지보수 프로젝트입니다.
+현재 Tessdeck은 1인 유지보수 프로젝트입니다.
 
 - **Committer / Reviewer:** `Eben-Builds`
 - **Release Approver:** `Eben-Builds`
@@ -32,7 +32,7 @@
 
 ## 개인정보 정책
 
-Tessdeck는 개인정보, 사용 기록, 창 제목, 입력 내용 또는 파일 내용을 수집하지 않습니다. 새 버전 확인을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에서 최신 버전 정보만 조회하며, 업데이트 파일을 자동 다운로드하거나 자동 설치하지 않습니다.
+Tessdeck은 개인정보, 사용 기록, 창 제목, 입력 내용 또는 파일 내용을 수집하지 않습니다. 새 버전 확인을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에서 최신 버전 정보만 조회하며, 업데이트 파일을 자동 다운로드하거나 자동 설치하지 않습니다.
 
 상세 내용: [`PRIVACY.md`](../PRIVACY.md)
 

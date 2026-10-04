@@ -105,10 +105,10 @@ jobs:
       - name: Upload verified release artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: EbenTiler-Release
+          name: Tessdeck-Release
           path: |
-            dist\EbenTiler-Setup.exe
-            dist\EbenTiler-Setup.exe.sha256
+            dist\Tessdeck-Setup.exe
+            dist\Tessdeck-Setup.exe.sha256
           if-no-files-found: error
           retention-days: 7
 
@@ -124,7 +124,7 @@ jobs:
       - name: Download verified release artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: EbenTiler-Release
+          name: Tessdeck-Release
           path: release-artifacts
 
       - name: Publish GitHub Release
@@ -135,8 +135,8 @@ jobs:
           EBENTILER_RELEASE_VERSION: ${{ needs.build-release.outputs.version }}
           EBENTILER_RELEASE_SIGNED: ${{ needs.build-release.outputs.signed }}
         run: |
-          $installer = '.\release-artifacts\EbenTiler-Setup.exe'
-          $checksum = '.\release-artifacts\EbenTiler-Setup.exe.sha256'
+          $installer = '.\release-artifacts\Tessdeck-Setup.exe'
+          $checksum = '.\release-artifacts\Tessdeck-Setup.exe.sha256'
 
           if ($env:EBENTILER_RELEASE_SIGNED -eq 'true') {
             gh release create "$env:GITHUB_REF_NAME" `
@@ -144,7 +144,7 @@ jobs:
               $checksum `
               --repo "$env:GH_REPO" `
               --verify-tag `
-              --title "EbenTiler $env:EBENTILER_RELEASE_VERSION" `
+              --title "Tessdeck $env:EBENTILER_RELEASE_VERSION" `
               --generate-notes
           } else {
             $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
@@ -152,7 +152,7 @@ jobs:
               '> [!WARNING]',
               '> 이 릴리스의 설치 파일은 아직 Authenticode 코드 서명이 적용되지 않았습니다. Windows에서 `알 수 없는 게시자` 또는 SmartScreen 경고가 표시될 수 있습니다.',
               '>',
-              '> 설치 파일은 이 저장소의 GitHub Actions에서 빌드했으며, 설치/제거 smoke test와 SHA-256 검증을 통과한 결과물입니다. `EbenTiler-Setup.exe.sha256` 파일을 함께 제공합니다.',
+              '> 설치 파일은 이 저장소의 GitHub Actions에서 빌드했으며, 설치/제거 smoke test와 SHA-256 검증을 통과한 결과물입니다. `Tessdeck-Setup.exe.sha256` 파일을 함께 제공합니다.',
               '>',
               '> SignPath Foundation 승인 또는 다른 공개 코드서명 수단이 연결되면 이후 릴리스부터 서명된 설치 파일로 전환할 예정입니다.',
               '',
@@ -165,6 +165,6 @@ jobs:
               $checksum `
               --repo "$env:GH_REPO" `
               --verify-tag `
-              --title "EbenTiler $env:EBENTILER_RELEASE_VERSION (unsigned)" `
+              --title "Tessdeck $env:EBENTILER_RELEASE_VERSION (unsigned)" `
               --notes-file $notesPath
           }

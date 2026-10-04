@@ -1,18 +1,18 @@
-# EbenTiler for Windows build script
+# Tessdeck for Windows build script
 # Uses the .NET Framework compiler already available on Windows.
 #
 #   powershell -ExecutionPolicy Bypass -File build.ps1
 #
-# Output: build\EbenTiler.exe
+# Output: build\Tessdeck.exe
 
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $srcDir = Join-Path $root 'src'
 $outDir = Join-Path $root 'build'
-$exePath = Join-Path $outDir 'EbenTiler.exe'
+$exePath = Join-Path $outDir 'Tessdeck.exe'
 $appConfigPath = Join-Path $root 'app.config'
-$runtimeConfigPath = Join-Path $outDir 'EbenTiler.exe.config'
+$runtimeConfigPath = Join-Path $outDir 'Tessdeck.exe.config'
 $iconPath = Join-Path $root 'assets\app.ico'
 $iconScript = Join-Path $root 'tools\make-appicon.ps1'
 
@@ -39,7 +39,7 @@ if (Test-Path $exePath) {
             [System.IO.FileShare]::None)
     }
     catch [System.IO.IOException] {
-        throw "build\EbenTiler.exe is currently in use. Exit EbenTiler from the tray, or run 'Get-Process EbenTiler -ErrorAction SilentlyContinue | Stop-Process -Force', then build again."
+        throw "build\Tessdeck.exe is currently in use. Exit Tessdeck from the tray, or run 'Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force', then build again."
     }
     finally {
         if ($null -ne $probe) { $probe.Dispose() }
@@ -79,13 +79,13 @@ $cscArgs = @(
     '/reference:System.Windows.Forms.dll'
 ) + $sources
 
-Write-Host 'Compiling EbenTiler...'
+Write-Host 'Compiling Tessdeck...'
 & $csc $cscArgs
 if ($LASTEXITCODE -ne 0) {
     throw "Compilation failed (exit $LASTEXITCODE)"
 }
 
-# .NET Framework reads DPI behavior from EbenTiler.exe.config next to the executable.
+# .NET Framework reads DPI behavior from Tessdeck.exe.config next to the executable.
 Copy-Item -Path $appConfigPath -Destination $runtimeConfigPath -Force
 
 $size = [Math]::Round((Get-Item $exePath).Length / 1KB, 1)

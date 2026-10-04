@@ -112,7 +112,7 @@ Windows 는 처음 보는 프로그램의 아이콘을 기본으로 숨김 처�
 
 ### 업데이트 확인
 
-Tessdeck는 최대 24시간에 한 번 GitHub의 공개 최신 Release 정보를 확인한다.
+Tessdeck은 최대 24시간에 한 번 GitHub의 공개 최신 Release 정보를 확인한다.
 현재 버전보다 새 정식 버전이 있으면 Windows 알림으로 한 번 알려 준다.
 
 알림을 누르면 `설정 > 정보`가 열리며, 여기서 `업데이트 확인`을 직접 눌러 언제든 다시 확인할 수 있다.
@@ -246,7 +246,7 @@ SignPath Foundation 또는 다른 공개 코드서명 수단이 연결되기 전
 
 코드서명 신원이 준비되면 이후 릴리스부터 Authenticode 서명과 Code Signing EKU 검증을 필수로 적용한다. 최초 공개 unsigned 버전이 `v1.0.0`이면 첫 signed 버전은 기존 사용자가 업데이트로 감지할 수 있도록 `v1.0.1` 이상을 사용한다.
 
-SignPath Foundation은 공개 OSS 코드서명의 우선 검토 대상이지만 **현재 Tessdeck는 아직 SignPath 승인을 받거나 연동한 상태가 아니다.** 승인 전에는 SignPath가 현재 서명을 제공하는 것처럼 표시하지 않는다.
+SignPath Foundation은 공개 OSS 코드서명의 우선 검토 대상이지만 **현재 Tessdeck은 아직 SignPath 승인을 받거나 연동한 상태가 아니다.** 승인 전에는 SignPath가 현재 서명을 제공하는 것처럼 표시하지 않는다.
 
 상세 정책과 공급자 선택 기준은 [`docs/CODE_SIGNING.md`](docs/CODE_SIGNING.md)를 참고한다.
 

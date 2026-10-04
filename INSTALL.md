@@ -1,6 +1,8 @@
 # Tessdeck 설치
 
-## 일반 사용자\n\n> 기존 EbenTiler 설치 사용자는 Tessdeck v1.1.0 설치 시 설정이 자동으로 이전됩니다. 기존 설치와 같은 AppId를 유지해 업그레이드 경로가 이어집니다.
+## 일반 사용자
+
+> 기존 EbenTiler 설치 사용자는 Tessdeck v1.1.0 설치 시 설정이 자동으로 이전됩니다. 기존 설치와 같은 AppId를 유지해 업그레이드 경로가 이어집니다.
 
 `Tessdeck-Setup.exe`를 더블클릭하고 설치 안내에 따라 진행하면 됩니다.
 
@@ -8,7 +10,7 @@
 - `%LOCALAPPDATA%\Programs\Tessdeck`에 설치됩니다.
 - 시작 메뉴에 `Tessdeck`이 등록됩니다.
 - 설치 화면에서 Windows 시작 시 자동 실행 여부를 선택할 수 있습니다.
-- 설치가 끝나면 바로 Tessdeck를 실행할 수 있습니다.
+- 설치가 끝나면 바로 Tessdeck을 실행할 수 있습니다.
 - 제거는 Windows **설정 > 앱 > 설치된 앱 > Tessdeck for Windows > 제거**에서 할 수 있습니다.
 
 > 코드 서명 인증서로 서명하지 않은 개발/테스트 빌드는 Windows SmartScreen에서 게시자를 확인할 수 없다는 경고가 표시될 수 있습니다. 정식 공개 릴리스는 유효한 Authenticode 서명을 요구합니다.
@@ -47,7 +49,7 @@ dist\Tessdeck-Setup.exe.sha256
 2026년의 공개 신뢰 코드서명 인증서는 새로 발급받을 때 **PFX 파일을 전제로 잡지 않습니다.**
 공개 신뢰 인증서의 개인키는 일반적으로 하드웨어 토큰, HSM, 클라우드 HSM 또는 서명 서비스에서 보호됩니다.
 
-Tessdeck는 서명 공급자와 빌드 로직을 분리합니다.
+Tessdeck은 서명 공급자와 빌드 로직을 분리합니다.
 서명 공급자가 Windows 인증서 저장소/KSP를 통해 인증서를 사용할 수 있게 한 뒤 아래 환경변수에 thumbprint를 제공하면 됩니다.
 
 ```text

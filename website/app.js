@@ -1,5 +1,5 @@
 (() => {
-  const releaseInstallerUrl = 'https://github.com/Eben-Builds/Tessdeck-for-Windows/releases/latest';
+  const releaseInstallerUrl = 'https://github.com/Eben-Builds/Tessdeck-for-Windows/releases/latest/download/Tessdeck-Setup.exe';
   const windowsLogo = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" style="display:block;fill:currentColor"><path d="M2 2h9v9H2V2zm11 0h9v9h-9V2zM2 13h9v9H2v-9zm11 0h9v9h-9v-9z"/></svg>';
   const links = document.querySelectorAll('a.download-button');
 

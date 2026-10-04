@@ -63,13 +63,7 @@ function Get-AllElements {
 
 function Find-ListView {
     param($Window)
-
-    foreach ($e in (Get-AllElements $Window)) {
-        if ($e.Current.ControlType -eq [System.Windows.Automation.ControlType]::List) {
-            return $e
-        }
-    }
-    return $null
+    return Find-Element $Window '기능 목록'
 }
 
 function Find-CaptureBox {
@@ -207,7 +201,8 @@ try {
     Click-Element $assign
     Ok "'이 단축키로 지정' 버튼 클릭"
 
-    $layoutNav = Find-Element $window '레이아웃'
+    $layoutNav = Find-Element $window '레이아웃 설정'
+    if ($null -eq $layoutNav) { $layoutNav = Find-Element $window '레이아웃' }
     if ($null -eq $layoutNav) { throw "'레이아웃' 탐색 버튼을 찾지 못했습니다." }
     Click-Element $layoutNav
 

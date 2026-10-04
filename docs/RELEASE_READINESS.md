@@ -1,11 +1,11 @@
-# Tessdeck v1.1.0 공개 전환 상태
+# Tessdeck v1.1.0 공개 릴리스 상태
 
 이 문서는 EbenTiler에서 Tessdeck으로의 v1.1.0 리브랜딩, 기존 공개 Release 이력, 코드서명 전후 전환 조건을 기록합니다.
 
 ## 0. v1.1.0 Tessdeck 리브랜딩
 
 - `v1.0.1`: EbenTiler 이름으로 공개된 마지막 Release
-- `v1.1.0`: Tessdeck 이름으로 공개할 첫 Release
+- `v1.1.0`: Tessdeck 이름으로 공개된 첫 Release
 - 저장소 이름: `Eben-Builds/Tessdeck-for-Windows`
 - 실행 파일: `Tessdeck.exe`
 - 설치 파일: `Tessdeck-Setup.exe`
@@ -16,7 +16,7 @@
 - 내부 C# namespace `EbenTilerWindows`는 호환성과 변경 범위 최소화를 위해 유지
 - v1.1.0 준비 빌드에서 `Tessdeck.exe` / `Tessdeck-Setup.exe` 생성, SHA-256, 설치/제거, CLI, 시작프로그램 smoke test를 GitHub Actions에서 통과
 
-v1.1.0 Release가 실제 게시되기 전까지 랜딩페이지 다운로드 버튼은 존재하지 않는 설치파일 직링크를 사용하지 않고 GitHub Releases 페이지로 연결합니다.
+2026-10-05 `v1.1.0` Release가 실제 게시되었으며, 랜딩페이지 다운로드 버튼은 최신 공개 Release의 `Tessdeck-Setup.exe`와 SHA-256 파일을 직접 가리킵니다.
 
 ## 1. GitHub Rulesets
 
@@ -162,6 +162,17 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [x] 랜딩페이지 소스가 `releases/latest/download/EbenTiler-Setup.exe`를 사용하고 최신 공개 Release가 `v1.0.1`인 것 확인
 - [ ] 실제 브라우저에서 랜딩페이지 `윈도우용 다운로드` 클릭 후 `EbenTiler-Setup.exe` 다운로드 확인
 - [ ] 실제 Windows 앱의 `설정 > 정보 > 업데이트 확인`에서 공개 Release 상태 확인
+
+## 8. v1.1.0 Tessdeck 공개 Release 상태
+
+- [x] `v1.1.0` 태그가 main의 검증된 커밋을 가리킴
+- [x] Release workflow에서 버전 일치 확인
+- [x] `Tessdeck-Setup.exe` 빌드 성공
+- [x] 설치/제거 smoke test 성공
+- [x] SHA-256 검증 성공
+- [x] GitHub Release 게시 성공
+- [x] `Tessdeck-Setup.exe` 및 `Tessdeck-Setup.exe.sha256` 첨부
+- [x] 랜딩페이지 다운로드 경로를 Tessdeck 최신 Release 직링크로 전환
 
 ## 9. v1.1.0 이후 코드서명 승인 시
 

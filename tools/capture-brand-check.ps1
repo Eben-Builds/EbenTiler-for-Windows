@@ -94,6 +94,14 @@ for ($i = 0; $i -lt $count; $i++) {
     if ($w -eq 0) { $w = 256 }
     if ($h -eq 0) { $h = 256 }
     $sizes += ("{0}x{1}" -f $w, $h)
+
+    if ($w -eq 16 -or $w -eq 32) {
+        $length = [BitConverter]::ToUInt32($bytes, $offset + 8)
+        $dataOffset = [BitConverter]::ToUInt32($bytes, $offset + 12)
+        $frame = New-Object byte[] $length
+        [Array]::Copy($bytes, [int]$dataOffset, $frame, 0, [int]$length)
+        [IO.File]::WriteAllBytes((Join-Path $OutDir ("appicon-{0}.png" -f $w)), $frame)
+    }
 }
 $report.Add("ICO entries: " + ($sizes -join ', '))
 

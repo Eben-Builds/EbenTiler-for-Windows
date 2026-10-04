@@ -408,7 +408,7 @@ namespace EbenTilerWindows
             page.Controls.Add(_cycleHalves);
 
             page.Controls.Add(MakeLabel("순환 비율", 0, 348, 120, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
-            page.Controls.Add(MakeLabel("같은 키를 누를 때 순서대로 적용", 132, 350, 166, 22, 8.2f, FontStyle.Regular, UiPalette.TextMuted));
+            page.Controls.Add(MakeLabel("누를 때 순서대로 적용", 132, 350, 166, 22, 8.2f, FontStyle.Regular, UiPalette.TextMuted));
 
             _cycleRatio1 = MakeRatioInput(_config.CycleRatio1, "첫 번째 순환 비율", 322, 344);
             _cycleRatio2 = MakeRatioInput(_config.CycleRatio2, "두 번째 순환 비율", 446, 344);

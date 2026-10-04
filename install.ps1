@@ -1,4 +1,4 @@
-﻿# EbenTiler for Windows 설치 / 제거
+﻿# Tessdeck for Windows 설치 / 제거
 #
 #   powershell -ExecutionPolicy Bypass -File install.ps1              설치
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -NoStartup   설치하되 자동 실행은 끄기
@@ -15,30 +15,32 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root       = Split-Path -Parent $MyInvocation.MyCommand.Path
-$builtExe   = Join-Path $root 'build\EbenTiler.exe'
-$installDir = Join-Path $env:LOCALAPPDATA 'Programs\EbenTiler'
-$installExe = Join-Path $installDir 'EbenTiler.exe'
+$builtExe   = Join-Path $root 'build\Tessdeck.exe'
+$installDir = Join-Path $env:LOCALAPPDATA 'Programs\Tessdeck'
+$installExe = Join-Path $installDir 'Tessdeck.exe'
 $startMenu  = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
-$shortcut   = Join-Path $startMenu 'EbenTiler for Windows.lnk'
-$configDir  = Join-Path $env:APPDATA 'EbenTiler'
+$shortcut   = Join-Path $startMenu 'Tessdeck for Windows.lnk'
+$configDir  = Join-Path $env:APPDATA 'Tessdeck'
 
 function Stop-Running {
-    $running = Get-Process EbenTiler -ErrorAction SilentlyContinue
+    $running = @(Get-Process Tessdeck -ErrorAction SilentlyContinue) + @(Get-Process EbenTiler -ErrorAction SilentlyContinue)
+    $running = $running | Where-Object { $null -ne $_ }
     if ($running) {
         $running | Stop-Process -Force
         Start-Sleep -Milliseconds 700
-        Write-Host "실행 중이던 EbenTiler 을 종료했습니다."
+        Write-Host "실행 중이던 Tessdeck 을 종료했습니다."
     }
 }
 
 if ($Uninstall) {
-    Write-Host "EbenTiler for Windows 를 제거합니다."
+    Write-Host "Tessdeck for Windows 를 제거합니다."
     Stop-Running
 
     if (Test-Path $installExe) {
         # 자동 실행 등록은 프로그램 자신이 지우게 한다.
         Start-Process -FilePath $installExe -ArgumentList @('--startup', 'off') -Wait -WindowStyle Hidden | Out-Null
     }
+    Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name Tessdeck -ErrorAction SilentlyContinue
     Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name EbenTiler -ErrorAction SilentlyContinue
 
     if (Test-Path $shortcut)   { Remove-Item $shortcut -Force;            Write-Host "시작 메뉴 바로 가기 삭제" }
@@ -108,7 +110,7 @@ if ($conflicts) {
 # 실행
 Start-Process -FilePath $installExe | Out-Null
 Start-Sleep -Seconds 2
-if (Get-Process EbenTiler -ErrorAction SilentlyContinue) {
+if (Get-Process Tessdeck -ErrorAction SilentlyContinue) {
     Write-Host ""
     Write-Host "설치 완료. 지금 실행 중입니다."
     Write-Host "알림 영역(작업표시줄 오른쪽 ∧) 안에 아이콘이 있습니다."

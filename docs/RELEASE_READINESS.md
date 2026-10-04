@@ -1,4 +1,4 @@
-# Tessdeck v1.1.1 릴리스 준비 상태
+# Tessdeck v1.1.1 공개 릴리스 상태
 
 이 문서는 EbenTiler에서 Tessdeck으로의 v1.1.0 리브랜딩, 기존 공개 Release 이력, 코드서명 전후 전환 조건을 기록합니다.
 
@@ -174,7 +174,7 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [x] `Tessdeck-Setup.exe` 및 `Tessdeck-Setup.exe.sha256` 첨부
 - [x] 랜딩페이지 다운로드 경로를 Tessdeck 최신 Release 직링크로 전환
 
-## 10. v1.1.1 브랜드 품질 패치 준비 상태
+## 10. v1.1.1 브랜드 품질 패치 공개 상태
 
 - [x] 공식 Tessdeck 아이콘을 Windows 멀티사이즈 ICO로 생성
 - [x] 실제 ICO의 16×16 / 32×32 프레임을 PNG로 추출해 식별성 확인
@@ -185,10 +185,12 @@ powershell -ExecutionPolicy Bypass -File tools\test-update-badge.ps1 -Restore
 - [x] Windows Installer CI에서 빌드 / SHA-256 / 설치 / 제거 smoke test 통과
 - [x] Visual Brand Check workflow 통과
 - [x] `Tessdeck-Visual-Brand-Check` 아티팩트 생성
-- [ ] `v1.1.1` 태그 생성
-- [ ] Release workflow 성공
-- [ ] `Tessdeck-Setup.exe` / SHA-256 공개
-- [ ] 최신 랜딩페이지 다운로드가 `v1.1.1`을 가리키는지 확인
+- [x] `v1.1.1` 태그 생성
+- [x] Release workflow 성공
+- [x] `Tessdeck-Setup.exe` / SHA-256 공개
+- [x] 최신 랜딩페이지 다운로드가 `v1.1.1`을 가리키는지 확인
+
+2026-10-05 `v1.1.1` Release가 실제 게시되었고, 최신 Release는 `Tessdeck 1.1.1 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 랜딩페이지의 `releases/latest/download/Tessdeck-Setup.exe` 경로가 자동으로 이 버전을 가리킵니다.
 
 ## 11. v1.1.1 이후 코드서명 승인 시
 
@@ -199,4 +201,4 @@ SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release
 - `tools/verify-release.ps1 -RequireCodeSigning` 통과
 - signed 설치 파일 게시
 - 랜딩페이지의 `코드 서명 준비 중` 안내 제거
-- 기존 `v1.0.1` EbenTiler 및 `v1.1.0` Tessdeck 사용자에게 업데이트 알림이 정상 동작하는지 확인
+- 기존 `v1.0.1` EbenTiler, `v1.1.0` Tessdeck, `v1.1.1` Tessdeck 사용자에게 다음 버전 업데이트 알림이 정상 동작하는지 확인

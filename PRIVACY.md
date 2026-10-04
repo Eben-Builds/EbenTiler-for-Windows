@@ -1,20 +1,20 @@
 # Privacy Policy
 
-EbenTiler for Windows는 로컬에서 동작하는 창 배치 유틸리티입니다.
+Tessdeck for Windows는 로컬에서 동작하는 창 배치 유틸리티입니다.
 
 ## 수집하는 정보
 
-EbenTiler 앱은 사용자의 개인정보, 사용 통계, 창 제목, 입력 내용, 파일 내용 또는 계정 정보를 수집하지 않습니다.
+Tessdeck 앱은 사용자의 개인정보, 사용 통계, 창 제목, 입력 내용, 파일 내용 또는 계정 정보를 수집하지 않습니다.
 
 ## 네트워크 통신
 
-EbenTiler는 새 버전이 있는지 확인하기 위해 **최대 24시간에 한 번** GitHub의 공개 Release API에 최신 릴리스 정보를 요청할 수 있습니다.
+Tessdeck는 새 버전이 있는지 확인하기 위해 **최대 24시간에 한 번** GitHub의 공개 Release API에 최신 릴리스 정보를 요청할 수 있습니다.
 
-이 요청은 공개 버전 정보 확인에만 사용하며 EbenTiler가 개인정보, 사용 기록, 창 제목, 입력 내용 또는 파일 내용을 전송하지 않습니다. 업데이트 파일을 자동으로 다운로드하거나 설치하지도 않습니다. 새 버전이 있으면 Windows 알림으로 알려 주고, 사용자가 직접 `설정 > 정보 > 업데이트 확인`에서 릴리스 페이지를 열도록 합니다.
+이 요청은 공개 버전 정보 확인에만 사용하며 Tessdeck가 개인정보, 사용 기록, 창 제목, 입력 내용 또는 파일 내용을 전송하지 않습니다. 업데이트 파일을 자동으로 다운로드하거나 설치하지도 않습니다. 새 버전이 있으면 Windows 알림으로 알려 주고, 사용자가 직접 `설정 > 정보 > 업데이트 확인`에서 릴리스 페이지를 열도록 합니다.
 
-GitHub 요청에는 일반적인 HTTPS 연결 정보와 앱 식별용 User-Agent(`EbenTiler-for-Windows/<버전>`)가 포함됩니다. GitHub 측에서 처리되는 네트워크 메타데이터에는 GitHub의 개인정보 처리방침이 적용됩니다.
+GitHub 요청에는 일반적인 HTTPS 연결 정보와 앱 식별용 User-Agent(`Tessdeck-for-Windows/<버전>`)가 포함됩니다. GitHub 측에서 처리되는 네트워크 메타데이터에는 GitHub의 개인정보 처리방침이 적용됩니다.
 
-EbenTiler는 그 밖의 텔레메트리, 광고, 분석 SDK 또는 사용자 추적용 원격 API를 사용하지 않습니다.
+Tessdeck는 그 밖의 텔레메트리, 광고, 분석 SDK 또는 사용자 추적용 원격 API를 사용하지 않습니다.
 
 사용자가 직접 GitHub 링크나 웹사이트 링크를 열거나 정식 릴리스 설치 파일을 내려받는 경우에는 해당 브라우저와 외부 서비스의 개인정보 처리방침이 적용됩니다.
 
@@ -22,35 +22,35 @@ EbenTiler는 그 밖의 텔레메트리, 광고, 분석 SDK 또는 사용자 추
 
 앱 설정은 현재 Windows 사용자 계정의 다음 위치에 저장됩니다.
 
-`%APPDATA%\EbenTiler\config.ini`
+`%APPDATA%\Tessdeck\config.ini`
 
 저장되는 값은 단축키, 창 사이 여백, 반복 배치 옵션, 시작 가이드 표시 여부와 같은 로컬 설정뿐입니다.
 
 업데이트 확인 주기와 같은 알림 상태는 다음 파일에 저장됩니다.
 
-`%APPDATA%\EbenTiler\update-state.ini`
+`%APPDATA%\Tessdeck\update-state.ini`
 
 이 파일에는 마지막 업데이트 확인 시각과 이미 알린 릴리스 태그만 저장되며 사용자 데이터는 저장하지 않습니다.
 
 새 버전이 발견된 뒤 실제 업데이트가 설치될 때까지 트레이 아이콘의 `!` 배지를 유지하기 위한 상태는 다음 파일에 저장됩니다.
 
-`%APPDATA%\EbenTiler\update-badge.ini`
+`%APPDATA%\Tessdeck\update-badge.ini`
 
 이 파일에는 현재 설치 버전보다 높은 것으로 확인된 공개 릴리스 태그만 저장합니다. 개인정보, 창 제목, 입력 내용, 파일 내용 또는 사용 기록은 저장하지 않습니다.
 
 Windows 시작 시 자동 실행을 켜면 현재 사용자 영역의 다음 레지스트리 값만 사용합니다.
 
-`HKCU\Software\Microsoft\Windows\CurrentVersion\Run\EbenTiler`
+`HKCU\Software\Microsoft\Windows\CurrentVersion\Run\Tessdeck`
 
 관리자 권한이 필요하지 않으며 다른 사용자 계정의 설정에는 접근하지 않습니다.
 
 ## 제거
 
-정식 설치 프로그램으로 제거하면 EbenTiler가 만든 `config.ini`, `update-state.ini`, `update-badge.ini`와 자동 시작 값을 제거합니다. 같은 설정 폴더에 사용자가 직접 넣은 다른 파일은 삭제하지 않습니다.
+정식 설치 프로그램으로 제거하면 Tessdeck가 만든 `config.ini`, `update-state.ini`, `update-badge.ini`와 자동 시작 값을 제거합니다. 같은 설정 폴더에 사용자가 직접 넣은 다른 파일은 삭제하지 않습니다.
 
 ## 랜딩페이지
 
-EbenTiler 랜딩페이지는 정적 사이트이며 자체 분석 스크립트, 광고 추적기 또는 사용자 계정을 사용하지 않습니다. 다운로드 버튼은 검증된 정식 GitHub Release 자산을 가리키도록 구성합니다.
+Tessdeck 랜딩페이지는 정적 사이트이며 자체 분석 스크립트, 광고 추적기 또는 사용자 계정을 사용하지 않습니다. 다운로드 버튼은 검증된 정식 GitHub Release 자산을 가리키도록 구성합니다.
 
 ## 변경
 

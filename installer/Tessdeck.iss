@@ -143,7 +143,7 @@ begin
   if FileExists(SourcePath) and (not FileExists(DestPath)) then
   begin
     ForceDirectories(NewDir);
-    if FileCopy(SourcePath, DestPath, True) then
+    if CopyFile(SourcePath, DestPath, True) then
       DeleteFile(SourcePath);
   end;
 end;

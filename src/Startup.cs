@@ -9,7 +9,7 @@ namespace EbenTilerWindows
     public static class Startup
     {
         private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string ValueName = "EbenTiler";
+        private const string ValueName = "Tessdeck";\n        private const string LegacyValueName = "EbenTiler";
 
         private static string ExpectedValue
         {
@@ -50,12 +50,14 @@ namespace EbenTilerWindows
                     if (enabled)
                     {
                         key.SetValue(ValueName, ExpectedValue, RegistryValueKind.String);
+                        key.DeleteValue(LegacyValueName, false);
                         string stored = key.GetValue(ValueName) as string;
                         return string.Equals(stored, ExpectedValue, StringComparison.OrdinalIgnoreCase);
                     }
 
                     key.DeleteValue(ValueName, false);
-                    return key.GetValue(ValueName) == null;
+                    key.DeleteValue(LegacyValueName, false);
+                    return key.GetValue(ValueName) == null && key.GetValue(LegacyValueName) == null;
                 }
             }
             catch (UnauthorizedAccessException)

@@ -14,7 +14,7 @@ on:
       - 'tools/verify-release.ps1'
       - 'tools/verify-local-upgrade.ps1'
       - 'tools/verify-hotkeys.ps1'
-      - 'tools/verify-settings.ps1'
+      - 'tools/verify-layout-settings.ps1'
       - 'tools/_testwindow.ps1'
       - 'build.ps1'
       - 'build-installer.ps1'
@@ -67,9 +67,9 @@ jobs:
         shell: powershell
         run: .\tools\verify-hotkeys.ps1
 
-      - name: Verify settings UI and split ratio persistence
+      - name: Verify split ratio settings UI and persistence
         shell: powershell
-        run: .\tools\verify-settings.ps1
+        run: .\tools\verify-layout-settings.ps1
 
       - name: Verify installer outputs
         shell: powershell

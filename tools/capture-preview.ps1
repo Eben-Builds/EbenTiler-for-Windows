@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $toolsDir
-$exe  = Join-Path $root 'build\EbenTiler.exe'
+$exe  = Join-Path $root 'build\Tessdeck.exe'
 $outDir = Join-Path $root 'build\screenshots'
 if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
 

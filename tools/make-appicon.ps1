@@ -2,7 +2,7 @@ param(
     [switch]$NoPreview
 )
 
-# 랜딩페이지 favicon.svg와 같은 EbenTiler 아이콘을 멀티 사이즈 .ico로 만든다.
+# Tessdeck의 겹쳐진 두 창 심볼을 Windows 멀티 사이즈 .ico로 만든다.
 # 결과물: assets\app.ico
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -44,46 +44,73 @@ function Render-Icon {
     try {
         $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
         $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+        $g.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
         $g.Clear([System.Drawing.Color]::Transparent)
 
         $s = $Size / 64.0
-        $main = New-Object System.Drawing.RectangleF ([single](5*$s)), ([single](8*$s)), ([single](34*$s)), ([single](48*$s))
-        $top = New-Object System.Drawing.RectangleF ([single](42*$s)), ([single](14*$s)), ([single](17*$s)), ([single](19*$s))
-        $bottom = New-Object System.Drawing.RectangleF ([single](42*$s)), ([single](37*$s)), ([single](17*$s)), ([single](19*$s))
+        $small = $Size -le 40
 
-        $mainPath = New-RoundedPath $main.X $main.Y $main.Width $main.Height ([single](9*$s))
-        $gradient = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-            $main,
-            ([System.Drawing.Color]::FromArgb(255, 10, 133, 255)),
-            ([System.Drawing.Color]::FromArgb(255, 0, 90, 216)),
+        # Rounded navy app tile.
+        $tile = New-Object System.Drawing.RectangleF ([single](2*$s)), ([single](2*$s)), ([single](60*$s)), ([single](60*$s))
+        $tilePath = New-RoundedPath $tile.X $tile.Y $tile.Width $tile.Height ([single](14*$s))
+        $tileGradient = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+            $tile,
+            ([System.Drawing.Color]::FromArgb(255, 16, 72, 156)),
+            ([System.Drawing.Color]::FromArgb(255, 2, 17, 48)),
             [System.Drawing.Drawing2D.LinearGradientMode]::ForwardDiagonal)
-        $g.FillPath($gradient, $mainPath)
-        $gradient.Dispose()
-        $mainPath.Dispose()
+        $g.FillPath($tileGradient, $tilePath)
+        $tileGradient.Dispose()
 
-        foreach ($part in @(
-            @{ Rect=$top; Color=[System.Drawing.Color]::FromArgb(255,102,181,255) },
-            @{ Rect=$bottom; Color=[System.Drawing.Color]::FromArgb(255,32,139,244) }
-        )) {
-            $r = $part.Rect
-            $path = New-RoundedPath $r.X $r.Y $r.Width $r.Height ([single](6*$s))
-            $brush = New-Object System.Drawing.SolidBrush $part.Color
-            $g.FillPath($brush, $path)
-            $brush.Dispose()
-            $path.Dispose()
+        $tilePen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255, 30, 157, 255)), ([single][Math]::Max(1.0, 1.5*$s))
+        $g.DrawPath($tilePen, $tilePath)
+        $tilePen.Dispose()
+        $tilePath.Dispose()
+
+        # Back window: pale glass panel.
+        $back = New-Object System.Drawing.RectangleF ([single](13*$s)), ([single](15*$s)), ([single](32*$s)), ([single](30*$s))
+        $backPath = New-RoundedPath $back.X $back.Y $back.Width $back.Height ([single](7*$s))
+        if ($small) {
+            $backBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 234, 242, 255))
+        } else {
+            $backBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+                $back,
+                ([System.Drawing.Color]::FromArgb(255, 255, 255, 255)),
+                ([System.Drawing.Color]::FromArgb(255, 158, 196, 255)),
+                [System.Drawing.Drawing2D.LinearGradientMode]::ForwardDiagonal)
         }
+        $g.FillPath($backBrush, $backPath)
+        $backBrush.Dispose()
+        $backPen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(235, 255, 255, 255)), ([single][Math]::Max(1.0, 1.2*$s))
+        $g.DrawPath($backPen, $backPath)
+        $backPen.Dispose()
+        $backPath.Dispose()
 
-        $stroke = [single][Math]::Max(1.8, 5*$s)
-        $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::White), $stroke
-        $pen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
-        $pen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-        $pen.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
-        $points = New-Object 'System.Drawing.PointF[]' 3
-        $points[0] = New-Object System.Drawing.PointF ([single](25*$s)), ([single](24*$s))
-        $points[1] = New-Object System.Drawing.PointF ([single](34*$s)), ([single](32*$s))
-        $points[2] = New-Object System.Drawing.PointF ([single](25*$s)), ([single](40*$s))
-        $g.DrawLines($pen, $points)
-        $pen.Dispose()
+        # Front window: vivid cyan/blue panel overlapping the back panel.
+        $front = New-Object System.Drawing.RectangleF ([single](25*$s)), ([single](27*$s)), ([single](31*$s)), ([single](28*$s))
+        $frontPath = New-RoundedPath $front.X $front.Y $front.Width $front.Height ([single](7*$s))
+        if ($small) {
+            $frontBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 17, 126, 255))
+        } else {
+            $frontBrush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+                $front,
+                ([System.Drawing.Color]::FromArgb(245, 61, 224, 255)),
+                ([System.Drawing.Color]::FromArgb(255, 0, 82, 238)),
+                [System.Drawing.Drawing2D.LinearGradientMode]::ForwardDiagonal)
+        }
+        $g.FillPath($frontBrush, $frontPath)
+        $frontBrush.Dispose()
+
+        $frontPen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255, 55, 235, 255)), ([single][Math]::Max(1.0, 1.4*$s))
+        $g.DrawPath($frontPen, $frontPath)
+        $frontPen.Dispose()
+
+        if (-not $small) {
+            # Soft top highlight keeps the glass feel without hurting small-size clarity.
+            $highlightPen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(180, 220, 255, 255)), ([single][Math]::Max(1.0, 1.1*$s))
+            $g.DrawLine($highlightPen, ([single](31*$s)), ([single](29*$s)), ([single](49*$s)), ([single](29*$s))
+            $highlightPen.Dispose()
+        }
+        $frontPath.Dispose()
     }
     finally {
         $g.Dispose()
@@ -145,7 +172,7 @@ function New-IcoFile {
 
 $icoPath = Join-Path $assetsDir 'app.ico'
 New-IcoFile -Sizes @(16, 20, 24, 32, 40, 48, 64, 96, 128, 256) -Path $icoPath
-Write-Host ("EbenTiler icon generated: {0} ({1:N0} bytes)" -f $icoPath, (Get-Item $icoPath).Length)
+Write-Host ("Tessdeck icon generated: {0} ({1:N0} bytes)" -f $icoPath, (Get-Item $icoPath).Length)
 
 if (-not $NoPreview) {
     $preview = Render-Icon 256

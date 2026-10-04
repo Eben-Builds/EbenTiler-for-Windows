@@ -33,6 +33,8 @@ jobs:
             from_asset: 'Tessdeck-Setup.exe'
           - from_version: '1.1.1'
             from_asset: 'Tessdeck-Setup.exe'
+          - from_version: '1.1.2'
+            from_asset: 'Tessdeck-Setup.exe'
 
     steps:
       - name: Checkout
@@ -63,14 +65,14 @@ jobs:
             -FromVersion '${{ matrix.from_version }}' `
             -BaseInstaller '.\upgrade-assets\from\${{ matrix.from_asset }}' `
             -TargetInstaller '.\dist\Tessdeck-Setup.exe' `
-            -TargetVersion '1.1.2' `
+            -TargetVersion '1.2.0' `
             -OutDir '.\build\upgrade-check'
 
       - name: Upload upgrade report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Upgrade-${{ matrix.from_version }}-to-1.1.2
+          name: Upgrade-${{ matrix.from_version }}-to-1.2.0
           path: build\upgrade-check
           if-no-files-found: warn
           retention-days: 14

@@ -59,14 +59,14 @@ jobs:
           if ($index -notmatch 'href="\.\/download\.html"') {
             throw 'Landing page download buttons do not route through the download guide.'
           }
-          if ($download -notmatch 'Windows의 PC 보호' -or $download -notmatch '추가 정보' -or $download -notmatch 'EbenTiler-Setup\.exe') {
+          if ($download -notmatch 'Windows의 PC 보호' -or $download -notmatch '추가 정보' -or $download -notmatch 'Tessdeck-Setup\.exe') {
             throw 'Download guide is missing the Windows protection instructions or installer link.'
           }
           if ($download -notmatch 'download\.css' -or $downloadStyles -notmatch '\.smartscreen-card' -or $downloadStyles -notmatch '\.install-steps') {
             throw 'Download guide stylesheet is missing or not referenced.'
           }
-          if ($app -notmatch 'releases/latest/download/EbenTiler-Setup\.exe') {
-            throw 'Download guide does not route the installer to the verified GitHub Release asset.'
+          if ($app -notmatch 'Eben-Builds/Tessdeck-for-Windows/releases/latest') {
+            throw 'Download guide does not route downloads through the Tessdeck GitHub Releases page.'
           }
 
       - name: 정적 랜딩페이지 묶기

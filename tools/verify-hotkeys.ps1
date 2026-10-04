@@ -9,28 +9,16 @@ $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $exe  = Join-Path $root 'build\Tessdeck.exe'
 if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
 
-$configDir = Join-Path $env:APPDATA 'Tessdeck'
+$originalAppData = $env:APPDATA
+$testAppData = Join-Path $env:TEMP ('tessdeck-hotkeys-appdata-' + [Guid]::NewGuid().ToString('N'))
+$env:APPDATA = $testAppData
+$configDir = Join-Path $testAppData 'Tessdeck'
 $configPath = Join-Path $configDir 'config.ini'
-$backupPath = Join-Path $env:TEMP ('tessdeck-hotkeys-config-' + [Guid]::NewGuid().ToString('N') + '.ini')
-$hadConfigDir = Test-Path $configDir
-$hadConfig = Test-Path $configPath
-if ($hadConfig) { Copy-Item $configPath $backupPath -Force }
 
 function Restore-TestConfig {
-    if ($hadConfig) {
-        New-Item -ItemType Directory -Path $configDir -Force | Out-Null
-        Copy-Item $backupPath $configPath -Force
-        Remove-Item $backupPath -Force -ErrorAction SilentlyContinue
-    }
-    elseif (Test-Path $configPath) {
-        Remove-Item $configPath -Force
-    }
-
-    if (-not $hadConfigDir -and (Test-Path $configDir)) {
-        $remaining = @(Get-ChildItem -LiteralPath $configDir -Force -ErrorAction SilentlyContinue)
-        if ($remaining.Count -eq 0) {
-            Remove-Item $configDir -Force -ErrorAction SilentlyContinue
-        }
+    $env:APPDATA = $originalAppData
+    if (Test-Path $testAppData) {
+        Remove-Item $testAppData -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 

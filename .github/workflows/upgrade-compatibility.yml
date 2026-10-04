@@ -7,9 +7,13 @@ on:
       - main
     paths:
       - 'installer/**'
+      - 'src/AssemblyInfo.cs'
       - 'src/Config.cs'
       - 'src/Startup.cs'
+      - 'tools/make-appicon.ps1'
       - 'tools/verify-upgrade.ps1'
+      - 'build.ps1'
+      - 'build-installer.ps1'
       - '.github/workflows/upgrade-compatibility.yml'
 
 permissions:
@@ -27,6 +31,8 @@ jobs:
             from_asset: 'EbenTiler-Setup.exe'
           - from_version: '1.1.0'
             from_asset: 'Tessdeck-Setup.exe'
+          - from_version: '1.1.1'
+            from_asset: 'Tessdeck-Setup.exe'
 
     steps:
       - name: Checkout
@@ -34,15 +40,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Download published installers
+      - name: Install pinned Inno Setup
+        shell: powershell
+        run: choco install innosetup --version=6.7.1 -y --no-progress
+
+      - name: Build current upgrade target
+        shell: powershell
+        run: .\build-installer.ps1
+
+      - name: Download published base installer
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           New-Item -ItemType Directory -Path .\upgrade-assets\from -Force | Out-Null
-          New-Item -ItemType Directory -Path .\upgrade-assets\to -Force | Out-Null
           gh release download "v${{ matrix.from_version }}" --repo "$env:GITHUB_REPOSITORY" --pattern "${{ matrix.from_asset }}" --dir .\upgrade-assets\from
-          gh release download "v1.1.1" --repo "$env:GITHUB_REPOSITORY" --pattern "Tessdeck-Setup.exe" --dir .\upgrade-assets\to
 
       - name: Verify published upgrade path
         shell: powershell
@@ -50,14 +62,15 @@ jobs:
           .\tools\verify-upgrade.ps1 `
             -FromVersion '${{ matrix.from_version }}' `
             -BaseInstaller '.\upgrade-assets\from\${{ matrix.from_asset }}' `
-            -TargetInstaller '.\upgrade-assets\to\Tessdeck-Setup.exe' `
+            -TargetInstaller '.\dist\Tessdeck-Setup.exe' `
+            -TargetVersion '1.1.2' `
             -OutDir '.\build\upgrade-check'
 
       - name: Upload upgrade report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Upgrade-${{ matrix.from_version }}-to-1.1.1
+          name: Upgrade-${{ matrix.from_version }}-to-1.1.2
           path: build\upgrade-check
           if-no-files-found: warn
           retention-days: 14

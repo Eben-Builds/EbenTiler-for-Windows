@@ -57,7 +57,7 @@ namespace EbenTilerWindows
         }
     }
 
-    /// <summary>EbenTiler의 일반, 단축키, 레이아웃, 모니터, 정보를 관리하는 설정 창.</summary>
+    /// <summary>Tessdeck의 일반, 단축키, 레이아웃, 모니터, 정보를 관리하는 설정 창.</summary>
     public sealed class SettingsForm : Form
     {
         private readonly Config _config;
@@ -123,7 +123,7 @@ namespace EbenTilerWindows
 
         private void BuildUi()
         {
-            Text = "EbenTiler for Windows - 설정";
+            Text = "Tessdeck for Windows - 설정";
             ShowIcon = true;
             Icon = AppIcon.LoadLarge();
             FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -147,10 +147,10 @@ namespace EbenTilerWindows
             iconBox.Size = new Size(headerIconPixels, headerIconPixels);
             iconBox.SizeMode = PictureBoxSizeMode.Normal;
             iconBox.Image = _headerIcon;
-            iconBox.AccessibleName = "EbenTiler 앱 아이콘";
+            iconBox.AccessibleName = "Tessdeck 앱 아이콘";
             Controls.Add(iconBox);
 
-            Controls.Add(MakeLabel("EbenTiler 설정", 82, 17, 450, 30, 16f, FontStyle.Bold, UiPalette.Text));
+            Controls.Add(MakeLabel("Tessdeck 설정", 82, 17, 450, 30, 16f, FontStyle.Bold, UiPalette.Text));
             Controls.Add(MakeLabel(
                 "창 배치 방식과 단축키, 모니터 동작을 한곳에서 관리하세요.",
                 82, 48, 570, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
@@ -243,7 +243,7 @@ namespace EbenTilerWindows
 
             page.Controls.Add(MakeLabel("시작", 0, 78, 120, 22, 10.5f, FontStyle.Bold, UiPalette.Text));
             _startupToggle = new CheckBox();
-            _startupToggle.Text = "Windows 시작 시 EbenTiler 자동 실행";
+            _startupToggle.Text = "Windows 시작 시 Tessdeck 자동 실행";
             _startupToggle.Location = new Point(S(4), S(110));
             _startupToggle.Size = new Size(S(340), S(28));
             _startupToggle.FlatStyle = FlatStyle.System;
@@ -428,7 +428,7 @@ namespace EbenTilerWindows
             Panel page = CreatePage("monitors");
             page.Controls.Add(MakeLabel("모니터", 0, 0, 240, 30, 15f, FontStyle.Bold, UiPalette.Text));
             page.Controls.Add(MakeLabel(
-                "현재 연결된 디스플레이와 EbenTiler의 모니터 이동 방식을 확인합니다.",
+                "현재 연결된 디스플레이와 Tessdeck의 모니터 이동 방식을 확인합니다.",
                 0, 32, 520, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
 
             Button refresh = MakePageButton("새로 고침", 548, 20, 144, false);
@@ -481,7 +481,7 @@ namespace EbenTilerWindows
             appIcon.Image = _aboutIcon;
             page.Controls.Add(appIcon);
 
-            page.Controls.Add(MakeLabel("EbenTiler for Windows", 82, 4, 430, 30, 15f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel("Tessdeck for Windows", 82, 4, 430, 30, 15f, FontStyle.Bold, UiPalette.Text));
             string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             page.Controls.Add(MakeLabel("버전 " + version, 82, 38, 260, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
 
@@ -709,7 +709,7 @@ namespace EbenTilerWindows
             SnapAction action;
             if (!TryGetSelectedAction(out action))
             {
-                MessageBox.Show(this, "먼저 위 목록에서 기능을 하나 고르세요.", "EbenTiler for Windows",
+                MessageBox.Show(this, "먼저 위 목록에서 기능을 하나 고르세요.", "Tessdeck for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -717,7 +717,7 @@ namespace EbenTilerWindows
             Hotkey source = _capture.Captured;
             if (source.IsEmpty)
             {
-                MessageBox.Show(this, "입력 상자를 누른 뒤 원하는 키 조합을 눌러 주세요.", "EbenTiler for Windows",
+                MessageBox.Show(this, "입력 상자를 누른 뒤 원하는 키 조합을 눌러 주세요.", "Tessdeck for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -734,7 +734,7 @@ namespace EbenTilerWindows
                 MessageBox.Show(this,
                     "Ctrl, Alt, Shift, Win 중 하나 이상을 함께 눌러야 합니다.\n" +
                     "보조키 없이 등록하면 다른 프로그램에서 그 키를 아예 쓸 수 없게 됩니다.",
-                    "EbenTiler for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    "Tessdeck for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -756,7 +756,7 @@ namespace EbenTilerWindows
                 DialogResult answer = MessageBox.Show(this,
                     hotkey.ToDisplayString() + " 는 이미 " + names + " 에 쓰이고 있습니다.\n" +
                     "그쪽 단축키를 비우고 이 기능에 지정할까요?",
-                    "EbenTiler for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    "Tessdeck for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (answer != DialogResult.Yes) return;
 
                 for (int i = 0; i < conflicts.Count; i++) _config.Hotkeys[conflicts[i]] = new Hotkey();
@@ -779,7 +779,7 @@ namespace EbenTilerWindows
         private void OnResetDefaults(object sender, EventArgs e)
         {
             DialogResult answer = MessageBox.Show(this,
-                "모든 단축키를 처음 상태로 되돌릴까요?", "EbenTiler for Windows",
+                "모든 단축키를 처음 상태로 되돌릴까요?", "Tessdeck for Windows",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (answer != DialogResult.Yes) return;
 
@@ -792,7 +792,7 @@ namespace EbenTilerWindows
         {
             DialogResult answer = MessageBox.Show(this,
                 "단축키와 레이아웃 설정을 모두 처음 상태로 되돌릴까요?",
-                "EbenTiler for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                "Tessdeck for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (answer != DialogResult.Yes) return;
 
             Config defaults = Config.CreateDefault();
@@ -815,7 +815,7 @@ namespace EbenTilerWindows
                 {
                     MessageBox.Show(this,
                         "Windows 시작 프로그램 설정을 변경하지 못했습니다. 다시 시도해 주세요.",
-                        "EbenTiler for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        "Tessdeck for Windows", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
             }
@@ -843,7 +843,7 @@ namespace EbenTilerWindows
             }
             catch (Exception)
             {
-                MessageBox.Show(this, "해당 위치를 열지 못했습니다.", "EbenTiler for Windows",
+                MessageBox.Show(this, "해당 위치를 열지 못했습니다.", "Tessdeck for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }

@@ -1,4 +1,4 @@
-# Tessdeck 설정 > 레이아웃의 사용자 지정 순환 비율을 실제 UI로 저장해 검증한다.
+# Verify Tessdeck Settings > Layout custom cycle ratios through the real UI.
 #
 #   powershell -ExecutionPolicy Bypass -File tools\verify-layout-settings.ps1
 
@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $root = Split-Path -Parent $toolsDir
 $exe = Join-Path $root 'build\Tessdeck.exe'
-if (-not (Test-Path $exe)) { throw "먼저 build.ps1 로 빌드하세요." }
+if (-not (Test-Path $exe)) { throw 'Build Tessdeck first with build.ps1.' }
 
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
@@ -36,7 +36,8 @@ if ($hadConfigDir) {
 }
 
 function Restore-TestState {
-    Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Get-Process Tessdeck -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
 
     if (Test-Path $configDir) {
         Remove-Item $configDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -53,73 +54,11 @@ function Restore-TestState {
         Remove-Item $backupDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 
-    if ($wasResident -and (Test-Path $installedExe) -and -not (Get-Process Tessdeck -ErrorAction SilentlyContinue)) {
+    if ($wasResident -and (Test-Path $installedExe) -and
+        -not (Get-Process Tessdeck -ErrorAction SilentlyContinue)) {
         Start-Process -FilePath $installedExe | Out-Null
     }
 }
-
-function Find-ByName {
-    param($Window, [string[]]$Names)
-
-    $scope = [System.Windows.Automation.TreeScope]::Descendants
-    foreach ($name in $Names) {
-        $condition = New-Object System.Windows.Automation.PropertyCondition (
-            [System.Windows.Automation.AutomationElement]::NameProperty, $name)
-        $element = $Window.FindFirst($scope, $condition)
-        if ($null -ne $element) { return $element }
-    }
-    return $null
-}
-
-function Invoke-Element {
-    param($Element)
-
-    if ($null -eq $Element) { return $false }
-    $pattern = $null
-    if ($Element.TryGetCurrentPattern(
-        [System.Windows.Automation.InvokePattern]::Pattern,
-        [ref]$pattern)) {
-        ([System.Windows.Automation.InvokePattern]$pattern).Invoke()
-        Start-Sleep -Milliseconds 400
-        return $true
-    }
-    return $false
-}
-
-function Find-RatioInputs {
-    param($Window)
-
-    $result = @()
-    foreach ($name in @('첫 번째 순환 비율','두 번째 순환 비율','세 번째 순환 비율')) {
-        $element = Find-ByName $Window @($name)
-        if ($null -ne $element) { $result += $element }
-    }
-    return $result
-}
-function Set-RatioValue {
-    param($Element, [double]$Value)
-
-    $pattern = $null
-    if ($Element.TryGetCurrentPattern(
-        [System.Windows.Automation.RangeValuePattern]::Pattern,
-        [ref]$pattern)) {
-        ([System.Windows.Automation.RangeValuePattern]$pattern).SetValue($Value)
-        Start-Sleep -Milliseconds 150
-        return $true
-    }
-
-    try {
-        $Element.SetFocus()
-        [System.Windows.Forms.SendKeys]::SendWait('^a')
-        [System.Windows.Forms.SendKeys]::SendWait(([int]$Value).ToString())
-        Start-Sleep -Milliseconds 150
-        return $true
-    }
-    catch {
-        return $false
-    }
-}
-
 
 function Click-ClientPoint {
     param([IntPtr]$Handle, [int]$X, [int]$Y)
@@ -131,19 +70,60 @@ function Click-ClientPoint {
     $point = New-Object 'LayoutQA.Native+POINT'
     $point.X = [int][Math]::Round($X * $scale)
     $point.Y = [int][Math]::Round($Y * $scale)
+
     [LayoutQA.Native]::ClientToScreen($Handle, [ref]$point) | Out-Null
     [LayoutQA.Native]::SetForegroundWindow($Handle) | Out-Null
     [LayoutQA.Native]::SetCursorPos($point.X, $point.Y) | Out-Null
-    Start-Sleep -Milliseconds 100
+    Start-Sleep -Milliseconds 120
     [LayoutQA.Native]::mouse_event(0x0002, 0, 0, 0, [IntPtr]::Zero)
     [LayoutQA.Native]::mouse_event(0x0004, 0, 0, 0, [IntPtr]::Zero)
-    Start-Sleep -Milliseconds 250
+    Start-Sleep -Milliseconds 300
+}
+
+function Get-RatioSpinners {
+    param($Window)
+
+    $all = $Window.FindAll(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        [System.Windows.Automation.Condition]::TrueCondition)
+
+    $spinners = @()
+    foreach ($element in $all) {
+        if ($element.Current.ControlType -eq [System.Windows.Automation.ControlType]::Spinner) {
+            $spinners += $element
+        }
+    }
+
+    if ($spinners.Count -lt 3) { return @() }
+
+    # Ratio controls are the first row of spinners. Gap is lower on the page.
+    return @($spinners |
+        Sort-Object @{ Expression = { $_.Current.BoundingRectangle.Y } },
+                    @{ Expression = { $_.Current.BoundingRectangle.X } } |
+        Select-Object -First 3)
+}
+
+function Set-SpinnerValue {
+    param($Element, [double]$Value)
+
+    $pattern = $null
+    if ($null -ne $Element -and $Element.TryGetCurrentPattern(
+        [System.Windows.Automation.RangeValuePattern]::Pattern,
+        [ref]$pattern)) {
+        ([System.Windows.Automation.RangeValuePattern]$pattern).SetValue($Value)
+        Start-Sleep -Milliseconds 150
+        return $true
+    }
+    return $false
 }
 
 $settings = $null
 try {
-    Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    if (Test-Path $configDir) { Remove-Item $configDir -Recurse -Force }
+    Get-Process Tessdeck -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
+    if (Test-Path $configDir) {
+        Remove-Item $configDir -Recurse -Force
+    }
 
     $settings = Start-Process -FilePath $exe -ArgumentList '--settings' -PassThru
     Start-Sleep -Seconds 3
@@ -157,31 +137,31 @@ try {
         }
         Start-Sleep -Milliseconds 200
     }
-    if ($hwnd -eq [IntPtr]::Zero) { throw '설정 창을 찾지 못했습니다.' }
+    if ($hwnd -eq [IntPtr]::Zero) { throw 'Settings window was not found.' }
 
     $window = [System.Windows.Automation.AutomationElement]::FromHandle($hwnd)
-    Write-Host "[통과] 설정 창 열림: $($window.Current.Name)" -ForegroundColor Green
+    Write-Host '[PASS] Settings window opened.' -ForegroundColor Green
 
-    $layout = Find-ByName $window @('레이아웃 설정','레이아웃')
-    if (-not (Invoke-Element $layout)) {
-        Click-ClientPoint $hwnd 101 239
-    }
-    Write-Host '[통과] 레이아웃 설정 페이지 열림' -ForegroundColor Green
+    # Layout is the third navigation button at 96-DPI client coordinates.
+    Click-ClientPoint $hwnd 101 239
+    Write-Host '[PASS] Layout page opened.' -ForegroundColor Green
 
-    $values = @(50,40,60)
-    $ratios = @(Find-RatioInputs $window)
-    $ratioSet = $ratios.Count -eq 3
-    if ($ratioSet) {
+    $values = @(50, 40, 60)
+    $spinners = @(Get-RatioSpinners $window)
+    $usedAutomation = $spinners.Count -eq 3
+
+    if ($usedAutomation) {
         for ($i = 0; $i -lt 3; $i++) {
-            if (-not (Set-RatioValue $ratios[$i] $values[$i])) {
-                $ratioSet = $false
+            if (-not (Set-SpinnerValue $spinners[$i] $values[$i])) {
+                $usedAutomation = $false
                 break
             }
         }
     }
 
-    if (-not $ratioSet) {
-        $ratioX = @(567,691,815)
+    if (-not $usedAutomation) {
+        # Center points of the three ratio NumericUpDown controls at 96 DPI.
+        $ratioX = @(567, 691, 815)
         for ($i = 0; $i -lt 3; $i++) {
             Click-ClientPoint $hwnd $ratioX[$i] 465
             [System.Windows.Forms.SendKeys]::SendWait('^a')
@@ -189,26 +169,25 @@ try {
             Start-Sleep -Milliseconds 150
         }
     }
-    Write-Host '[통과] 순환 비율 입력: 50 / 40 / 60' -ForegroundColor Green
 
-    $save = Find-ByName $window @('저장')
-    if (-not (Invoke-Element $save)) {
-        Click-ClientPoint $hwnd 799 624
-    }
+    Write-Host '[PASS] Entered cycle ratios 50 / 40 / 60.' -ForegroundColor Green
+
+    # Save button center at 96-DPI client coordinates.
+    Click-ClientPoint $hwnd 799 623
 
     $settings.WaitForExit(5000) | Out-Null
     if (-not (Test-Path $configPath)) {
-        throw "설정 파일이 생성되지 않았습니다: $configPath"
+        throw "Config file was not created: $configPath"
     }
 
     $saved = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
-    if ($saved -notmatch 'CycleRatio1=50') { throw 'CycleRatio1=50 저장 실패' }
-    if ($saved -notmatch 'CycleRatio2=40') { throw 'CycleRatio2=40 저장 실패' }
-    if ($saved -notmatch 'CycleRatio3=60') { throw 'CycleRatio3=60 저장 실패' }
+    if ($saved -notmatch 'CycleRatio1=50') { throw 'CycleRatio1=50 was not saved.' }
+    if ($saved -notmatch 'CycleRatio2=40') { throw 'CycleRatio2=40 was not saved.' }
+    if ($saved -notmatch 'CycleRatio3=60') { throw 'CycleRatio3=60 was not saved.' }
 
-    Write-Host '[통과] config.ini 저장: CycleRatio1=50 / CycleRatio2=40 / CycleRatio3=60' -ForegroundColor Green
+    Write-Host '[PASS] config.ini contains 50 / 40 / 60.' -ForegroundColor Green
     Write-Host ''
-    Write-Host '레이아웃 설정 UI 검증: PASS' -ForegroundColor Green
+    Write-Host 'Layout settings UI verification: PASS' -ForegroundColor Green
 }
 finally {
     if ($null -ne $settings -and -not $settings.HasExited) {

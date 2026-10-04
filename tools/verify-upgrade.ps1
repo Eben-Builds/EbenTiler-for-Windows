@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory=$true)][string]$FromVersion,
     [Parameter(Mandatory=$true)][string]$BaseInstaller,
     [Parameter(Mandatory=$true)][string]$TargetInstaller,
+    [Parameter(Mandatory=$true)][string]$TargetVersion,
     [string]$OutDir = '.\\build\\upgrade-check'
 )
 
@@ -14,7 +15,7 @@ $modernConfigDir = Join-Path $env:APPDATA 'Tessdeck'
 $runKey = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
 
 New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
-$reportPath = Join-Path $OutDir ("upgrade-{0}-to-1.1.1.txt" -f ($FromVersion -replace '\\.','-'))
+$reportPath = Join-Path $OutDir ("upgrade-{0}-to-{1}.txt" -f ($FromVersion -replace '\\.','-'), ($TargetVersion -replace '\\.','-'))
 $report = New-Object System.Collections.Generic.List[string]
 
 function Add-Report([string]$Line) {
@@ -67,7 +68,7 @@ if (-not (Test-Path $targetInstallerPath)) { throw "Target installer not found: 
 Clean-TestState
 
 try {
-    Add-Report "Scenario: $FromVersion -> 1.1.1"
+    Add-Report "Scenario: $FromVersion -> $TargetVersion"
     Add-Report "Base installer: $baseInstallerPath"
     Add-Report "Target installer: $targetInstallerPath"
     Add-Report ""
@@ -85,8 +86,12 @@ try {
 
     Add-Report "Base executable: $baseExe"
     Add-Report "Base file version: $($baseInfo.FileVersion)"
-    Add-Report "Base startup EbenTiler: $(Get-RunValue 'EbenTiler')"
-    Add-Report "Base startup Tessdeck: $(Get-RunValue 'Tessdeck')"
+    $baseStartupEben = Get-RunValue 'EbenTiler'
+    $baseStartupTess = Get-RunValue 'Tessdeck'
+    $baseHadStartup = (-not [string]::IsNullOrWhiteSpace($baseStartupEben)) -or (-not [string]::IsNullOrWhiteSpace($baseStartupTess))
+    Add-Report "Base startup EbenTiler: $baseStartupEben"
+    Add-Report "Base startup Tessdeck: $baseStartupTess"
+    Add-Report "Base startup enabled: $baseHadStartup"
 
     $baseConfigDir = $modernConfigDir
     if ($FromVersion -eq '1.0.1') { $baseConfigDir = $legacyConfigDir }
@@ -112,8 +117,8 @@ try {
     }
 
     $targetInfo = [Diagnostics.FileVersionInfo]::GetVersionInfo($targetExe)
-    if (-not $targetInfo.FileVersion.StartsWith('1.1.1')) {
-        throw "Expected Tessdeck 1.1.1 but found $($targetInfo.FileVersion)."
+    if (-not $targetInfo.FileVersion.StartsWith($TargetVersion)) {
+        throw "Expected Tessdeck $TargetVersion but found $($targetInfo.FileVersion)."
     }
 
     Add-Report ""
@@ -122,8 +127,22 @@ try {
     Add-Report "Legacy install directory exists: $(Test-Path $legacyInstallDir)"
     Add-Report "Modern install directory exists: $(Test-Path $modernInstallDir)"
     Add-Report "Legacy EbenTiler.exe exists: $(Test-Path (Join-Path $legacyInstallDir 'EbenTiler.exe'))"
-    Add-Report "Target startup EbenTiler: $(Get-RunValue 'EbenTiler')"
-    Add-Report "Target startup Tessdeck: $(Get-RunValue 'Tessdeck')"
+    $targetStartupEben = Get-RunValue 'EbenTiler'
+    $targetStartupTess = Get-RunValue 'Tessdeck'
+    Add-Report "Target startup EbenTiler: $targetStartupEben"
+    Add-Report "Target startup Tessdeck: $targetStartupTess"
+
+    if (-not [string]::IsNullOrWhiteSpace($targetStartupEben)) {
+        throw 'Legacy EbenTiler startup value remains after upgrade.'
+    }
+    if ($baseHadStartup) {
+        $expectedStartup = '"' + $targetExe + '"'
+        if ($targetStartupTess -ne $expectedStartup) {
+            throw "Startup preference was not preserved. Expected $expectedStartup but got $targetStartupTess"
+        }
+    } elseif (-not [string]::IsNullOrWhiteSpace($targetStartupTess)) {
+        throw 'Upgrade unexpectedly enabled startup.'
+    }
 
     $out = Join-Path $env:TEMP ("tessdeck-upgrade-" + [Guid]::NewGuid().ToString('N') + '.txt')
     $cli = Start-Process -FilePath $targetExe -ArgumentList @('--list','--out',$out) -Wait -PassThru
@@ -142,12 +161,23 @@ try {
 
     Add-Report "Modern config exists: True"
     Add-Report "Gap=17 preserved: True"
+    $legacySentinel = Join-Path $legacyConfigDir 'upgrade-sentinel.txt'
     Add-Report "Legacy config directory still exists: $(Test-Path $legacyConfigDir)"
-    Add-Report "Upgrade result: PASS"
+    Add-Report "Unrelated legacy sentinel preserved: $(Test-Path $legacySentinel)"
 
-    if ($FromVersion -eq '1.0.1' -and $targetExe.StartsWith($legacyInstallDir, [StringComparison]::OrdinalIgnoreCase)) {
-        Add-Report "OBSERVATION: Tessdeck 1.1.1 reused the legacy EbenTiler install directory."
+    if ($FromVersion -eq '1.0.1') {
+        if (-not $targetExe.StartsWith($modernInstallDir, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Legacy default install path was not migrated to Tessdeck: $targetExe"
+        }
+        if (Test-Path $legacyInstallDir) {
+            throw "Legacy EbenTiler install directory remains after upgrade: $legacyInstallDir"
+        }
+        if (-not (Test-Path $legacySentinel)) {
+            throw 'Upgrade removed an unrelated file from the legacy config directory.'
+        }
     }
+
+    Add-Report "Upgrade result: PASS"
 }
 finally {
     Set-Content -LiteralPath $reportPath -Value $report -Encoding utf8

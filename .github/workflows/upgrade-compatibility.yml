@@ -1,0 +1,63 @@
+name: Upgrade Compatibility Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'installer/**'
+      - 'src/Config.cs'
+      - 'src/Startup.cs'
+      - 'tools/verify-upgrade.ps1'
+      - '.github/workflows/upgrade-compatibility.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  published-upgrade:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - from_version: '1.0.1'
+            from_asset: 'EbenTiler-Setup.exe'
+          - from_version: '1.1.0'
+            from_asset: 'Tessdeck-Setup.exe'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Download published installers
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Path .\upgrade-assets\from -Force | Out-Null
+          New-Item -ItemType Directory -Path .\upgrade-assets\to -Force | Out-Null
+          gh release download "v${{ matrix.from_version }}" --repo "$env:GITHUB_REPOSITORY" --pattern "${{ matrix.from_asset }}" --dir .\upgrade-assets\from
+          gh release download "v1.1.1" --repo "$env:GITHUB_REPOSITORY" --pattern "Tessdeck-Setup.exe" --dir .\upgrade-assets\to
+
+      - name: Verify published upgrade path
+        shell: powershell
+        run: |
+          .\tools\verify-upgrade.ps1 `
+            -FromVersion '${{ matrix.from_version }}' `
+            -BaseInstaller '.\upgrade-assets\from\${{ matrix.from_asset }}' `
+            -TargetInstaller '.\upgrade-assets\to\Tessdeck-Setup.exe' `
+            -OutDir '.\build\upgrade-check'
+
+      - name: Upload upgrade report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Upgrade-${{ matrix.from_version }}-to-1.1.1
+          path: build\upgrade-check
+          if-no-files-found: warn
+          retention-days: 14

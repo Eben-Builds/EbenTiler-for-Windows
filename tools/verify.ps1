@@ -8,7 +8,7 @@
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$exe  = Join-Path $root 'build\EbenTiler.exe'
+$exe  = Join-Path $root 'build\Tessdeck.exe'
 
 if (-not (Test-Path $exe)) {
     throw "먼저 build.ps1 로 빌드하세요: $exe 없음"
@@ -16,9 +16,9 @@ if (-not (Test-Path $exe)) {
 
 $tolerance = 2
 
-# EbenTiler.exe 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않는다.
+# Tessdeck.exe 는 창 프로그램이라 표준 출력이 파이프로 잡히지 않는다.
 # --out 으로 임시 파일에 결과를 남기게 하고 그 파일을 읽는다.
-function Invoke-EbenTiler {
+function Invoke-Tessdeck {
     param([string[]]$Arguments)
     $tmp = [System.IO.Path]::GetTempFileName()
     try {
@@ -51,7 +51,7 @@ $hwnd = [IntPtr]::Zero
 for ($i=0; $i -lt 100; $i++) { Start-Sleep -Milliseconds 100; if (Test-Path $handleFile) { $raw=(Get-Content $handleFile -Raw).Trim(); if ($raw.Length -gt 0) { $hwnd=[IntPtr][long]$raw; break } } }
 if ($hwnd -eq [IntPtr]::Zero) { $proc | Stop-Process -Force -ErrorAction SilentlyContinue; throw "검증용 창 핸들을 얻지 못했습니다." }
 $handleArg = '0x' + $hwnd.ToInt64().ToString('X')
-$infoText = Invoke-EbenTiler @('--info','--hwnd',$handleArg)
+$infoText = Invoke-Tessdeck @('--info','--hwnd',$handleArg)
 $work = Parse-Rect $infoText 'work='
 if ($null -eq $work) { $proc | Stop-Process -Force; throw "작업 영역을 읽지 못했습니다.`n$infoText" }
 
@@ -60,13 +60,13 @@ $halfW=[int][Math]::Truncate($w/2); $halfH=[int][Math]::Truncate($h/2); $thirdW=
 $cases=@(
 @{Action='LeftHalf';Expect=@($x,$y,$roundW,$h)},@{Action='RightHalf';Expect=@(($x+$w-$roundW),$y,$roundW,$h)},@{Action='TopHalf';Expect=@($x,$y,$w,$roundH)},@{Action='BottomHalf';Expect=@($x,($y+$h-$roundH),$w,$roundH)},@{Action='TopLeft';Expect=@($x,$y,$halfW,$halfH)},@{Action='TopRight';Expect=@(($x+$halfW),$y,($w-$halfW),$halfH)},@{Action='BottomLeft';Expect=@($x,($y+$halfH),$halfW,($h-$halfH))},@{Action='BottomRight';Expect=@(($x+$halfW),($y+$halfH),($w-$halfW),($h-$halfH))},@{Action='FirstThird';Expect=@($x,$y,$thirdW,$h)},@{Action='CenterThird';Expect=@(($x+$thirdW),$y,$thirdW,$h)},@{Action='LastThird';Expect=@(($x+$twoThird),$y,($w-$twoThird),$h)},@{Action='FirstTwoThirds';Expect=@($x,$y,$twoThird,$h)},@{Action='LastTwoThirds';Expect=@(($x+$thirdW),$y,($w-$thirdW),$h)})
 $pass=0; $fail=0
-foreach($case in $cases){ Invoke-EbenTiler @('--apply',$case.Action,'--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 120; $after=Parse-Rect (Invoke-EbenTiler @('--info','--hwnd',$handleArg)) 'window='; $e=$case.Expect; if($null -ne $after -and [Math]::Abs($after.X-$e[0]) -le $tolerance -and [Math]::Abs($after.Y-$e[1]) -le $tolerance -and [Math]::Abs($after.Width-$e[2]) -le $tolerance -and [Math]::Abs($after.Height-$e[3]) -le $tolerance){Write-Host ("[통과] {0}" -f $case.Action) -ForegroundColor Green;$pass++}else{Write-Host ("[실패] {0}" -f $case.Action) -ForegroundColor Red;$fail++}}
+foreach($case in $cases){ Invoke-Tessdeck @('--apply',$case.Action,'--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 120; $after=Parse-Rect (Invoke-Tessdeck @('--info','--hwnd',$handleArg)) 'window='; $e=$case.Expect; if($null -ne $after -and [Math]::Abs($after.X-$e[0]) -le $tolerance -and [Math]::Abs($after.Y-$e[1]) -le $tolerance -and [Math]::Abs($after.Width-$e[2]) -le $tolerance -and [Math]::Abs($after.Height-$e[3]) -le $tolerance){Write-Host ("[통과] {0}" -f $case.Action) -ForegroundColor Green;$pass++}else{Write-Host ("[실패] {0}" -f $case.Action) -ForegroundColor Red;$fail++}}
 Add-Type -Namespace Win -Name U -MemberDefinition '[DllImport("user32.dll")] public static extern bool IsZoomed(IntPtr h);'
-Invoke-EbenTiler @('--apply','Maximize','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 200; if([Win.U]::IsZoomed($hwnd)){$pass++;Write-Host '[통과] Maximize' -ForegroundColor Green}else{$fail++;Write-Host '[실패] Maximize' -ForegroundColor Red}
-Invoke-EbenTiler @('--apply','Restore','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 200; if(-not [Win.U]::IsZoomed($hwnd)){$pass++;Write-Host '[통과] Restore' -ForegroundColor Green}else{$fail++;Write-Host '[실패] Restore' -ForegroundColor Red}
-$before=Parse-Rect (Invoke-EbenTiler @('--info','--hwnd',$handleArg)) 'window='; Invoke-EbenTiler @('--apply','Smaller','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 150; $smaller=Parse-Rect (Invoke-EbenTiler @('--info','--hwnd',$handleArg)) 'window='; if($smaller.Width -lt $before.Width -and $smaller.Height -lt $before.Height){$pass++}else{$fail++}
-Invoke-EbenTiler @('--apply','Larger','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 150; $larger=Parse-Rect (Invoke-EbenTiler @('--info','--hwnd',$handleArg)) 'window='; if($larger.Width -gt $smaller.Width -and $larger.Height -gt $smaller.Height){$pass++}else{$fail++}
-Invoke-EbenTiler @('--apply','Center','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 150; $centered=Parse-Rect (Invoke-EbenTiler @('--info','--hwnd',$handleArg)) 'window='; $expectX=$work.X+[int](($work.Width-$centered.Width)/2);$expectY=$work.Y+[int](($work.Height-$centered.Height)/2);if([Math]::Abs($centered.X-$expectX)-le $tolerance -and [Math]::Abs($centered.Y-$expectY)-le $tolerance){$pass++}else{$fail++}
+Invoke-Tessdeck @('--apply','Maximize','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 200; if([Win.U]::IsZoomed($hwnd)){$pass++;Write-Host '[통과] Maximize' -ForegroundColor Green}else{$fail++;Write-Host '[실패] Maximize' -ForegroundColor Red}
+Invoke-Tessdeck @('--apply','Restore','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 200; if(-not [Win.U]::IsZoomed($hwnd)){$pass++;Write-Host '[통과] Restore' -ForegroundColor Green}else{$fail++;Write-Host '[실패] Restore' -ForegroundColor Red}
+$before=Parse-Rect (Invoke-Tessdeck @('--info','--hwnd',$handleArg)) 'window='; Invoke-Tessdeck @('--apply','Smaller','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 150; $smaller=Parse-Rect (Invoke-Tessdeck @('--info','--hwnd',$handleArg)) 'window='; if($smaller.Width -lt $before.Width -and $smaller.Height -lt $before.Height){$pass++}else{$fail++}
+Invoke-Tessdeck @('--apply','Larger','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 150; $larger=Parse-Rect (Invoke-Tessdeck @('--info','--hwnd',$handleArg)) 'window='; if($larger.Width -gt $smaller.Width -and $larger.Height -gt $smaller.Height){$pass++}else{$fail++}
+Invoke-Tessdeck @('--apply','Center','--hwnd',$handleArg)|Out-Null; Start-Sleep -Milliseconds 150; $centered=Parse-Rect (Invoke-Tessdeck @('--info','--hwnd',$handleArg)) 'window='; $expectX=$work.X+[int](($work.Width-$centered.Width)/2);$expectY=$work.Y+[int](($work.Height-$centered.Height)/2);if([Math]::Abs($centered.X-$expectX)-le $tolerance -and [Math]::Abs($centered.Y-$expectY)-le $tolerance){$pass++}else{$fail++}
 Write-Host ""; Write-Host ("결과: 통과 {0} / 실패 {1}" -f $pass,$fail)
 $proc|Stop-Process -Force -ErrorAction SilentlyContinue; Remove-Item $handleFile -ErrorAction SilentlyContinue
 if($fail -gt 0){exit 1}else{exit 0}

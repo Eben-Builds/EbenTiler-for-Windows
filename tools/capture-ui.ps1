@@ -24,6 +24,11 @@ Add-Type -Namespace Cap -Name U -MemberDefinition @'
 public struct R { public int Left; public int Top; public int Right; public int Bottom; }
 [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out R r);
 [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
+public struct P { public int X; public int Y; }
+[DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref P p);
+[DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr h);
+[DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+[DllImport("user32.dll")] public static extern void mouse_event(uint flags, int dx, int dy, uint data, IntPtr extra);
 '@
 try { [Cap.U]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null } catch { }
 
@@ -60,7 +65,21 @@ function Invoke-SettingsNavigation {
         }
     }
 
-    return $false
+    $dpi = [Cap.U]::GetDpiForWindow($Handle)
+    if ($dpi -le 0) { $dpi = 96 }
+    $scale = $dpi / 96.0
+
+    # 설정 창의 왼쪽 탐색에서 세 번째 항목(레이아웃) 중앙.
+    $point = New-Object 'Cap.U+P'
+    $point.X = [int][Math]::Round(101 * $scale)
+    $point.Y = [int][Math]::Round(239 * $scale)
+    [Cap.U]::ClientToScreen($Handle, [ref]$point) | Out-Null
+    [Cap.U]::SetCursorPos($point.X, $point.Y) | Out-Null
+    Start-Sleep -Milliseconds 100
+    [Cap.U]::mouse_event(0x0002, 0, 0, 0, [IntPtr]::Zero)
+    [Cap.U]::mouse_event(0x0004, 0, 0, 0, [IntPtr]::Zero)
+    Start-Sleep -Milliseconds 500
+    return $true
 }
 
 $settings = Start-Process -FilePath $exe -ArgumentList '--settings' -PassThru

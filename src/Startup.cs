@@ -9,7 +9,8 @@ namespace EbenTilerWindows
     public static class Startup
     {
         private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string ValueName = "Tessdeck";\n        private const string LegacyValueName = "EbenTiler";
+        private const string ValueName = "Tessdeck";
+        private const string LegacyValueName = "EbenTiler";
 
         private static string ExpectedValue
         {

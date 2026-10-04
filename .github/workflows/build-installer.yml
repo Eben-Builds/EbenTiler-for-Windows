@@ -40,18 +40,18 @@ jobs:
         run: choco install innosetup --version=6.7.1 -y --no-progress
 
       # main CI is intentionally unsigned and never receives release signing secrets.
-      - name: Build unsigned EbenTiler installer
+      - name: Build unsigned Tessdeck installer
         shell: powershell
         run: .\build-installer.ps1
 
       - name: Verify installer outputs
         shell: powershell
         run: |
-          if (-not (Test-Path '.\dist\EbenTiler-Setup.exe')) { throw 'Installer output is missing.' }
-          if (-not (Test-Path '.\dist\EbenTiler-Setup.exe.sha256')) { throw 'SHA256 output is missing.' }
+          if (-not (Test-Path '.\dist\Tessdeck-Setup.exe')) { throw 'Installer output is missing.' }
+          if (-not (Test-Path '.\dist\Tessdeck-Setup.exe.sha256')) { throw 'SHA256 output is missing.' }
 
-          $expected = ((Get-Content '.\dist\EbenTiler-Setup.exe.sha256' -Raw).Split()[0]).Trim().ToLowerInvariant()
-          $actual = (Get-FileHash '.\dist\EbenTiler-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected = ((Get-Content '.\dist\Tessdeck-Setup.exe.sha256' -Raw).Split()[0]).Trim().ToLowerInvariant()
+          $actual = (Get-FileHash '.\dist\Tessdeck-Setup.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($expected -ne $actual) { throw "Installer SHA256 mismatch: $actual" }
 
       - name: Exercise release verification without signing requirement
@@ -65,9 +65,9 @@ jobs:
       - name: Upload unsigned CI installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: EbenTiler-Unsigned-CI
+          name: Tessdeck-Unsigned-CI
           path: |
-            dist\EbenTiler-Setup.exe
-            dist\EbenTiler-Setup.exe.sha256
+            dist\Tessdeck-Setup.exe
+            dist\Tessdeck-Setup.exe.sha256
           if-no-files-found: error
           retention-days: 7

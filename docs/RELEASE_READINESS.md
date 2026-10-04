@@ -1,4 +1,4 @@
-# Tessdeck v1.1.2 공개 릴리스 상태
+# Tessdeck v1.2.0 릴리스 준비 상태
 
 이 문서는 EbenTiler에서 Tessdeck으로의 v1.1.0 리브랜딩, 기존 공개 Release 이력, 코드서명 전후 전환 조건을 기록합니다.
 
@@ -223,13 +223,40 @@ v1.1.1 공개 후 실제 공개 설치파일끼리 업그레이드하는 자동 
 
 2026-10-05 `v1.1.2` Release가 실제 게시되었고, 최신 Release는 `Tessdeck 1.1.2 (unsigned)`입니다. 같은 날 실제 Windows PC에서 v1.1.1 → v1.1.2 업그레이드를 수행했고, 로컬 QA 최종 결과는 `Local upgrade QA: PASS`였습니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 랜딩페이지의 `releases/latest/download/Tessdeck-Setup.exe` 경로가 자동으로 이 버전을 가리킵니다.
 
-## 12. v1.1.2 이후 코드서명 승인 시
+## 12. v1.2.0 사용자 지정 분할 비율 준비 상태
+
+v1.2.0은 같은 방향 단축키를 반복할 때 적용하는 세 가지 분할 비율을 사용자가 직접 지정할 수 있게 하는 기능 릴리스입니다. 기존 사용자의 기본 동작은 `50 / 33 / 67`로 유지합니다.
+
+- [x] `CycleRatio1 / CycleRatio2 / CycleRatio3` 설정 추가
+- [x] 기존 설정 파일에 새 키가 없어도 `50 / 33 / 67` 기본값으로 동작
+- [x] 각 비율을 20~80 범위로 제한
+- [x] `WindowManager`가 고정 비율 대신 사용자 설정 비율을 사용
+- [x] 반복 배치 OFF일 때 첫 번째 비율만 사용
+- [x] 설정 > 레이아웃에 세 비율 입력 UI 추가
+- [x] 중복 비율 저장 방지
+- [x] 실제 Windows 전역 단축키로 `50 → 40 → 60%` 폭 순환 확인
+- [x] 실제 Windows 전역 단축키로 `50 → 40 → 60%` 높이 순환 확인
+- [x] 실제 레이아웃 설정 UI에서 `50 / 40 / 60` 입력 후 `config.ini` 저장 확인
+- [x] Windows Installer CI 빌드 / release verification / 설치·제거 smoke test 통과
+- [x] Visual Brand Check 통과
+- [x] 실제 `layout.png`에서 컨트롤 겹침·잘림·말줄임 최종 확인
+- [x] README 한국어/영어에 사용자 지정 비율 및 설정 키 문서화
+- [ ] `v1.0.1 / v1.1.0 / v1.1.1 / v1.1.2 → v1.2.0` Upgrade Compatibility Check 모두 통과
+- [ ] 실제 Windows PC에서 `v1.1.2 → v1.2.0` 로컬 업그레이드 QA 통과
+- [ ] `v1.2.0` 태그 생성
+- [ ] Release workflow 성공
+- [ ] `Tessdeck-Setup.exe` / SHA-256 공개
+- [ ] 최신 랜딩페이지 다운로드가 `v1.2.0`을 가리키는지 확인
+
+상세 설계는 `docs/CUSTOM_SPLIT_RATIOS_v0.1.md`를 봅니다.
+
+## 13. v1.2.0 이후 코드서명 승인 시
 
 SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release에서:
 
-- 앱 버전을 `1.1.3` 이상으로 올림
+- 앱 버전을 `1.2.1` 이상으로 올림
 - Authenticode 서명 적용
 - `tools/verify-release.ps1 -RequireCodeSigning` 통과
 - signed 설치 파일 게시
 - 랜딩페이지의 `코드 서명 준비 중` 안내 제거
-- 기존 `v1.0.1` EbenTiler 및 `v1.1.0`~`v1.1.2` Tessdeck 사용자에게 다음 버전 업데이트 알림이 정상 동작하는지 확인
+- 기존 `v1.0.1` EbenTiler 및 `v1.1.0`~`v1.2.0` Tessdeck 사용자에게 다음 버전 업데이트 알림이 정상 동작하는지 확인

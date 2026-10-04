@@ -16,7 +16,7 @@
 
 랜딩페이지는 일반 CI의 임시 Actions artifact를 직접 배포하지 않습니다.
 
-v1.1.0 공개 전환 중에는 모든 `윈도우용 다운로드` 링크를 GitHub의 최신 Release 페이지로 연결합니다. `Tessdeck-Setup.exe`가 실제 공개된 뒤 검증된 설치 파일 직링크로 전환할 수 있습니다. 공개 Release는 `.github/workflows/release.yml`에서 태그/버전/`main` 포함 여부, 설치/제거 smoke test, SHA-256 검증을 통과한 경우에만 게시됩니다.
+모든 `윈도우용 다운로드` 링크는 GitHub 최신 공개 Release의 `Tessdeck-Setup.exe`를 직접 가리킵니다. 공개 Release는 태그/버전/`main` 포함 여부, 설치/제거 smoke test, SHA-256 검증을 통과한 결과물만 게시됩니다. 공개 Release는 `.github/workflows/release.yml`에서 태그/버전/`main` 포함 여부, 설치/제거 smoke test, SHA-256 검증을 통과한 경우에만 게시됩니다.
 
 코드서명 신원이 연결되어 있으면 같은 Release 경로에서 Authenticode 서명과 검증까지 수행합니다. 아직 코드서명이 연결되지 않은 경우에는 Release 제목과 설명, 랜딩페이지에서 unsigned 상태와 Windows의 게시자/SmartScreen 경고 가능성을 명확하게 고지합니다.
 

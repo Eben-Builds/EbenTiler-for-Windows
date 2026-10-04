@@ -1,17 +1,17 @@
 # Security
 
-EbenTiler는 계정, 로그인, 원격 코드 실행 기능을 사용하지 않는 로컬 Windows 유틸리티입니다.
+Tessdeck는 계정, 로그인, 원격 코드 실행 기능을 사용하지 않는 로컬 Windows 유틸리티입니다.
 랜딩페이지는 정적 파일만 제공하며, 앱은 새 버전 확인을 위해 최대 24시간에 한 번 GitHub의 공개 Release API에 버전 정보만 요청합니다.
 
 ## 현재 공격 표면
 
 앱이 직접 다루는 외부 입력은 전역 단축키, 로컬 설정 파일, CLI 인수, Windows 창 핸들, GitHub 공개 Release 메타데이터입니다.
 
-- 설정 파일: 현재 사용자 `%APPDATA%\EbenTiler\config.ini`
-- 업데이트 확인 상태: `%APPDATA%\EbenTiler\update-state.ini`
-- 업데이트 배지 상태: `%APPDATA%\EbenTiler\update-badge.ini`
+- 설정 파일: 현재 사용자 `%APPDATA%\Tessdeck\config.ini`
+- 업데이트 확인 상태: `%APPDATA%\Tessdeck\update-state.ini`
+- 업데이트 배지 상태: `%APPDATA%\Tessdeck\update-badge.ini`
 - 자동 시작: 현재 사용자 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
-- 설치 위치: 현재 사용자 `%LOCALAPPDATA%\Programs\EbenTiler`
+- 설치 위치: 현재 사용자 `%LOCALAPPDATA%\Programs\Tessdeck`
 - 관리자 권한 설치 요구 없음
 - 계정/로그인/텔레메트리 없음
 - 업데이트 파일 자동 다운로드/자동 설치 없음
@@ -30,7 +30,7 @@ EbenTiler는 계정, 로그인, 원격 코드 실행 기능을 사용하지 않�
 ## 다운로드 공급망
 
 일반 사용자는 랜딩페이지에서 일반 CI의 임시 Actions artifact를 받지 않습니다.
-랜딩페이지의 다운로드 버튼은 GitHub의 최신 공개 Release에 첨부된 `EbenTiler-Setup.exe`만 가리킵니다.
+랜딩페이지의 다운로드 버튼은 GitHub의 최신 공개 Release에 첨부된 `Tessdeck-Setup.exe`만 가리킵니다.
 
 모든 공개 Release 게시 조건:
 
@@ -42,8 +42,8 @@ EbenTiler는 계정, 로그인, 원격 코드 실행 기능을 사용하지 않�
 
 코드서명 신원이 있는 Release는 추가로 다음을 통과해야 합니다.
 
-- `EbenTiler.exe` Authenticode 서명 유효
-- `EbenTiler-Setup.exe` Authenticode 서명 유효
+- `Tessdeck.exe` Authenticode 서명 유효
+- `Tessdeck-Setup.exe` Authenticode 서명 유효
 - Code Signing EKU 확인
 
 코드서명 신원이 아직 없는 초기 공개 Release는 unsigned로 게시할 수 있지만, 다음을 반드시 지킵니다.

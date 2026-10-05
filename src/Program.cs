@@ -96,6 +96,7 @@ namespace EbenTilerWindows
                 if (arg == "--layout-snapshot-info") return PrintLayoutSnapshotInfo();
                 if (arg == "--layout-save") return SaveLayoutSnapshot();
                 if (arg == "--layout-read-info") return ReadLayoutSnapshotInfo();
+                if (arg == "--layout-match-info") return PrintLayoutMatchInfo();
                 if (arg == "--layout-read-file" && i + 1 < args.Length)
                 {
                     string snapshotPath = args[i + 1];
@@ -331,6 +332,70 @@ namespace EbenTilerWindows
             return 0;
         }
 
+        private static int PrintLayoutMatchInfo()
+        {
+            LayoutSnapshotMatchResult result = LayoutSnapshot.MatchSavedToCurrent();
+
+            Emit("path=" + result.FilePath);
+            Emit("exists=" + (result.FileExists ? "1" : "0"));
+            Emit("ready=" + (result.Ready ? "1" : "0"));
+
+            if (!result.Ready)
+            {
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    Emit("error=" + result.Error);
+                }
+                return 1;
+            }
+
+            Emit("saved=" + result.SavedWindowCount);
+            Emit("current=" + result.CurrentWindowCount);
+            Emit("matched=" + result.Matched.Count);
+            Emit("missing=" + result.Missing.Count);
+            Emit("current-only=" + result.CurrentOnly.Count);
+            Emit("skipped-saved=" + result.SkippedSavedWindowCount);
+
+            for (int i = 0; i < result.Matched.Count; i++)
+            {
+                LayoutSnapshotMatchedWindow item = result.Matched[i];
+                WindowSnapshotEntry saved = item.Saved;
+                WindowSnapshotEntry current = item.Current.Entry;
+
+                Emit("match=" + i
+                    + " hwnd=0x" + item.Current.Handle.ToInt64().ToString("X", CultureInfo.InvariantCulture)
+                    + " process=" + saved.ProcessName
+                    + " class=" + saved.WindowClass
+                    + " instance=" + saved.InstanceIndex
+                    + " saved-monitor=" + saved.MonitorDeviceName
+                    + " current-monitor=" + current.MonitorDeviceName);
+            }
+
+            for (int i = 0; i < result.Missing.Count; i++)
+            {
+                WindowSnapshotEntry item = result.Missing[i];
+                Emit("missing-item=" + i
+                    + " process=" + item.ProcessName
+                    + " class=" + item.WindowClass
+                    + " instance=" + item.InstanceIndex
+                    + " saved-monitor=" + item.MonitorDeviceName);
+            }
+
+            for (int i = 0; i < result.CurrentOnly.Count; i++)
+            {
+                CurrentWindowSnapshot item = result.CurrentOnly[i];
+                WindowSnapshotEntry entry = item.Entry;
+                Emit("current-only-item=" + i
+                    + " hwnd=0x" + item.Handle.ToInt64().ToString("X", CultureInfo.InvariantCulture)
+                    + " process=" + entry.ProcessName
+                    + " class=" + entry.WindowClass
+                    + " instance=" + entry.InstanceIndex
+                    + " current-monitor=" + entry.MonitorDeviceName);
+            }
+
+            return 0;
+        }
+
         private static int CheckHotkeys()
         {
             Config config = Config.Load();
@@ -388,6 +453,7 @@ namespace EbenTilerWindows
             Emit("  --layout-snapshot-info 현재 창들을 메모리 snapshot으로 변환해 출력");
             Emit("  --layout-save        현재 관리 가능한 창 배치를 quick-layout.ini 에 저장");
             Emit("  --layout-read-info   저장된 quick-layout.ini 를 읽고 검증 결과 출력");
+            Emit("  --layout-match-info  저장된 snapshot과 현재 열린 창의 매칭 결과 출력");
             Emit("  --layout-read-file <파일>  지정 snapshot 파일을 읽어 검증 (테스트용)");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");

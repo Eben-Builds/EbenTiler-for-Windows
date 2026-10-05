@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
@@ -11,6 +12,7 @@ namespace EbenTilerWindows
     {
         private const int MinWidth = 240;
         private const int MinHeight = 160;
+        private static readonly string CurrentProcessName = GetCurrentProcessName();
 
         private readonly Dictionary<IntPtr, Native.WINDOWPLACEMENT> _originalPlacements
             = new Dictionary<IntPtr, Native.WINDOWPLACEMENT>();
@@ -479,32 +481,56 @@ namespace EbenTilerWindows
 
         // 대상 창 고르기
 
-        /// <summary>배치 가능한 활성 창을 고른다. 시스템 셸/일시적 팝업은 제외하고 일반 borderless 앱 창은 허용한다.</summary>
+        /// <summary>배치 가능한 활성 창을 고른다.</summary>
         public static IntPtr GetTargetWindow()
         {
             IntPtr hwnd = Native.GetForegroundWindow();
-            if (hwnd == IntPtr.Zero || !Native.IsWindow(hwnd) || !Native.IsWindowVisible(hwnd))
+            return IsManageableWindow(hwnd) ? hwnd : IntPtr.Zero;
+        }
+
+        /// <summary>현재 보이는 top-level 창 중 Tessdeck이 안전하게 관리할 일반 앱 창만 Z-order 순서로 반환한다.</summary>
+        public static List<IntPtr> EnumerateManageableWindows()
+        {
+            List<IntPtr> windows = new List<IntPtr>();
+            Native.EnumWindows(delegate(IntPtr hwnd, IntPtr lParam)
             {
-                return IntPtr.Zero;
+                if (IsManageableWindow(hwnd))
+                {
+                    windows.Add(hwnd);
+                }
+                return true;
+            }, IntPtr.Zero);
+            return windows;
+        }
+
+        /// <summary>시스템 셸/일시적 팝업/최소화 창/Tessdeck 자체 창을 제외하고 일반 앱 창인지 판별한다.</summary>
+        public static bool IsManageableWindow(IntPtr hwnd)
+        {
+            if (hwnd == IntPtr.Zero
+                || !Native.IsWindow(hwnd)
+                || !Native.IsWindowVisible(hwnd)
+                || Native.IsIconic(hwnd))
+            {
+                return false;
             }
 
             long style = Native.GetWindowLongSafe(hwnd, Native.GWL_STYLE);
             if ((style & Native.WS_CHILD) != 0)
             {
-                return IntPtr.Zero;
+                return false;
             }
 
             long exStyle = Native.GetWindowLongSafe(hwnd, Native.GWL_EXSTYLE);
             if ((exStyle & Native.WS_EX_TOOLWINDOW) != 0)
             {
-                return IntPtr.Zero;
+                return false;
             }
 
             int cloaked;
             if (Native.DwmGetWindowAttribute(hwnd, Native.DWMWA_CLOAKED, out cloaked, sizeof(int)) == 0
                 && cloaked != 0)
             {
-                return IntPtr.Zero;
+                return false;
             }
 
             StringBuilder className = new StringBuilder(256);
@@ -512,7 +538,7 @@ namespace EbenTilerWindows
             string name = className.ToString();
             if (IsBlockedWindowClass(name))
             {
-                return IntPtr.Zero;
+                return false;
             }
 
             // 제목 표시줄이 없는 Electron/Chromium/커스텀 프레임 창도 실제 앱 창이면 허용한다.
@@ -520,10 +546,47 @@ namespace EbenTilerWindows
             Rectangle visual = GetVisualRect(hwnd);
             if (visual.IsEmpty || visual.Width < 80 || visual.Height < 60)
             {
-                return IntPtr.Zero;
+                return false;
             }
 
-            return hwnd;
+            return !IsTessdeckWindow(hwnd);
+        }
+
+        private static bool IsTessdeckWindow(IntPtr hwnd)
+        {
+            uint processId;
+            if (Native.GetWindowThreadProcessId(hwnd, out processId) == 0 || processId == 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                using (Process process = Process.GetProcessById((int)processId))
+                {
+                    return string.Equals(process.ProcessName, CurrentProcessName, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                return false;
+            }
+        }
+
+        private static string GetCurrentProcessName()
+        {
+            using (Process process = Process.GetCurrentProcess())
+            {
+                return process.ProcessName;
+            }
         }
 
         private static bool IsBlockedWindowClass(string name)

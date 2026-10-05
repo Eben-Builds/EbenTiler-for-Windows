@@ -44,6 +44,35 @@ namespace EbenTilerWindows
         }
     }
 
+    internal sealed class LayoutSnapshotReadResult
+    {
+        public bool Loaded { get; private set; }
+        public bool FileExists { get; private set; }
+        public int DeclaredWindowCount { get; private set; }
+        public int SkippedWindowCount { get; private set; }
+        public LayoutSnapshotData Snapshot { get; private set; }
+        public string FilePath { get; private set; }
+        public string Error { get; private set; }
+
+        public LayoutSnapshotReadResult(
+            bool loaded,
+            bool fileExists,
+            int declaredWindowCount,
+            int skippedWindowCount,
+            LayoutSnapshotData snapshot,
+            string filePath,
+            string error)
+        {
+            Loaded = loaded;
+            FileExists = fileExists;
+            DeclaredWindowCount = declaredWindowCount;
+            SkippedWindowCount = skippedWindowCount;
+            Snapshot = snapshot;
+            FilePath = filePath;
+            Error = error;
+        }
+    }
+
     internal sealed class WindowSnapshotEntry
     {
         public string ProcessName { get; private set; }
@@ -223,6 +252,269 @@ namespace EbenTilerWindows
                     catch (UnauthorizedAccessException) { }
                 }
             }
+        }
+
+        /// <summary>
+        /// 저장된 quick-layout.ini 를 읽어 검증된 메모리 snapshot으로 변환한다.
+        /// 이 메서드는 창을 이동하거나 복원하지 않는다.
+        /// </summary>
+        public static LayoutSnapshotReadResult ReadSaved()
+        {
+            string path = FilePath;
+            if (!File.Exists(path))
+            {
+                return new LayoutSnapshotReadResult(
+                    false, false, 0, 0, null, path, null);
+            }
+
+            try
+            {
+                string[] lines = File.ReadAllLines(path, Encoding.UTF8);
+                Dictionary<string, Dictionary<string, string>> sections = ParseIniSections(lines);
+
+                Dictionary<string, string> snapshotSection;
+                if (!sections.TryGetValue("Snapshot", out snapshotSection))
+                {
+                    return ReadFailure(path, "Snapshot section is missing.");
+                }
+
+                int version;
+                if (!TryGetInt(snapshotSection, "Version", out version)
+                    || version != SnapshotFormatVersion)
+                {
+                    return ReadFailure(path, "Unsupported or invalid snapshot version.");
+                }
+
+                DateTime capturedAtUtc;
+                string capturedText;
+                if (!snapshotSection.TryGetValue("CapturedUtc", out capturedText)
+                    || !DateTime.TryParse(
+                        capturedText,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind,
+                        out capturedAtUtc))
+                {
+                    return ReadFailure(path, "Snapshot capture time is invalid.");
+                }
+
+                int declaredCount;
+                if (!TryGetInt(snapshotSection, "WindowCount", out declaredCount)
+                    || declaredCount < 0
+                    || declaredCount > 1000)
+                {
+                    return ReadFailure(path, "Snapshot window count is invalid.");
+                }
+
+                List<WindowSnapshotEntry> entries = new List<WindowSnapshotEntry>();
+                int skipped = 0;
+
+                for (int i = 0; i < declaredCount; i++)
+                {
+                    Dictionary<string, string> windowSection;
+                    if (!sections.TryGetValue(
+                        "Window" + i.ToString(CultureInfo.InvariantCulture),
+                        out windowSection))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    WindowSnapshotEntry entry;
+                    if (!TryParseWindowEntry(windowSection, out entry))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    entries.Add(entry);
+                }
+
+                LayoutSnapshotData snapshot = new LayoutSnapshotData(capturedAtUtc, entries);
+                return new LayoutSnapshotReadResult(
+                    true, true, declaredCount, skipped, snapshot, path, null);
+            }
+            catch (IOException ex)
+            {
+                return ReadFailure(path, ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return ReadFailure(path, ex.Message);
+            }
+        }
+
+        private static LayoutSnapshotReadResult ReadFailure(string path, string error)
+        {
+            return new LayoutSnapshotReadResult(
+                false, true, 0, 0, null, path, error);
+        }
+
+        private static Dictionary<string, Dictionary<string, string>> ParseIniSections(string[] lines)
+        {
+            Dictionary<string, Dictionary<string, string>> sections =
+                new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> current = null;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i].Trim();
+                if (line.Length == 0 || line.StartsWith(";") || line.StartsWith("#"))
+                {
+                    continue;
+                }
+
+                if (line.StartsWith("[") && line.EndsWith("]") && line.Length > 2)
+                {
+                    string sectionName = line.Substring(1, line.Length - 2).Trim();
+                    if (sectionName.Length == 0)
+                    {
+                        current = null;
+                        continue;
+                    }
+
+                    if (!sections.TryGetValue(sectionName, out current))
+                    {
+                        current = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        sections[sectionName] = current;
+                    }
+                    continue;
+                }
+
+                if (current == null)
+                {
+                    continue;
+                }
+
+                int equals = line.IndexOf('=');
+                if (equals <= 0)
+                {
+                    continue;
+                }
+
+                string key = line.Substring(0, equals).Trim();
+                string value = line.Substring(equals + 1).Trim();
+                if (key.Length > 0)
+                {
+                    current[key] = value;
+                }
+            }
+
+            return sections;
+        }
+
+        private static bool TryParseWindowEntry(
+            Dictionary<string, string> section,
+            out WindowSnapshotEntry entry)
+        {
+            entry = null;
+
+            string processName;
+            string windowClass;
+            string monitor;
+            if (!TryGetNonEmpty(section, "Process", out processName)
+                || !TryGetNonEmpty(section, "Class", out windowClass)
+                || !TryGetNonEmpty(section, "Monitor", out monitor))
+            {
+                return false;
+            }
+
+            int instance;
+            int x;
+            int y;
+            int width;
+            int height;
+            if (!TryGetInt(section, "Instance", out instance)
+                || instance < 0
+                || instance > 10000
+                || !TryGetCoordinate(section, "X", out x, true)
+                || !TryGetCoordinate(section, "Y", out y, true)
+                || !TryGetCoordinate(section, "Width", out width, false)
+                || !TryGetCoordinate(section, "Height", out height, false))
+            {
+                return false;
+            }
+
+            bool maximized;
+            string maximizedText;
+            if (!section.TryGetValue("Maximized", out maximizedText)
+                || !bool.TryParse(maximizedText, out maximized))
+            {
+                return false;
+            }
+
+            entry = new WindowSnapshotEntry(
+                processName,
+                NormalizeWindowClassKey(windowClass),
+                instance,
+                monitor,
+                Rectangle.Empty,
+                x,
+                y,
+                width,
+                height,
+                maximized);
+            return true;
+        }
+
+        private static bool TryGetCoordinate(
+            Dictionary<string, string> section,
+            string key,
+            out int value,
+            bool allowZero)
+        {
+            if (!TryGetInt(section, key, out value))
+            {
+                return false;
+            }
+
+            if (value < 0 || value > CoordinateScale)
+            {
+                return false;
+            }
+
+            if (!allowZero && value == 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryGetInt(
+            Dictionary<string, string> section,
+            string key,
+            out int value)
+        {
+            value = 0;
+            string text;
+            return section.TryGetValue(key, out text)
+                && int.TryParse(
+                    text,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out value);
+        }
+
+        private static bool TryGetNonEmpty(
+            Dictionary<string, string> section,
+            string key,
+            out string value)
+        {
+            value = null;
+            string text;
+            if (!section.TryGetValue(key, out text))
+            {
+                return false;
+            }
+
+            text = text.Trim();
+            if (text.Length == 0 || text.IndexOf('\r') >= 0 || text.IndexOf('\n') >= 0)
+            {
+                return false;
+            }
+
+            value = text;
+            return true;
         }
 
         private static string Serialize(LayoutSnapshotData snapshot)

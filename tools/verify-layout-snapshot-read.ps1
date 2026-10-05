@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $exe = Join-Path $root 'build\Tessdeck.exe'
 if (-not (Test-Path $exe)) {
-    throw '먼저 build.ps1 로 빌드하세요.'
+    throw 'Build Tessdeck first with build.ps1.'
 }
 
 $tempDir = Join-Path $env:TEMP ('tessdeck-layout-read-' + [Guid]::NewGuid().ToString('N'))
@@ -23,8 +23,8 @@ function Assert-Contains {
         [string]$Label
     )
 
-    if ($Text -notlike ('*' + $Expected + '*')) {
-        throw "$Label 실패: '$Expected' 를 찾지 못했습니다.`n$Text"
+    if (-not $Text.Contains($Expected)) {
+        throw "$Label failed: expected literal text not found: '$Expected'`n$Text"
     }
 }
 
@@ -56,11 +56,11 @@ function Invoke-ReadCase {
     Start-Sleep -Milliseconds 100
 
     if ($process.ExitCode -ne $ExpectedExitCode) {
-        throw "$Name 종료 코드 실패: expected=$ExpectedExitCode actual=$($process.ExitCode)"
+        throw "$Name exit code mismatch: expected=$ExpectedExitCode actual=$($process.ExitCode)"
     }
 
     if (-not (Test-Path $outputPath)) {
-        throw "$Name 출력 파일이 생성되지 않았습니다."
+        throw "$Name output file was not created."
     }
 
     $text = Get-Content -LiteralPath $outputPath -Raw

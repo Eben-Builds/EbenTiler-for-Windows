@@ -10,6 +10,8 @@ namespace EbenTilerWindows
     public sealed class Config
     {
         public Dictionary<SnapAction, Hotkey> Hotkeys;
+        public Hotkey QuickLayoutSaveHotkey;
+        public Hotkey QuickLayoutRestoreHotkey;
         public int Gap;
         public bool CycleHalves;
         public int CycleRatio1;
@@ -20,6 +22,8 @@ namespace EbenTilerWindows
         public Config()
         {
             Hotkeys = new Dictionary<SnapAction, Hotkey>();
+            QuickLayoutSaveHotkey = new Hotkey();
+            QuickLayoutRestoreHotkey = new Hotkey();
             Gap = 0;
             CycleHalves = true;
             CycleRatio1 = 50;
@@ -103,6 +107,18 @@ namespace EbenTilerWindows
                     string key = line.Substring(0, eq).Trim();
                     string value = line.Substring(eq + 1).Trim();
 
+                    if (string.Equals(key, "QuickLayoutSave", StringComparison.OrdinalIgnoreCase))
+                    {
+                        config.QuickLayoutSaveHotkey = Hotkey.Parse(value);
+                        continue;
+                    }
+
+                    if (string.Equals(key, "QuickLayoutRestore", StringComparison.OrdinalIgnoreCase))
+                    {
+                        config.QuickLayoutRestoreHotkey = Hotkey.Parse(value);
+                        continue;
+                    }
+
                     SnapAction action;
                     if (SnapActions.TryParse(key, out action))
                     {
@@ -177,6 +193,9 @@ namespace EbenTilerWindows
                     sb.AppendLine(action.ToString() + "=" + value);
                 }
 
+                sb.AppendLine("QuickLayoutSave=" + HotkeyText(QuickLayoutSaveHotkey));
+                sb.AppendLine("QuickLayoutRestore=" + HotkeyText(QuickLayoutRestoreHotkey));
+
                 sb.AppendLine();
                 sb.AppendLine("[Options]");
                 sb.AppendLine("Gap=" + Gap.ToString(CultureInfo.InvariantCulture));
@@ -199,6 +218,25 @@ namespace EbenTilerWindows
             return new Hotkey();
         }
 
+        private static string HotkeyText(Hotkey hotkey)
+        {
+            return hotkey != null && !hotkey.IsEmpty ? hotkey.ToString() : "";
+        }
+
+        private static Hotkey CloneHotkey(Hotkey source)
+        {
+            Hotkey target = new Hotkey();
+            if (source != null)
+            {
+                target.Ctrl = source.Ctrl;
+                target.Alt = source.Alt;
+                target.Shift = source.Shift;
+                target.Win = source.Win;
+                target.Key = source.Key;
+            }
+            return target;
+        }
+
         public void CopyFrom(Config other)
         {
             if (other == null) return;
@@ -209,6 +247,8 @@ namespace EbenTilerWindows
             CycleRatio3 = other.CycleRatio3;
             ShowWelcomeGuide = other.ShowWelcomeGuide;
             Hotkeys = other.Hotkeys;
+            QuickLayoutSaveHotkey = CloneHotkey(other.QuickLayoutSaveHotkey);
+            QuickLayoutRestoreHotkey = CloneHotkey(other.QuickLayoutRestoreHotkey);
         }
 
         public Config Clone()
@@ -220,6 +260,8 @@ namespace EbenTilerWindows
             copy.CycleRatio2 = CycleRatio2;
             copy.CycleRatio3 = CycleRatio3;
             copy.ShowWelcomeGuide = ShowWelcomeGuide;
+            copy.QuickLayoutSaveHotkey = CloneHotkey(QuickLayoutSaveHotkey);
+            copy.QuickLayoutRestoreHotkey = CloneHotkey(QuickLayoutRestoreHotkey);
             foreach (KeyValuePair<SnapAction, Hotkey> pair in Hotkeys)
             {
                 Hotkey source = pair.Value;

@@ -4,14 +4,25 @@ using System.Windows.Forms;
 
 namespace EbenTilerWindows
 {
+    public enum QuickLayoutHotkeyAction
+    {
+        Save,
+        Restore
+    }
+
     /// <summary>전역 단축키를 등록하고, 눌렸을 때 알려 주는 숨은 창.</summary>
     public sealed class HotkeyManager : NativeWindow, IDisposable
     {
         private readonly Dictionary<int, SnapAction> _registered = new Dictionary<int, SnapAction>();
+        private readonly Dictionary<int, QuickLayoutHotkeyAction> _registeredQuickLayout =
+            new Dictionary<int, QuickLayoutHotkeyAction>();
         private int _nextId = 0xB100;
 
-        /// <summary>단축키가 눌렸을 때 호출된다.</summary>
+        /// <summary>창 배치 단축키가 눌렸을 때 호출된다.</summary>
         public event Action<SnapAction> HotkeyPressed;
+
+        /// <summary>Quick Layout 저장/복원 단축키가 눌렸을 때 호출된다.</summary>
+        public event Action<QuickLayoutHotkeyAction> QuickLayoutHotkeyPressed;
 
         public HotkeyManager()
         {
@@ -48,7 +59,46 @@ namespace EbenTilerWindows
                 }
             }
 
+            RegisterQuickLayoutHotkey(
+                config.QuickLayoutSaveHotkey,
+                QuickLayoutHotkeyAction.Save,
+                "Quick Layout 저장",
+                failed);
+            RegisterQuickLayoutHotkey(
+                config.QuickLayoutRestoreHotkey,
+                QuickLayoutHotkeyAction.Restore,
+                "Quick Layout 복원",
+                failed);
+
             return failed;
+        }
+
+        private void RegisterQuickLayoutHotkey(
+            Hotkey hotkey,
+            QuickLayoutHotkeyAction action,
+            string label,
+            List<string> failed)
+        {
+            if (hotkey == null || hotkey.IsEmpty || !hotkey.HasModifier)
+            {
+                return;
+            }
+
+            int id = _nextId++;
+            bool ok = Native.RegisterHotKey(
+                Handle,
+                id,
+                hotkey.Modifiers | Native.MOD_NOREPEAT,
+                (uint)hotkey.Key);
+
+            if (ok)
+            {
+                _registeredQuickLayout[id] = action;
+            }
+            else
+            {
+                failed.Add(label + " (" + hotkey.ToDisplayString() + ")");
+            }
         }
 
         public void UnregisterAll()
@@ -58,6 +108,12 @@ namespace EbenTilerWindows
                 Native.UnregisterHotKey(Handle, pair.Key);
             }
             _registered.Clear();
+
+            foreach (KeyValuePair<int, QuickLayoutHotkeyAction> pair in _registeredQuickLayout)
+            {
+                Native.UnregisterHotKey(Handle, pair.Key);
+            }
+            _registeredQuickLayout.Clear();
         }
 
         protected override void WndProc(ref Message m)
@@ -72,6 +128,17 @@ namespace EbenTilerWindows
                     if (handler != null)
                     {
                         handler(action);
+                    }
+                    return;
+                }
+
+                QuickLayoutHotkeyAction quickLayoutAction;
+                if (_registeredQuickLayout.TryGetValue(id, out quickLayoutAction))
+                {
+                    Action<QuickLayoutHotkeyAction> handler = QuickLayoutHotkeyPressed;
+                    if (handler != null)
+                    {
+                        handler(quickLayoutAction);
                     }
                     return;
                 }

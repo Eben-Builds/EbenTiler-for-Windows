@@ -557,7 +557,23 @@ namespace EbenTilerWindows
                     registered++;
                 }
 
-                Emit("total=" + ordered.Length);
+                Hotkey[] quickLayoutHotkeys = new Hotkey[]
+                {
+                    config.QuickLayoutSaveHotkey,
+                    config.QuickLayoutRestoreHotkey
+                };
+                for (int i = 0; i < quickLayoutHotkeys.Length; i++)
+                {
+                    Hotkey hotkey = quickLayoutHotkeys[i];
+                    if (hotkey == null || hotkey.IsEmpty || !hotkey.HasModifier)
+                    {
+                        empty++;
+                        continue;
+                    }
+                    registered++;
+                }
+
+                Emit("total=" + (ordered.Length + quickLayoutHotkeys.Length));
                 Emit("assigned=" + registered);
                 Emit("unassigned=" + empty);
                 Emit("failed=" + failed.Count);

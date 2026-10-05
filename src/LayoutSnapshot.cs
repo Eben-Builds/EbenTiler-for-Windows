@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
 
@@ -16,6 +18,29 @@ namespace EbenTilerWindows
         {
             CapturedAtUtc = capturedAtUtc;
             Windows = windows ?? new List<WindowSnapshotEntry>();
+        }
+    }
+
+    internal sealed class LayoutSnapshotSaveResult
+    {
+        public bool Saved { get; private set; }
+        public bool SkippedEmpty { get; private set; }
+        public int WindowCount { get; private set; }
+        public string FilePath { get; private set; }
+        public string Error { get; private set; }
+
+        public LayoutSnapshotSaveResult(
+            bool saved,
+            bool skippedEmpty,
+            int windowCount,
+            string filePath,
+            string error)
+        {
+            Saved = saved;
+            SkippedEmpty = skippedEmpty;
+            WindowCount = windowCount;
+            FilePath = filePath;
+            Error = error;
         }
     }
 
@@ -60,6 +85,12 @@ namespace EbenTilerWindows
     internal static class LayoutSnapshot
     {
         private const int CoordinateScale = 10000;
+        private const int SnapshotFormatVersion = 1;
+
+        public static string FilePath
+        {
+            get { return Path.Combine(Config.Directory, "quick-layout.ini"); }
+        }
 
         /// <summary>
         /// 현재 관리 가능한 일반 앱 창을 메모리상의 snapshot 데이터로 변환한다.
@@ -123,6 +154,120 @@ namespace EbenTilerWindows
             }
 
             return new LayoutSnapshotData(DateTime.UtcNow, entries);
+        }
+
+        /// <summary>
+        /// 현재 snapshot을 %APPDATA%\Tessdeck\quick-layout.ini 에 안전하게 저장한다.
+        /// 0개 창이면 기존 snapshot을 절대 덮어쓰지 않는다.
+        /// </summary>
+        public static LayoutSnapshotSaveResult SaveCurrent()
+        {
+            LayoutSnapshotData snapshot = CaptureCurrent();
+            string path = FilePath;
+
+            if (snapshot.Windows.Count == 0)
+            {
+                return new LayoutSnapshotSaveResult(false, true, 0, path, null);
+            }
+
+            string directory = Path.GetDirectoryName(path);
+            string tempPath = null;
+
+            try
+            {
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                tempPath = Path.Combine(
+                    directory,
+                    "quick-layout." + Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture)
+                        + "." + Guid.NewGuid().ToString("N") + ".tmp");
+
+                string serialized = Serialize(snapshot);
+                File.WriteAllText(tempPath, serialized, new UTF8Encoding(false));
+
+                if (File.Exists(path))
+                {
+                    File.Replace(tempPath, path, null, true);
+                }
+                else
+                {
+                    File.Move(tempPath, path);
+                }
+
+                tempPath = null;
+                return new LayoutSnapshotSaveResult(
+                    true, false, snapshot.Windows.Count, path, null);
+            }
+            catch (IOException ex)
+            {
+                return new LayoutSnapshotSaveResult(
+                    false, false, snapshot.Windows.Count, path, ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return new LayoutSnapshotSaveResult(
+                    false, false, snapshot.Windows.Count, path, ex.Message);
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(tempPath))
+                {
+                    try
+                    {
+                        if (File.Exists(tempPath)) File.Delete(tempPath);
+                    }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+            }
+        }
+
+        private static string Serialize(LayoutSnapshotData snapshot)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("; Tessdeck Quick Layout Snapshot");
+            sb.AppendLine("; Local-only window geometry. No window titles, URLs, file paths, or command lines.");
+            sb.AppendLine();
+            sb.AppendLine("[Snapshot]");
+            sb.AppendLine("Version=" + SnapshotFormatVersion.ToString(CultureInfo.InvariantCulture));
+            sb.AppendLine("CapturedUtc=" + snapshot.CapturedAtUtc.ToString("o", CultureInfo.InvariantCulture));
+            sb.AppendLine("WindowCount=" + snapshot.Windows.Count.ToString(CultureInfo.InvariantCulture));
+
+            for (int i = 0; i < snapshot.Windows.Count; i++)
+            {
+                WindowSnapshotEntry entry = snapshot.Windows[i];
+                sb.AppendLine();
+                sb.AppendLine("[Window" + i.ToString(CultureInfo.InvariantCulture) + "]");
+                sb.AppendLine("Process=" + SafeIniValue(entry.ProcessName));
+                sb.AppendLine("Class=" + SafeIniValue(entry.WindowClass));
+                sb.AppendLine("Instance=" + entry.InstanceIndex.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("Monitor=" + SafeIniValue(entry.MonitorDeviceName));
+                sb.AppendLine("X=" + entry.NormalizedX.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("Y=" + entry.NormalizedY.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("Width=" + entry.NormalizedWidth.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("Height=" + entry.NormalizedHeight.ToString(CultureInfo.InvariantCulture));
+                sb.AppendLine("Maximized=" + (entry.Maximized ? "true" : "false"));
+            }
+
+            return sb.ToString();
+        }
+
+        private static string SafeIniValue(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            if (value.IndexOf('\r') >= 0 || value.IndexOf('\n') >= 0)
+            {
+                throw new InvalidDataException("Snapshot text value contains an invalid line break.");
+            }
+
+            return value;
         }
 
         private static bool TryGetProcessName(IntPtr hwnd, out string processName)

@@ -11,7 +11,7 @@
 > **v1.1.0 리브랜딩:** 기존 EbenTiler 사용자의 설정은 Tessdeck 첫 실행 시 자동으로 이전됩니다.
 
 - 별도 런타임 설치 필요 없음 (Windows 11/10 에 기본 포함된 .NET Framework 4.8 사용)
-- 실행 파일 하나, 약 100KB
+- 실행 파일 하나, 약 170KB
 - 알림 영역에 상주, 설정 창에서 단축키 자유롭게 변경
 - 새 정식 버전이 있으면 최대 하루 한 번 알림으로 안내하며 자동 다운로드·설치는 하지 않음
 
@@ -46,6 +46,17 @@
 `Ctrl + Alt + ←` 같은 방향 단축키를 연달아 누르면 기본값으로 **50% → 33% → 67%** 순서로 크기가 바뀐다.
 2초 안에 같은 창에서 같은 방향 키를 다시 누를 때만 순환하고, 그 뒤에는 첫 번째 비율부터 다시 시작한다.
 `설정 > 레이아웃`에서 세 비율을 **20~80%** 범위로 직접 바꿀 수 있다. 예를 들어 `50 / 40 / 60`으로 설정하면 좌우 배치는 폭에, 위아래 배치는 높이에 같은 순서를 적용한다.
+
+## Quick Layout
+
+Tessdeck 1.3부터 현재 열려 있는 앱 창들의 위치와 크기를 한 번 저장하고, 나중에 현재 열려 있는 같은 창들을 저장 당시 모니터와 위치로 한 번에 복원할 수 있다.
+
+- 트레이 메뉴의 `Quick Layout 저장` / `Quick Layout 복원`으로 바로 사용
+- `설정 > 단축키`에서 저장/복원 전역 단축키를 직접 지정 가능하며 기본값은 둘 다 비어 있음
+- 닫힌 앱을 자동 실행하지 않으며, 매칭되지 않는 창은 건드리지 않고 저장 당시 모니터가 없으면 해당 창은 건너뜀
+- 레이아웃은 `%APPDATA%\\Tessdeck\\quick-layout.ini`에 로컬로만 저장
+- 저장 필드는 프로세스 실행 파일 이름, 창 클래스, 같은 종류 창의 순번, 모니터 장치 이름, 정규화 좌표, 최대화 여부, 저장 시각뿐임
+- **창 제목, 문서명, URL, 명령줄, 파일 경로, 프로세스 전체 경로, 창 내용은 저장하지 않음**
 
 ## 설치
 
@@ -107,6 +118,8 @@ Windows 는 처음 보는 프로그램의 아이콘을 기본으로 숨김 처�
 
 - `단축키 설정...` : 설정 창
 - `Windows 시작할 때 함께 실행` : 자동 시작 등록/해제. 현재 켜져 있으면 앞에 체크 표시가 붙는다.
+- `Quick Layout 저장` : 현재 열린 창들의 배치를 저장
+- `Quick Layout 복원` : 현재 열려 있고 매칭되는 창들을 저장 위치로 복원
 - `종료`
 
 메뉴를 열 때마다 실제 등록 상태를 다시 읽어 체크를 맞추므로, 설정을 다른 데서 바꿔도 표시가 어긋나지 않는다.
@@ -134,6 +147,8 @@ Tessdeck.exe --apply TopRight --hwnd 0x3B078E # 창을 직접 지정
 Tessdeck.exe --info                           # 활성 창 위치와 화면 작업 영역 확인
 Tessdeck.exe --list                           # 쓸 수 있는 명령 목록
 Tessdeck.exe --settings                       # 설정 창만 열기
+Tessdeck.exe --layout-save                    # 현재 Quick Layout 저장
+Tessdeck.exe --layout-restore                 # 현재 열린 매칭 창 복원
 Tessdeck.exe --check                          # 단축키가 다른 프로그램과 겹치는지 확인
 Tessdeck.exe --startup on|off|status          # 윈도우 시작 시 자동 실행 등록/해제/확인
 Tessdeck.exe --out result.txt --info          # 결과를 파일로도 저장
@@ -142,9 +157,9 @@ Tessdeck.exe --out result.txt --info          # 결과를 파일로도 저장
 `--check` 는 이런 식으로 알려 준다. 단축키가 안 먹을 때 제일 먼저 확인하면 된다.
 
 ```text
-total=21
+total=23
 assigned=21
-unassigned=0
+unassigned=2
 failed=1
 conflict=오른쪽 1/3 (Ctrl + Alt + H)
 ```
@@ -185,6 +200,8 @@ powershell -ExecutionPolicy Bypass -File tools\make-appicon.ps1   # 아이콘 �
 LeftHalf=Ctrl+Alt+Left
 TopLeft=Ctrl+Alt+U
 Maximize=Ctrl+Alt+Enter
+QuickLayoutSave=
+QuickLayoutRestore=
 
 [Options]
 Gap=0                  ; 창 사이와 화면 가장자리에 남길 여백(픽셀)
@@ -195,7 +212,9 @@ CycleRatio3=67         ; 세 번째 비율(20~80)
 ShowWelcomeGuide=false ; 다음 실행 때 시작 가이드를 표시할지 여부
 ```
 
-값을 비워 두면 그 기능의 단축키는 등록하지 않는다.
+값을 비워 두면 그 기능의 단축키는 등록하지 않는다. Quick Layout 저장/복원 단축키는 기본값이 비어 있다.
+
+Quick Layout 스냅샷은 `%APPDATA%\\Tessdeck\\quick-layout.ini`에 별도로 저장되며 위에서 설명한 최소한의 창 식별/좌표 정보만 포함한다.
 
 업데이트 확인 상태는 별도 `%APPDATA%\Tessdeck\update-state.ini`에 마지막 확인 시각과 이미 알린 릴리스 태그만 저장한다.
 

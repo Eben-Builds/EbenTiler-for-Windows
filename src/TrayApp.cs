@@ -40,6 +40,7 @@ namespace EbenTilerWindows
 
             _hotkeys = new HotkeyManager();
             _hotkeys.HotkeyPressed += OnHotkeyPressed;
+            _hotkeys.QuickLayoutHotkeyPressed += OnQuickLayoutHotkeyPressed;
 
             RoundedContextMenuStrip menu = new RoundedContextMenuStrip();
             menu.MinimumSize = new Size(220, 0);
@@ -313,6 +314,22 @@ namespace EbenTilerWindows
             _windows.Apply(action);
         }
 
+        private void OnQuickLayoutHotkeyPressed(QuickLayoutHotkeyAction action)
+        {
+            if (_settingsForm != null) return;
+
+            if (action == QuickLayoutHotkeyAction.Save)
+            {
+                QueueQuickLayoutAction(SaveQuickLayout);
+                return;
+            }
+
+            if (action == QuickLayoutHotkeyAction.Restore)
+            {
+                QueueQuickLayoutAction(RestoreQuickLayout);
+            }
+        }
+
         private int ApplyHotkeys(bool notifyFailures)
         {
             List<string> failed = _hotkeys.RegisterAll(_config);
@@ -459,6 +476,8 @@ namespace EbenTilerWindows
         private void ExitApp()
         {
             UpdateBadgeState.Changed -= OnUpdateBadgeStateChanged;
+            _hotkeys.HotkeyPressed -= OnHotkeyPressed;
+            _hotkeys.QuickLayoutHotkeyPressed -= OnQuickLayoutHotkeyPressed;
             _tray.Visible = false;
             _tray.Dispose();
             if (_trayIcon != null) _trayIcon.Dispose();

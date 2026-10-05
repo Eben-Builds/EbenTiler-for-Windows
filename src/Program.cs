@@ -94,6 +94,7 @@ namespace EbenTilerWindows
                 if (arg == "--info") { infoOnly = true; continue; }
                 if (arg == "--window-filter-info") return PrintManageableWindows();
                 if (arg == "--layout-snapshot-info") return PrintLayoutSnapshotInfo();
+                if (arg == "--layout-save") return SaveLayoutSnapshot();
                 if (arg == "--settings") return ShowSettingsOnly();
                 if (arg == "--check") return CheckHotkeys();
 
@@ -240,6 +241,33 @@ namespace EbenTilerWindows
             return 0;
         }
 
+        private static int SaveLayoutSnapshot()
+        {
+            LayoutSnapshotSaveResult result = LayoutSnapshot.SaveCurrent();
+
+            Emit("saved=" + (result.Saved ? "1" : "0"));
+            Emit("count=" + result.WindowCount);
+            Emit("path=" + result.FilePath);
+
+            if (result.Saved)
+            {
+                return 0;
+            }
+
+            if (result.SkippedEmpty)
+            {
+                Emit("reason=no-manageable-windows");
+                Emit("기존 snapshot은 변경하지 않았습니다.");
+                return 1;
+            }
+
+            if (!string.IsNullOrEmpty(result.Error))
+            {
+                Emit("error=" + result.Error);
+            }
+            return 1;
+        }
+
         private static int CheckHotkeys()
         {
             Config config = Config.Load();
@@ -295,6 +323,7 @@ namespace EbenTilerWindows
             Emit("  --info               대상 창의 현재 위치와 화면 작업 영역 출력");
             Emit("  --window-filter-info 관리 가능한 일반 앱 창 목록 출력 (창 제목 제외)");
             Emit("  --layout-snapshot-info 현재 창들을 메모리 snapshot으로 변환해 출력");
+            Emit("  --layout-save        현재 관리 가능한 창 배치를 quick-layout.ini 에 저장");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");
             Emit("  --check              단축키가 다른 프로그램과 겹치는지 확인");

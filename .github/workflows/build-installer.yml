@@ -15,6 +15,7 @@ on:
       - 'tools/verify-local-upgrade.ps1'
       - 'tools/verify-hotkeys.ps1'
       - 'tools/verify-layout-settings.ps1'
+      - 'tools/verify-layout-snapshot-read.ps1'
       - 'tools/_testwindow.ps1'
       - 'build.ps1'
       - 'build-installer.ps1'
@@ -70,6 +71,10 @@ jobs:
       - name: Verify split ratio settings UI and persistence
         shell: powershell
         run: .\tools\verify-layout-settings.ps1
+
+      - name: Verify layout snapshot parser safety
+        shell: powershell
+        run: .\tools\verify-layout-snapshot-read.ps1
 
       - name: Verify installer outputs
         shell: powershell

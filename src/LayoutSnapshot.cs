@@ -692,8 +692,14 @@ namespace EbenTilerWindows
                     Native.ShowWindow(hwnd, Native.SW_RESTORE);
                 }
 
-                WindowManager.MoveTo(hwnd, item.TargetRect);
-                WindowManager.MoveTo(hwnd, item.TargetRect);
+                if (!WindowManager.MoveToStable(
+                    hwnd,
+                    item.TargetRect,
+                    item.TargetMonitorDeviceName))
+                {
+                    failed.Add(new LayoutRestoreFailedItem(item, "move-failed"));
+                    continue;
+                }
 
                 if (saved.Maximized)
                 {

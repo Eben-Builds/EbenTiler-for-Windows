@@ -278,12 +278,12 @@ v1.3.0은 현재 열려 있는 여러 앱 창의 배치를 한 번 저장하고,
 - [x] `v1.3.0` 태그가 아직 존재하지 않음을 Preflight에서 확인
 - [x] 현재 최신 공개 Release가 `v1.2.0`임을 확인
 - [x] `publish-release.ps1 -PreflightOnly` 추가: 검증만 수행하고 태그 생성/push는 하지 않음
-- [ ] `v1.3.0` 태그 생성
-- [ ] Release workflow 실제 성공
-- [ ] `Tessdeck-Setup.exe` / `Tessdeck-Setup.exe.sha256` 공개
-- [ ] 최신 공개 Release가 `v1.3.0`을 가리키는지 확인
+- [x] `v1.3.0` 태그 생성
+- [x] v1.3.0 공개 Release workflow 실제 성공
+- [x] `Tessdeck-Setup.exe` / `Tessdeck-Setup.exe.sha256` 공개
+- [x] 최신 공개 Release가 `v1.3.0`을 가리키는지 확인
 
-2026-10-05 기준 v1.3.0은 **배포 직전 Preflight PASS** 상태입니다. 실제 태그 생성과 공개 Release 게시만 남아 있으며, Preflight 단계에서는 태그를 만들거나 push하지 않았습니다.
+2026-10-05 `v1.3.0` Release가 실제 게시되었습니다. 태그는 검증 완료 커밋 `9a95508dd717afc28ac65a6e3bd6cf442ff31578`을 가리키며, 최신 공개 Release는 `Tessdeck 1.3.0 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 설치파일 SHA-256은 `6f1bff46850cd4c3b5af87b3c9ae37b3fe68368871634604f0a36a6503c9ee56`입니다. 일회성 배포 workflow는 태그/설치본/Release 생성 성공 확인 후 main에서 제거했습니다.
 
 ## 14. v1.3.0 이후 코드서명 승인 시
 

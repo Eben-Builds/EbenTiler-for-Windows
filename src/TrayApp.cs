@@ -17,6 +17,7 @@ namespace EbenTilerWindows
         private readonly NotifyIcon _tray;
         private readonly ToolStripMenuItem _startupItem;
         private readonly ToolStripMenuItem _updateItem;
+        private readonly ToolStripMenuItem _restoreLayoutItem;
         private readonly Control _uiDispatcher;
         private ContextMenuStrip _menu;
         private SettingsForm _settingsForm;
@@ -56,12 +57,14 @@ namespace EbenTilerWindows
 
             ToolStripMenuItem quickLayoutItem = MakeMenuItem("Quick Layout");
             ToolStripMenuItem saveLayoutItem = MakeMenuItem("현재 레이아웃 저장");
-            saveLayoutItem.Click += delegate { SaveQuickLayout(); };
+            saveLayoutItem.Click += delegate { QueueQuickLayoutAction(SaveQuickLayout); };
             quickLayoutItem.DropDownItems.Add(saveLayoutItem);
 
-            ToolStripMenuItem restoreLayoutItem = MakeMenuItem("저장된 레이아웃 복원");
-            restoreLayoutItem.Click += delegate { RestoreQuickLayout(); };
-            quickLayoutItem.DropDownItems.Add(restoreLayoutItem);
+            _restoreLayoutItem = MakeMenuItem("저장된 레이아웃 복원");
+            _restoreLayoutItem.Click += delegate { QueueQuickLayoutAction(RestoreQuickLayout); };
+            quickLayoutItem.DropDownItems.Add(_restoreLayoutItem);
+
+            ConfigureAttachedDropDown(quickLayoutItem);
             menu.Items.Add(quickLayoutItem);
 
             _updateItem = MakeMenuItem("업데이트 있음");
@@ -83,6 +86,7 @@ namespace EbenTilerWindows
             menu.Opening += delegate
             {
                 _startupItem.Checked = Startup.IsEnabled();
+                _restoreLayoutItem.Enabled = System.IO.File.Exists(LayoutSnapshot.FilePath);
                 ApplyMenuScale(menu);
             };
             menu.Opened += delegate { ApplyMenuScale(menu); };
@@ -174,6 +178,11 @@ namespace EbenTilerWindows
                         menuItem.Padding = new Padding(
                             ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale),
                             ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale));
+
+                        if (menuItem.HasDropDownItems)
+                        {
+                            ApplyDropDownScale(menuItem.DropDown, scale, regular);
+                        }
                     }
                     else if (item is ToolStripSeparator)
                     {
@@ -196,13 +205,71 @@ namespace EbenTilerWindows
             if (oldBold != null) oldBold.Dispose();
         }
 
-        private static int GetMenuDpi(ContextMenuStrip menu)
+        private void ConfigureAttachedDropDown(ToolStripMenuItem ownerItem)
         {
-            if (menu != null && menu.IsHandleCreated)
+            ToolStripDropDown dropDown = ownerItem.DropDown;
+            dropDown.BackColor = UiPalette.Surface;
+            dropDown.ForeColor = UiPalette.Text;
+            dropDown.Renderer = new EbenMenuRenderer();
+            dropDown.DropShadowEnabled = false;
+            dropDown.Padding = new Padding(4);
+
+            // 기본 WinForms 서브메뉴는 부모와 몇 픽셀 떨어져 열릴 수 있다.
+            // 열리는 방향에 맞춰 4px 겹치게 붙여 마우스가 건너갈 빈 공간을 없앤다.
+            dropDown.Opened += delegate
+            {
+                if (ownerItem.Owner == null) return;
+
+                Rectangle ownerBounds = ownerItem.Owner.RectangleToScreen(ownerItem.Bounds);
+                Rectangle dropBounds = dropDown.Bounds;
+                int dpi = GetWindowDpi(dropDown.Handle);
+                float scale = Math.Max(1f, dpi / 96f);
+                int overlap = ScaleMenuPixel(4, scale);
+
+                Point location = dropDown.Location;
+                if (dropBounds.Left >= ownerBounds.Right - 1)
+                {
+                    location.X -= overlap;
+                }
+                else if (dropBounds.Right <= ownerBounds.Left + 1)
+                {
+                    location.X += overlap;
+                }
+
+                if (location != dropDown.Location)
+                {
+                    dropDown.Location = location;
+                }
+            };
+        }
+
+        private static void ApplyDropDownScale(
+            ToolStripDropDown dropDown,
+            float scale,
+            Font regular)
+        {
+            dropDown.Font = regular;
+            dropDown.Padding = new Padding(ScaleMenuPixel(4, scale));
+
+            foreach (ToolStripItem child in dropDown.Items)
+            {
+                ToolStripMenuItem menuItem = child as ToolStripMenuItem;
+                if (menuItem == null) continue;
+
+                menuItem.Font = regular;
+                menuItem.Padding = new Padding(
+                    ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale),
+                    ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale));
+            }
+        }
+
+        private static int GetWindowDpi(IntPtr hwnd)
+        {
+            if (hwnd != IntPtr.Zero)
             {
                 try
                 {
-                    uint dpi = GetDpiForWindow(menu.Handle);
+                    uint dpi = GetDpiForWindow(hwnd);
                     if (dpi > 0) return (int)dpi;
                 }
                 catch (EntryPointNotFoundException)
@@ -214,6 +281,12 @@ namespace EbenTilerWindows
             {
                 return (int)Math.Round(g.DpiX);
             }
+        }
+
+        private static int GetMenuDpi(ContextMenuStrip menu)
+        {
+            return GetWindowDpi(
+                menu != null && menu.IsHandleCreated ? menu.Handle : IntPtr.Zero);
         }
 
         private void StartAutomaticUpdateCheck()
@@ -329,6 +402,17 @@ namespace EbenTilerWindows
             _tray.BalloonTipIcon = ToolTipIcon.Warning;
             _tray.ShowBalloonTip(8000);
             return failed.Count;
+        }
+
+        private void QueueQuickLayoutAction(MethodInvoker action)
+        {
+            try
+            {
+                _uiDispatcher.BeginInvoke(action);
+            }
+            catch (InvalidOperationException)
+            {
+            }
         }
 
         private void SaveQuickLayout()

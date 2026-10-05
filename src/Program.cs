@@ -96,6 +96,12 @@ namespace EbenTilerWindows
                 if (arg == "--layout-snapshot-info") return PrintLayoutSnapshotInfo();
                 if (arg == "--layout-save") return SaveLayoutSnapshot();
                 if (arg == "--layout-read-info") return ReadLayoutSnapshotInfo();
+                if (arg == "--layout-read-file" && i + 1 < args.Length)
+                {
+                    string snapshotPath = args[i + 1];
+                    i++;
+                    return ReadLayoutSnapshotInfo(snapshotPath);
+                }
                 if (arg == "--settings") return ShowSettingsOnly();
                 if (arg == "--check") return CheckHotkeys();
 
@@ -271,8 +277,16 @@ namespace EbenTilerWindows
 
         private static int ReadLayoutSnapshotInfo()
         {
-            LayoutSnapshotReadResult result = LayoutSnapshot.ReadSaved();
+            return PrintLayoutSnapshotReadResult(LayoutSnapshot.ReadSaved());
+        }
 
+        private static int ReadLayoutSnapshotInfo(string path)
+        {
+            return PrintLayoutSnapshotReadResult(LayoutSnapshot.ReadFromFile(path));
+        }
+
+        private static int PrintLayoutSnapshotReadResult(LayoutSnapshotReadResult result)
+        {
             Emit("path=" + result.FilePath);
             Emit("exists=" + (result.FileExists ? "1" : "0"));
             Emit("loaded=" + (result.Loaded ? "1" : "0"));
@@ -280,6 +294,10 @@ namespace EbenTilerWindows
             if (!result.FileExists)
             {
                 Emit("reason=snapshot-missing");
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    Emit("error=" + result.Error);
+                }
                 return 1;
             }
 
@@ -370,6 +388,7 @@ namespace EbenTilerWindows
             Emit("  --layout-snapshot-info 현재 창들을 메모리 snapshot으로 변환해 출력");
             Emit("  --layout-save        현재 관리 가능한 창 배치를 quick-layout.ini 에 저장");
             Emit("  --layout-read-info   저장된 quick-layout.ini 를 읽고 검증 결과 출력");
+            Emit("  --layout-read-file <파일>  지정 snapshot 파일을 읽어 검증 (테스트용)");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");
             Emit("  --check              단축키가 다른 프로그램과 겹치는지 확인");

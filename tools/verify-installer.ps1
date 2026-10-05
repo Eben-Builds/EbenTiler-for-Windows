@@ -13,6 +13,7 @@ $configDir = Join-Path $env:APPDATA 'Tessdeck'
 $configFile = Join-Path $configDir 'config.ini'
 $updateStateFile = Join-Path $configDir 'update-state.ini'
 $updateBadgeFile = Join-Path $configDir 'update-badge.ini'
+$quickLayoutFile = Join-Path $configDir 'quick-layout.ini'
 $sentinelFile = Join-Path $configDir 'user-file-must-survive.txt'
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $outputPath = Join-Path $env:TEMP ('ebentiler-smoke-' + [Guid]::NewGuid().ToString('N') + '.txt')
@@ -109,6 +110,7 @@ try {
     Set-Content -Path $configFile -Value 'Gap=0' -Encoding UTF8
     Set-Content -Path $updateStateFile -Value 'LastCheckUtc=2026-10-03T00:00:00.0000000Z' -Encoding UTF8
     Set-Content -Path $updateBadgeFile -Value 'AvailableTag=v9.9.9' -Encoding UTF8
+    Set-Content -Path $quickLayoutFile -Value "[Snapshot]`nVersion=1`nWindowCount=0" -Encoding UTF8
     Set-Content -Path $sentinelFile -Value 'This file is not owned by Tessdeck.' -Encoding UTF8
 
     $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
@@ -145,11 +147,14 @@ try {
     if (Test-Path $updateBadgeFile) {
         throw 'Tessdeck-owned update-badge.ini remains after uninstall.'
     }
+    if (Test-Path $quickLayoutFile) {
+        throw 'Tessdeck-owned quick-layout.ini remains after uninstall.'
+    }
     if (-not (Test-Path $sentinelFile)) {
         throw 'Uninstaller removed an unrelated file from the Tessdeck config directory.'
     }
 
-    Write-Host 'Installer smoke test passed: install, DPI runtime config, CLI launch, startup on/off, app-owned update state cleanup, uninstall.'
+    Write-Host 'Installer smoke test passed: install, DPI runtime config, CLI launch, startup on/off, app-owned config/update/Quick Layout cleanup, uninstall.'
 }
 finally {
     Remove-Item $outputPath -Force -ErrorAction SilentlyContinue
@@ -157,6 +162,7 @@ finally {
     Remove-Item $configFile -Force -ErrorAction SilentlyContinue
     Remove-Item $updateStateFile -Force -ErrorAction SilentlyContinue
     Remove-Item $updateBadgeFile -Force -ErrorAction SilentlyContinue
+    Remove-Item $quickLayoutFile -Force -ErrorAction SilentlyContinue
     if (Test-Path $configDir) {
         Remove-Item $configDir -Force -ErrorAction SilentlyContinue
     }

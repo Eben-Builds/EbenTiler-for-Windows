@@ -1,4 +1,4 @@
-# Tessdeck v1.2.0 릴리스 준비 상태
+# Tessdeck v1.3.0 릴리스 준비 상태
 
 이 문서는 EbenTiler에서 Tessdeck으로의 v1.1.0 리브랜딩, 기존 공개 Release 이력, 코드서명 전후 전환 조건을 기록합니다.
 
@@ -253,13 +253,45 @@ v1.2.0은 같은 방향 단축키를 반복할 때 적용하는 세 가지 분�
 
 상세 설계는 `docs/CUSTOM_SPLIT_RATIOS_v0.1.md`를 봅니다.
 
-## 13. v1.2.0 이후 코드서명 승인 시
+## 13. v1.3.0 Quick Layout 릴리스 Preflight 상태
+
+v1.3.0은 현재 열려 있는 여러 앱 창의 배치를 한 번 저장하고, 나중에 현재 열려 있는 같은 창들을 저장 당시 모니터/위치로 복원하는 **Quick Layout** 기능 릴리스입니다.
+
+- [x] 실행 파일 `AssemblyFileVersion` 1.3.0.0
+- [x] Inno Setup 기본 `AppVersion` 1.3.0
+- [x] `tools/publish-release.ps1` 기본 버전 1.3.0
+- [x] Quick Layout 저장 / 읽기 / 매칭 / 복원 엔진 구현
+- [x] 서로 다른 모니터 및 DPI 경계 복원 검증
+- [x] Tray의 Quick Layout 저장 / 복원 동작
+- [x] 설정 UI의 Quick Layout 저장 / 복원 단축키 편집
+- [x] 글로벌 Quick Layout 단축키 실제 실행
+- [x] Tessdeck 재시작 후 단축키 설정 유지 및 재등록 자동검증
+- [x] `quick-layout.ini` 손상 입력 안전 처리
+- [x] README 한국어/영어에 Quick Layout 사용법 및 개인정보 저장 범위 문서화
+- [x] `quick-layout.ini`에 창 제목, 문서명, URL, 명령줄, 파일 경로, 프로세스 전체 경로, 창 내용 미저장
+- [x] 제거 시 Tessdeck 소유 `quick-layout.ini` 삭제 및 사용자 임의 파일 보존 smoke test
+- [x] Build Windows Installer workflow PASS
+- [x] Visual Brand Check workflow PASS
+- [x] Upgrade Compatibility Check PASS
+- [x] `v1.0.1 / v1.1.0 / v1.1.1 / v1.1.2 / v1.2.0 → v1.3.0` 실제 공개 설치파일 업그레이드 matrix PASS
+- [x] Release workflow가 태그 버전과 AssemblyFileVersion 일치, main 포함 여부, 설치/제거, SHA-256을 재검증
+- [x] `v1.3.0` 태그가 아직 존재하지 않음을 Preflight에서 확인
+- [x] 현재 최신 공개 Release가 `v1.2.0`임을 확인
+- [x] `publish-release.ps1 -PreflightOnly` 추가: 검증만 수행하고 태그 생성/push는 하지 않음
+- [ ] `v1.3.0` 태그 생성
+- [ ] Release workflow 실제 성공
+- [ ] `Tessdeck-Setup.exe` / `Tessdeck-Setup.exe.sha256` 공개
+- [ ] 최신 공개 Release가 `v1.3.0`을 가리키는지 확인
+
+2026-10-05 기준 v1.3.0은 **배포 직전 Preflight PASS** 상태입니다. 실제 태그 생성과 공개 Release 게시만 남아 있으며, Preflight 단계에서는 태그를 만들거나 push하지 않았습니다.
+
+## 14. v1.3.0 이후 코드서명 승인 시
 
 SignPath 또는 다른 공개 코드서명 수단이 연결되면 다음 Release에서:
 
-- 앱 버전을 `1.2.1` 이상으로 올림
+- 앱 버전을 `1.3.1` 이상으로 올림
 - Authenticode 서명 적용
 - `tools/verify-release.ps1 -RequireCodeSigning` 통과
 - signed 설치 파일 게시
 - 랜딩페이지의 `코드 서명 준비 중` 안내 제거
-- 기존 `v1.0.1` EbenTiler 및 `v1.1.0`~`v1.2.0` Tessdeck 사용자에게 다음 버전 업데이트 알림이 정상 동작하는지 확인
+- 기존 `v1.0.1` EbenTiler 및 `v1.1.0`~`v1.3.0` Tessdeck 사용자에게 다음 버전 업데이트 알림이 정상 동작하는지 확인

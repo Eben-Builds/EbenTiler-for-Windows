@@ -198,8 +198,22 @@ namespace EbenTilerWindows
 
         private static int GetMenuDpi(ContextMenuStrip menu)
         {
-            return GetWindowDpi(
-                menu != null && menu.IsHandleCreated ? menu.Handle : IntPtr.Zero);
+            if (menu != null && menu.IsHandleCreated)
+            {
+                try
+                {
+                    uint dpi = GetDpiForWindow(menu.Handle);
+                    if (dpi > 0) return (int)dpi;
+                }
+                catch (EntryPointNotFoundException)
+                {
+                }
+            }
+
+            using (Graphics g = Graphics.FromHwnd(IntPtr.Zero))
+            {
+                return (int)Math.Round(g.DpiX);
+            }
         }
 
         private void StartAutomaticUpdateCheck()

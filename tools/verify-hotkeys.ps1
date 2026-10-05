@@ -330,24 +330,9 @@ if ($app.HasExited) {
 }
 
 $configAfterRestart = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
-if ($configAfterRestart -match '(?m)^QuickLayoutSave=Ctrl\+Alt\+S\s*
-$win | Stop-Process -Force -ErrorAction SilentlyContinue
-$app | Stop-Process -Force -ErrorAction SilentlyContinue
-Remove-Item $handleFile -Force -ErrorAction SilentlyContinue
-Restore-TestConfig
-Write-Host "정리 완료 (검증용 창과 Tessdeck.exe 종료, 원래 설정 복구)"
-
-if ($fail -gt 0) { exit 1 } else { exit 0 }
- -and
-    $configAfterRestart -match '(?m)^QuickLayoutRestore=Ctrl\+Alt\+R\s*
-$win | Stop-Process -Force -ErrorAction SilentlyContinue
-$app | Stop-Process -Force -ErrorAction SilentlyContinue
-Remove-Item $handleFile -Force -ErrorAction SilentlyContinue
-Restore-TestConfig
-Write-Host "정리 완료 (검증용 창과 Tessdeck.exe 종료, 원래 설정 복구)"
-
-if ($fail -gt 0) { exit 1 } else { exit 0 }
-) {
+$saveHotkeyPersisted = $configAfterRestart.Contains("QuickLayoutSave=Ctrl+Alt+S")
+$restoreHotkeyPersisted = $configAfterRestart.Contains("QuickLayoutRestore=Ctrl+Alt+R")
+if ($saveHotkeyPersisted -and $restoreHotkeyPersisted) {
     Write-Host "[통과] 재시작 후 Quick Layout 단축키 설정 유지" -ForegroundColor Green
     $pass++
 } else {

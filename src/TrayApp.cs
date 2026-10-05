@@ -55,17 +55,13 @@ namespace EbenTilerWindows
             _startupItem.Click += delegate { Startup.SetEnabled(_startupItem.Checked); };
             menu.Items.Add(_startupItem);
 
-            ToolStripMenuItem quickLayoutItem = MakeMenuItem("Quick Layout");
-            ToolStripMenuItem saveLayoutItem = MakeMenuItem("현재 레이아웃 저장");
+            ToolStripMenuItem saveLayoutItem = MakeMenuItem("Quick Layout 저장");
             saveLayoutItem.Click += delegate { QueueQuickLayoutAction(SaveQuickLayout); };
-            quickLayoutItem.DropDownItems.Add(saveLayoutItem);
+            menu.Items.Add(saveLayoutItem);
 
-            _restoreLayoutItem = MakeMenuItem("저장된 레이아웃 복원");
+            _restoreLayoutItem = MakeMenuItem("Quick Layout 복원");
             _restoreLayoutItem.Click += delegate { QueueQuickLayoutAction(RestoreQuickLayout); };
-            quickLayoutItem.DropDownItems.Add(_restoreLayoutItem);
-
-            ConfigureAttachedDropDown(quickLayoutItem);
-            menu.Items.Add(quickLayoutItem);
+            menu.Items.Add(_restoreLayoutItem);
 
             _updateItem = MakeMenuItem("업데이트 있음");
             _updateItem.Font = new Font(menu.Font, FontStyle.Bold);
@@ -178,11 +174,6 @@ namespace EbenTilerWindows
                         menuItem.Padding = new Padding(
                             ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale),
                             ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale));
-
-                        if (menuItem.HasDropDownItems)
-                        {
-                            ApplyDropDownScale(menuItem.DropDown, scale, regular);
-                        }
                     }
                     else if (item is ToolStripSeparator)
                     {
@@ -203,84 +194,6 @@ namespace EbenTilerWindows
 
             if (oldRegular != null) oldRegular.Dispose();
             if (oldBold != null) oldBold.Dispose();
-        }
-
-        private void ConfigureAttachedDropDown(ToolStripMenuItem ownerItem)
-        {
-            ToolStripDropDown dropDown = ownerItem.DropDown;
-            dropDown.BackColor = UiPalette.Surface;
-            dropDown.ForeColor = UiPalette.Text;
-            dropDown.Renderer = new EbenMenuRenderer();
-            dropDown.DropShadowEnabled = false;
-            dropDown.Padding = new Padding(4);
-
-            // 기본 WinForms 서브메뉴는 부모와 몇 픽셀 떨어져 열릴 수 있다.
-            // 열리는 방향에 맞춰 4px 겹치게 붙여 마우스가 건너갈 빈 공간을 없앤다.
-            dropDown.Opened += delegate
-            {
-                if (ownerItem.Owner == null) return;
-
-                Rectangle ownerBounds = ownerItem.Owner.RectangleToScreen(ownerItem.Bounds);
-                Rectangle dropBounds = dropDown.Bounds;
-                int dpi = GetWindowDpi(dropDown.Handle);
-                float scale = Math.Max(1f, dpi / 96f);
-                int overlap = ScaleMenuPixel(4, scale);
-
-                Point location = dropDown.Location;
-                if (dropBounds.Left >= ownerBounds.Right - 1)
-                {
-                    location.X -= overlap;
-                }
-                else if (dropBounds.Right <= ownerBounds.Left + 1)
-                {
-                    location.X += overlap;
-                }
-
-                if (location != dropDown.Location)
-                {
-                    dropDown.Location = location;
-                }
-            };
-        }
-
-        private static void ApplyDropDownScale(
-            ToolStripDropDown dropDown,
-            float scale,
-            Font regular)
-        {
-            dropDown.Font = regular;
-            dropDown.Padding = new Padding(ScaleMenuPixel(4, scale));
-
-            foreach (ToolStripItem child in dropDown.Items)
-            {
-                ToolStripMenuItem menuItem = child as ToolStripMenuItem;
-                if (menuItem == null) continue;
-
-                menuItem.Font = regular;
-                menuItem.Padding = new Padding(
-                    ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale),
-                    ScaleMenuPixel(8, scale), ScaleMenuPixel(5, scale));
-            }
-        }
-
-        private static int GetWindowDpi(IntPtr hwnd)
-        {
-            if (hwnd != IntPtr.Zero)
-            {
-                try
-                {
-                    uint dpi = GetDpiForWindow(hwnd);
-                    if (dpi > 0) return (int)dpi;
-                }
-                catch (EntryPointNotFoundException)
-                {
-                }
-            }
-
-            using (Graphics g = Graphics.FromHwnd(IntPtr.Zero))
-            {
-                return (int)Math.Round(g.DpiX);
-            }
         }
 
         private static int GetMenuDpi(ContextMenuStrip menu)

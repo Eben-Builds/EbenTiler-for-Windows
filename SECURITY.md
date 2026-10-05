@@ -10,6 +10,7 @@ Tessdeck은 계정, 로그인, 원격 코드 실행 기능을 사용하지 않�
 - 설정 파일: 현재 사용자 `%APPDATA%\Tessdeck\config.ini`
 - 업데이트 확인 상태: `%APPDATA%\Tessdeck\update-state.ini`
 - 업데이트 배지 상태: `%APPDATA%\Tessdeck\update-badge.ini`
+- Quick Layout 스냅샷: `%APPDATA%\Tessdeck\quick-layout.ini` (창 제목/URL/파일 경로/명령줄/창 내용 저장 안 함)
 - 자동 시작: 현재 사용자 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
 - 설치 위치: 현재 사용자 `%LOCALAPPDATA%\Programs\Tessdeck`
 - 관리자 권한 설치 요구 없음

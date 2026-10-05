@@ -479,6 +479,83 @@ namespace EbenTilerWindows
                 Native.SWP_NOZORDER | Native.SWP_NOACTIVATE);
         }
 
+
+        /// <summary>
+        /// 다른 모니터/DPI 경계를 넘는 복원용 이동.
+        /// Windows가 첫 이동 뒤 DPI를 다시 계산할 시간을 준 다음 새 프레임 여백으로 좌표를 재보정한다.
+        /// </summary>
+        public static bool MoveToStable(
+            IntPtr hwnd,
+            Rectangle target,
+            string targetMonitorDeviceName)
+        {
+            if (hwnd == IntPtr.Zero || !Native.IsWindow(hwnd))
+            {
+                return false;
+            }
+
+            string beforeMonitor = Screen.FromHandle(hwnd).DeviceName;
+            bool crossesMonitor = !string.Equals(
+                beforeMonitor,
+                targetMonitorDeviceName,
+                StringComparison.OrdinalIgnoreCase);
+
+            MoveTo(hwnd, target);
+
+            if (crossesMonitor)
+            {
+                // Per-monitor DPI 창은 모니터를 넘은 직후 Windows가 프레임/크기를 다시 조정한다.
+                // 새 모니터가 적용된 뒤 다시 읽어 보정해야 저장한 visual rect가 정확히 복원된다.
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    System.Threading.Thread.Sleep(35);
+
+                    if (!Native.IsWindow(hwnd))
+                    {
+                        return false;
+                    }
+
+                    string currentMonitor = Screen.FromHandle(hwnd).DeviceName;
+                    MoveTo(hwnd, target);
+
+                    if (string.Equals(
+                            currentMonitor,
+                            targetMonitorDeviceName,
+                            StringComparison.OrdinalIgnoreCase)
+                        && RectApproximatelyEquals(GetVisualRect(hwnd), target, 8))
+                    {
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                MoveTo(hwnd, target);
+            }
+
+            return string.Equals(
+                    Screen.FromHandle(hwnd).DeviceName,
+                    targetMonitorDeviceName,
+                    StringComparison.OrdinalIgnoreCase)
+                && RectApproximatelyEquals(GetVisualRect(hwnd), target, 8);
+        }
+
+        private static bool RectApproximatelyEquals(
+            Rectangle actual,
+            Rectangle expected,
+            int tolerance)
+        {
+            if (actual.IsEmpty)
+            {
+                return false;
+            }
+
+            return Math.Abs(actual.Left - expected.Left) <= tolerance
+                && Math.Abs(actual.Top - expected.Top) <= tolerance
+                && Math.Abs(actual.Width - expected.Width) <= tolerance
+                && Math.Abs(actual.Height - expected.Height) <= tolerance;
+        }
+
         // 대상 창 고르기
 
         /// <summary>배치 가능한 활성 창을 고른다.</summary>

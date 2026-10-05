@@ -509,7 +509,7 @@ namespace EbenTilerWindows
             if (hwnd == IntPtr.Zero
                 || !Native.IsWindow(hwnd)
                 || !Native.IsWindowVisible(hwnd)
-                || Native.IsIconic(hwnd))
+                || IsMinimizedWindow(hwnd))
             {
                 return false;
             }
@@ -550,6 +550,26 @@ namespace EbenTilerWindows
             }
 
             return !IsTessdeckWindow(hwnd);
+        }
+
+        private static bool IsMinimizedWindow(IntPtr hwnd)
+        {
+            if (Native.IsIconic(hwnd))
+            {
+                return true;
+            }
+
+            Native.WINDOWPLACEMENT placement = new Native.WINDOWPLACEMENT();
+            placement.length = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Native.WINDOWPLACEMENT));
+            if (!Native.GetWindowPlacement(hwnd, ref placement))
+            {
+                return false;
+            }
+
+            return placement.showCmd == Native.SW_SHOWMINIMIZED
+                || placement.showCmd == Native.SW_MINIMIZE
+                || placement.showCmd == Native.SW_SHOWMINNOACTIVE
+                || placement.showCmd == Native.SW_FORCEMINIMIZE;
         }
 
         private static bool IsTessdeckWindow(IntPtr hwnd)

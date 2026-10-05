@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory = $false)]
-    [string]$Version = '1.3.0'
+    [string]$Version = '1.3.0',
+    [switch]$PreflightOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -91,6 +92,11 @@ Write-Host "Commit: $head"
 Write-Host 'Mode: unsigned unless a valid code-signing identity is configured in GitHub Actions.'
 Write-Host 'The GitHub Release will disclose the unsigned state and publish a SHA-256 checksum.'
 Write-Host ''
+
+if ($PreflightOnly) {
+    Write-Host 'Preflight-only mode: no tag was created or pushed.'
+    exit 0
+}
 
 Invoke-Git -GitArgs @('tag', '-a', $tag, '-m', "Tessdeck $Version")
 try {

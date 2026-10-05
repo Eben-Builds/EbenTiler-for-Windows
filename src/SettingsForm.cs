@@ -60,6 +60,9 @@ namespace EbenTilerWindows
     /// <summary>Tessdeck의 일반, 단축키, 레이아웃, 모니터, 정보를 관리하는 설정 창.</summary>
     public sealed class SettingsForm : Form
     {
+        private const string QuickLayoutSaveTag = "QuickLayoutSave";
+        private const string QuickLayoutRestoreTag = "QuickLayoutRestore";
+
         private readonly Config _config;
         private readonly float _scale;
         private readonly Dictionary<string, Panel> _pages = new Dictionary<string, Panel>();
@@ -285,7 +288,7 @@ namespace EbenTilerWindows
                 "기능을 선택하고 원하는 키 조합을 지정하세요.",
                 0, 32, 520, 24, 9f, FontStyle.Regular, UiPalette.TextMuted));
 
-            page.Controls.Add(MakeLabel("배치 기능", 0, 70, 180, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
+            page.Controls.Add(MakeLabel("기능", 0, 70, 180, 24, 10.5f, FontStyle.Bold, UiPalette.Text));
 
             _list = new ListView();
             _list.Location = new Point(S(0), S(98));
@@ -651,6 +654,18 @@ namespace EbenTilerWindows
                 _list.Items.Add(item);
                 if (selectedName != null && selectedName == action.ToString()) item.Selected = true;
             }
+
+            AddQuickLayoutHotkeyRow(
+                "Quick Layout 저장",
+                QuickLayoutSaveTag,
+                _config.QuickLayoutSaveHotkey,
+                selectedName);
+            AddQuickLayoutHotkeyRow(
+                "Quick Layout 복원",
+                QuickLayoutRestoreTag,
+                _config.QuickLayoutRestoreHotkey,
+                selectedName);
+
             if (_list.SelectedItems.Count == 0 && _list.Items.Count > 0) _list.Items[0].Selected = true;
             _list.EndUpdate();
         }
@@ -730,28 +745,128 @@ namespace EbenTilerWindows
             return bitmap;
         }
 
-        private bool TryGetSelectedAction(out SnapAction action)
+        private void AddQuickLayoutHotkeyRow(
+            string label,
+            string tag,
+            Hotkey hotkey,
+            string selectedName)
         {
-            action = SnapAction.LeftHalf;
-            if (_list == null || _list.SelectedItems.Count == 0) return false;
-            return SnapActions.TryParse((string)_list.SelectedItems[0].Tag, out action);
+            Hotkey value = hotkey ?? new Hotkey();
+            ListViewItem item = new ListViewItem(label);
+            item.SubItems.Add(value.IsEmpty ? "(없음)" : value.ToDisplayString());
+            item.SubItems.Add("Quick Layout");
+            item.Tag = tag;
+            _list.Items.Add(item);
+            if (selectedName != null && selectedName == tag) item.Selected = true;
+        }
+
+        private string GetSelectedHotkeyTag()
+        {
+            if (_list == null || _list.SelectedItems.Count == 0) return null;
+            return _list.SelectedItems[0].Tag as string;
+        }
+
+        private Hotkey GetHotkeyForTag(string tag)
+        {
+            if (string.Equals(tag, QuickLayoutSaveTag, StringComparison.Ordinal))
+                return _config.QuickLayoutSaveHotkey ?? new Hotkey();
+            if (string.Equals(tag, QuickLayoutRestoreTag, StringComparison.Ordinal))
+                return _config.QuickLayoutRestoreHotkey ?? new Hotkey();
+
+            SnapAction action;
+            if (SnapActions.TryParse(tag, out action)) return _config.Get(action);
+            return new Hotkey();
+        }
+
+        private void SetHotkeyForTag(string tag, Hotkey hotkey)
+        {
+            Hotkey value = hotkey ?? new Hotkey();
+            if (string.Equals(tag, QuickLayoutSaveTag, StringComparison.Ordinal))
+            {
+                _config.QuickLayoutSaveHotkey = value;
+                return;
+            }
+            if (string.Equals(tag, QuickLayoutRestoreTag, StringComparison.Ordinal))
+            {
+                _config.QuickLayoutRestoreHotkey = value;
+                return;
+            }
+
+            SnapAction action;
+            if (SnapActions.TryParse(tag, out action)) _config.Hotkeys[action] = value;
+        }
+
+        private string HotkeyLabelForTag(string tag)
+        {
+            if (string.Equals(tag, QuickLayoutSaveTag, StringComparison.Ordinal))
+                return "Quick Layout 저장";
+            if (string.Equals(tag, QuickLayoutRestoreTag, StringComparison.Ordinal))
+                return "Quick Layout 복원";
+
+            SnapAction action;
+            return SnapActions.TryParse(tag, out action) ? SnapActions.Label(action) : tag;
+        }
+
+        private List<string> FindHotkeyConflicts(string selectedTag, Hotkey hotkey)
+        {
+            List<string> conflicts = new List<string>();
+
+            foreach (KeyValuePair<SnapAction, Hotkey> pair in _config.Hotkeys)
+            {
+                string tag = pair.Key.ToString();
+                if (!string.Equals(tag, selectedTag, StringComparison.Ordinal)
+                    && pair.Value != null
+                    && pair.Value.SameAs(hotkey))
+                {
+                    conflicts.Add(tag);
+                }
+            }
+
+            if (!string.Equals(selectedTag, QuickLayoutSaveTag, StringComparison.Ordinal)
+                && _config.QuickLayoutSaveHotkey != null
+                && _config.QuickLayoutSaveHotkey.SameAs(hotkey))
+            {
+                conflicts.Add(QuickLayoutSaveTag);
+            }
+
+            if (!string.Equals(selectedTag, QuickLayoutRestoreTag, StringComparison.Ordinal)
+                && _config.QuickLayoutRestoreHotkey != null
+                && _config.QuickLayoutRestoreHotkey.SameAs(hotkey))
+            {
+                conflicts.Add(QuickLayoutRestoreTag);
+            }
+
+            return conflicts;
         }
 
         private void OnSelectionChanged(object sender, EventArgs e)
         {
-            SnapAction action;
-            if (!TryGetSelectedAction(out action)) return;
-            Hotkey hotkey = _config.Get(action);
+            string tag = GetSelectedHotkeyTag();
+            if (string.IsNullOrEmpty(tag)) return;
+
+            Hotkey hotkey = GetHotkeyForTag(tag);
             _capture.Captured = hotkey;
             _winModifier.Checked = hotkey.Win;
-            _preview.SetAction(action);
-            _previewNote.Text = SnapActions.Label(action) + "\r\n" + PreviewPanel.Describe(action);
+
+            SnapAction action;
+            if (SnapActions.TryParse(tag, out action))
+            {
+                _preview.Visible = true;
+                _preview.SetAction(action);
+                _previewNote.Text = SnapActions.Label(action) + "\r\n" + PreviewPanel.Describe(action);
+                return;
+            }
+
+            _preview.Visible = false;
+            _previewNote.Text = string.Equals(tag, QuickLayoutSaveTag, StringComparison.Ordinal)
+                ? "Quick Layout 저장\r\n현재 열린 창의 위치와 모니터 배치를 저장합니다."
+                : "Quick Layout 복원\r\n저장된 위치와 모니터 배치로 현재 열린 창을 복원합니다.";
         }
 
         private void OnAssign(object sender, EventArgs e)
         {
-            SnapAction action;
-            if (!TryGetSelectedAction(out action))
+            string selectedTag = GetSelectedHotkeyTag();
+            if (string.IsNullOrEmpty(selectedTag))
             {
                 MessageBox.Show(this, "먼저 위 목록에서 기능을 하나 고르세요.", "Tessdeck for Windows",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -782,19 +897,14 @@ namespace EbenTilerWindows
                 return;
             }
 
-            List<SnapAction> conflicts = new List<SnapAction>();
-            foreach (KeyValuePair<SnapAction, Hotkey> pair in _config.Hotkeys)
-            {
-                if (pair.Key != action && pair.Value != null && pair.Value.SameAs(hotkey)) conflicts.Add(pair.Key);
-            }
-
+            List<string> conflicts = FindHotkeyConflicts(selectedTag, hotkey);
             if (conflicts.Count > 0)
             {
                 string names = "";
                 for (int i = 0; i < conflicts.Count; i++)
                 {
                     if (i > 0) names += ", ";
-                    names += SnapActions.Label(conflicts[i]);
+                    names += HotkeyLabelForTag(conflicts[i]);
                 }
 
                 DialogResult answer = MessageBox.Show(this,
@@ -803,18 +913,22 @@ namespace EbenTilerWindows
                     "Tessdeck for Windows", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (answer != DialogResult.Yes) return;
 
-                for (int i = 0; i < conflicts.Count; i++) _config.Hotkeys[conflicts[i]] = new Hotkey();
+                for (int i = 0; i < conflicts.Count; i++)
+                {
+                    SetHotkeyForTag(conflicts[i], new Hotkey());
+                }
             }
 
-            _config.Hotkeys[action] = hotkey;
+            SetHotkeyForTag(selectedTag, hotkey);
             FillList();
         }
 
         private void OnClear(object sender, EventArgs e)
         {
-            SnapAction action;
-            if (!TryGetSelectedAction(out action)) return;
-            _config.Hotkeys[action] = new Hotkey();
+            string tag = GetSelectedHotkeyTag();
+            if (string.IsNullOrEmpty(tag)) return;
+
+            SetHotkeyForTag(tag, new Hotkey());
             _capture.Captured = new Hotkey();
             _winModifier.Checked = false;
             FillList();
@@ -829,6 +943,8 @@ namespace EbenTilerWindows
 
             Config defaults = Config.CreateDefault();
             _config.Hotkeys = defaults.Hotkeys;
+            _config.QuickLayoutSaveHotkey = defaults.QuickLayoutSaveHotkey;
+            _config.QuickLayoutRestoreHotkey = defaults.QuickLayoutRestoreHotkey;
             FillList();
         }
 
@@ -841,6 +957,8 @@ namespace EbenTilerWindows
 
             Config defaults = Config.CreateDefault();
             _config.Hotkeys = defaults.Hotkeys;
+            _config.QuickLayoutSaveHotkey = defaults.QuickLayoutSaveHotkey;
+            _config.QuickLayoutRestoreHotkey = defaults.QuickLayoutRestoreHotkey;
             _config.Gap = defaults.Gap;
             _config.CycleHalves = defaults.CycleHalves;
             _config.CycleRatio1 = defaults.CycleRatio1;

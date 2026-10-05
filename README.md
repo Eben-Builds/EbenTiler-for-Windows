@@ -11,7 +11,7 @@ A lightweight Windows tray utility that snaps the active window to halves, quart
 > **v1.1.0 rebrand:** Tessdeck was previously released as EbenTiler. Existing settings are migrated automatically on first run.
 
 - No separate runtime installation required (.NET Framework 4.8 is included with Windows 10/11)
-- Single executable, about 100 KB
+- Single executable, about 170 KB
 - Runs in the notification area with fully configurable hotkeys
 - Checks for new stable releases at most once per day and notifies you without automatic downloads or installation
 
@@ -45,6 +45,17 @@ Why not use `Ctrl + Arrow`? Most editors and browsers already use those shortcut
 Press `Ctrl + Alt + ←` repeatedly and the left-side layout cycles through **1/2 → 1/3 → 2/3**.
 The cycle only continues when the shortcut is pressed again within two seconds; otherwise it starts again from 1/2.
 This behavior can be disabled in Settings.
+
+## Quick Layout
+
+Tessdeck 1.3 can save the current arrangement of open app windows and restore those same currently open windows later, including moving them back across monitors.
+
+- Tray menu: `Quick Layout 저장` / `Quick Layout 복원`
+- Optional global shortcuts can be assigned in **Settings > Hotkeys**; both are unassigned by default
+- Restore is best-effort: closed apps are not launched, unmatched windows are left alone, and a missing saved monitor is skipped
+- Layout data stays local in `%APPDATA%\\Tessdeck\\quick-layout.ini`
+- The snapshot stores only process executable name, window class, per-class instance index, monitor device name, normalized geometry, maximized state, and capture time
+- Window titles, document names, URLs, command lines, file paths, full process paths, and window contents are **not stored**
 
 ## Installation
 
@@ -109,6 +120,8 @@ Left-clicking or right-clicking the tray icon opens the menu.
 
 - `Hotkey settings...` opens Settings
 - `Start with Windows` toggles startup registration and shows a check mark when enabled
+- `Quick Layout 저장` saves the current open-window arrangement
+- `Quick Layout 복원` restores matching currently open windows
 - `Exit` closes Tessdeck
 
 The tray menu re-reads the actual startup registration state whenever it opens, so the check mark stays in sync even if the setting changes elsewhere.
@@ -136,6 +149,8 @@ Tessdeck.exe --apply TopRight --hwnd 0x3B078E # Target a specific window
 Tessdeck.exe --info                           # Show active-window and work-area information
 Tessdeck.exe --list                           # List available commands
 Tessdeck.exe --settings                       # Open Settings only
+Tessdeck.exe --layout-save                    # Save the current Quick Layout
+Tessdeck.exe --layout-restore                 # Restore matching open windows
 Tessdeck.exe --check                          # Check for hotkey registration conflicts
 Tessdeck.exe --startup on|off|status          # Enable/disable/query startup registration
 Tessdeck.exe --out result.txt --info          # Also write the result to a file
@@ -144,9 +159,9 @@ Tessdeck.exe --out result.txt --info          # Also write the result to a file
 `--check` reports registration status like this:
 
 ```text
-total=21
+total=23
 assigned=21
-unassigned=0
+unassigned=2
 failed=1
 conflict=Right third (Ctrl + Alt + H)
 ```
@@ -186,6 +201,8 @@ Settings are stored in `%APPDATA%\Tessdeck\config.ini` and can also be edited ma
 LeftHalf=Ctrl+Alt+Left
 TopLeft=Ctrl+Alt+U
 Maximize=Ctrl+Alt+Enter
+QuickLayoutSave=
+QuickLayoutRestore=
 
 [Options]
 Gap=0                  ; Gap around and between windows, in pixels
@@ -196,7 +213,9 @@ CycleRatio3=67         ; Third ratio (20-80)
 ShowWelcomeGuide=false ; Whether to show the welcome guide on the next launch
 ```
 
-Leave a hotkey value empty to disable that action's global shortcut.
+Leave a hotkey value empty to disable that action's global shortcut. Quick Layout save/restore shortcuts are empty by default.
+
+Quick Layout snapshots are stored separately in `%APPDATA%\\Tessdeck\\quick-layout.ini` and contain only the minimal local window identity and geometry fields described above.
 
 Update-check state is stored separately in `%APPDATA%\Tessdeck\update-state.ini`. It contains only the last check time and the release tag that has already been notified.
 

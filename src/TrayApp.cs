@@ -54,6 +54,16 @@ namespace EbenTilerWindows
             _startupItem.Click += delegate { Startup.SetEnabled(_startupItem.Checked); };
             menu.Items.Add(_startupItem);
 
+            ToolStripMenuItem quickLayoutItem = MakeMenuItem("Quick Layout");
+            ToolStripMenuItem saveLayoutItem = MakeMenuItem("현재 레이아웃 저장");
+            saveLayoutItem.Click += delegate { SaveQuickLayout(); };
+            quickLayoutItem.DropDownItems.Add(saveLayoutItem);
+
+            ToolStripMenuItem restoreLayoutItem = MakeMenuItem("저장된 레이아웃 복원");
+            restoreLayoutItem.Click += delegate { RestoreQuickLayout(); };
+            quickLayoutItem.DropDownItems.Add(restoreLayoutItem);
+            menu.Items.Add(quickLayoutItem);
+
             _updateItem = MakeMenuItem("업데이트 있음");
             _updateItem.Font = new Font(menu.Font, FontStyle.Bold);
             _updateItem.ForeColor = Color.FromArgb(196, 96, 0);
@@ -319,6 +329,90 @@ namespace EbenTilerWindows
             _tray.BalloonTipIcon = ToolTipIcon.Warning;
             _tray.ShowBalloonTip(8000);
             return failed.Count;
+        }
+
+        private void SaveQuickLayout()
+        {
+            LayoutSnapshotSaveResult result = LayoutSnapshot.SaveCurrent();
+
+            if (result.Saved)
+            {
+                ShowQuickLayoutNotification(
+                    "Quick Layout 저장 완료",
+                    result.WindowCount + "개 창의 현재 위치를 저장했습니다.",
+                    ToolTipIcon.Info);
+                return;
+            }
+
+            if (result.SkippedEmpty)
+            {
+                ShowQuickLayoutNotification(
+                    "Quick Layout을 저장하지 않았습니다",
+                    "저장할 일반 앱 창이 없어 기존 레이아웃을 그대로 유지했습니다.",
+                    ToolTipIcon.Warning);
+                return;
+            }
+
+            ShowQuickLayoutNotification(
+                "Quick Layout 저장 실패",
+                "레이아웃 파일을 저장하지 못했습니다.",
+                ToolTipIcon.Error);
+        }
+
+        private void RestoreQuickLayout()
+        {
+            LayoutRestoreResult result = LayoutSnapshot.RestoreSaved();
+
+            if (!result.Ready)
+            {
+                string message = result.FileExists
+                    ? "저장된 레이아웃을 읽지 못했습니다."
+                    : "아직 저장된 Quick Layout이 없습니다.";
+
+                ShowQuickLayoutNotification(
+                    "Quick Layout 복원 불가",
+                    message,
+                    ToolTipIcon.Warning);
+                return;
+            }
+
+            int unresolved = result.Failed.Count
+                + result.MissingWindows.Count
+                + result.Skipped.Count;
+
+            if (unresolved == 0)
+            {
+                ShowQuickLayoutNotification(
+                    "Quick Layout 복원 완료",
+                    result.Applied.Count + "개 창을 저장된 위치로 복원했습니다.",
+                    ToolTipIcon.Info);
+                return;
+            }
+
+            string details = result.Applied.Count + "개 복원";
+            if (result.MissingWindows.Count > 0)
+                details += ", 닫힌 창 " + result.MissingWindows.Count + "개";
+            if (result.Skipped.Count > 0)
+                details += ", 건너뜀 " + result.Skipped.Count + "개";
+            if (result.Failed.Count > 0)
+                details += ", 실패 " + result.Failed.Count + "개";
+
+            ShowQuickLayoutNotification(
+                "Quick Layout 일부 복원",
+                details,
+                result.Failed.Count > 0 ? ToolTipIcon.Warning : ToolTipIcon.Info);
+        }
+
+        private void ShowQuickLayoutNotification(
+            string title,
+            string message,
+            ToolTipIcon icon)
+        {
+            _updateNotificationPending = false;
+            _tray.BalloonTipTitle = title;
+            _tray.BalloonTipText = message;
+            _tray.BalloonTipIcon = icon;
+            _tray.ShowBalloonTip(5000);
         }
 
         private void ShowSettings(bool showAboutPage)

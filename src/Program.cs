@@ -92,6 +92,7 @@ namespace EbenTilerWindows
                     return 0;
                 }
                 if (arg == "--info") { infoOnly = true; continue; }
+                if (arg == "--window-filter-info") return PrintManageableWindows();
                 if (arg == "--settings") return ShowSettingsOnly();
                 if (arg == "--check") return CheckHotkeys();
 
@@ -172,6 +173,47 @@ namespace EbenTilerWindows
             return 0;
         }
 
+        private static int PrintManageableWindows()
+        {
+            System.Collections.Generic.List<IntPtr> windows = WindowManager.EnumerateManageableWindows();
+            Emit("count=" + windows.Count);
+
+            for (int i = 0; i < windows.Count; i++)
+            {
+                IntPtr hwnd = windows[i];
+                uint processId;
+                Native.GetWindowThreadProcessId(hwnd, out processId);
+
+                string processName = "?";
+                if (processId != 0)
+                {
+                    try
+                    {
+                        using (System.Diagnostics.Process process =
+                            System.Diagnostics.Process.GetProcessById((int)processId))
+                        {
+                            processName = process.ProcessName;
+                        }
+                    }
+                    catch (ArgumentException) { }
+                    catch (InvalidOperationException) { }
+                    catch (System.ComponentModel.Win32Exception) { }
+                }
+
+                StringBuilder className = new StringBuilder(256);
+                Native.GetClassName(hwnd, className, className.Capacity);
+                System.Drawing.Rectangle rect = WindowManager.GetVisualRect(hwnd);
+
+                Emit("window=0x" + hwnd.ToInt64().ToString("X", CultureInfo.InvariantCulture)
+                    + " pid=" + processId
+                    + " process=" + processName
+                    + " class=" + className
+                    + " rect=" + rect.Left + "," + rect.Top + "," + rect.Width + "," + rect.Height);
+            }
+
+            return 0;
+        }
+
         private static int CheckHotkeys()
         {
             Config config = Config.Load();
@@ -225,6 +267,7 @@ namespace EbenTilerWindows
             Emit("  --apply <명령>       현재 활성 창에 배치 명령을 한 번 적용");
             Emit("  --hwnd <핸들>        대상 창을 직접 지정 (10진수 또는 0x16진수)");
             Emit("  --info               대상 창의 현재 위치와 화면 작업 영역 출력");
+            Emit("  --window-filter-info 관리 가능한 일반 앱 창 목록 출력 (창 제목 제외)");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");
             Emit("  --check              단축키가 다른 프로그램과 겹치는지 확인");

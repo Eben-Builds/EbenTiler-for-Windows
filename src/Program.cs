@@ -97,6 +97,7 @@ namespace EbenTilerWindows
                 if (arg == "--layout-save") return SaveLayoutSnapshot();
                 if (arg == "--layout-read-info") return ReadLayoutSnapshotInfo();
                 if (arg == "--layout-match-info") return PrintLayoutMatchInfo();
+                if (arg == "--layout-restore-plan") return PrintLayoutRestorePlan();
                 if (arg == "--layout-read-file" && i + 1 < args.Length)
                 {
                     string snapshotPath = args[i + 1];
@@ -396,6 +397,73 @@ namespace EbenTilerWindows
             return 0;
         }
 
+        private static int PrintLayoutRestorePlan()
+        {
+            LayoutRestorePlanResult result = LayoutSnapshot.BuildRestorePlan();
+
+            Emit("path=" + result.FilePath);
+            Emit("exists=" + (result.FileExists ? "1" : "0"));
+            Emit("ready=" + (result.Ready ? "1" : "0"));
+
+            if (!result.Ready)
+            {
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    Emit("error=" + result.Error);
+                }
+                return 1;
+            }
+
+            Emit("saved=" + result.SavedWindowCount);
+            Emit("current=" + result.CurrentWindowCount);
+            Emit("planned=" + result.Planned.Count);
+            Emit("missing-window=" + result.MissingWindows.Count);
+            Emit("skipped=" + result.Skipped.Count);
+            Emit("current-only=" + result.CurrentOnly.Count);
+
+            for (int i = 0; i < result.Planned.Count; i++)
+            {
+                LayoutRestorePlanItem item = result.Planned[i];
+                WindowSnapshotEntry saved = item.Match.Saved;
+                Rectangle work = item.TargetWorkArea;
+                Rectangle target = item.TargetRect;
+
+                Emit("plan=" + i
+                    + " hwnd=0x" + item.Match.Current.Handle.ToInt64().ToString("X", CultureInfo.InvariantCulture)
+                    + " process=" + saved.ProcessName
+                    + " class=" + saved.WindowClass
+                    + " instance=" + saved.InstanceIndex
+                    + " monitor=" + item.TargetMonitorDeviceName
+                    + " work=" + work.Left + "," + work.Top + "," + work.Width + "," + work.Height
+                    + " target=" + target.Left + "," + target.Top + "," + target.Width + "," + target.Height
+                    + " maximized=" + (saved.Maximized ? "1" : "0"));
+            }
+
+            for (int i = 0; i < result.MissingWindows.Count; i++)
+            {
+                WindowSnapshotEntry item = result.MissingWindows[i];
+                Emit("missing-window-item=" + i
+                    + " process=" + item.ProcessName
+                    + " class=" + item.WindowClass
+                    + " instance=" + item.InstanceIndex
+                    + " monitor=" + item.MonitorDeviceName);
+            }
+
+            for (int i = 0; i < result.Skipped.Count; i++)
+            {
+                LayoutRestorePlanSkippedItem item = result.Skipped[i];
+                WindowSnapshotEntry saved = item.Match.Saved;
+                Emit("skipped-item=" + i
+                    + " reason=" + item.Reason
+                    + " process=" + saved.ProcessName
+                    + " class=" + saved.WindowClass
+                    + " instance=" + saved.InstanceIndex
+                    + " monitor=" + saved.MonitorDeviceName);
+            }
+
+            return 0;
+        }
+
         private static int CheckHotkeys()
         {
             Config config = Config.Load();
@@ -454,6 +522,7 @@ namespace EbenTilerWindows
             Emit("  --layout-save        현재 관리 가능한 창 배치를 quick-layout.ini 에 저장");
             Emit("  --layout-read-info   저장된 quick-layout.ini 를 읽고 검증 결과 출력");
             Emit("  --layout-match-info  저장된 snapshot과 현재 열린 창의 매칭 결과 출력");
+            Emit("  --layout-restore-plan 실제 이동 없이 복원 대상 모니터/좌표 계산");
             Emit("  --layout-read-file <파일>  지정 snapshot 파일을 읽어 검증 (테스트용)");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");

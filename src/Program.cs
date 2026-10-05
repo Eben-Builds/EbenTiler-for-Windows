@@ -98,6 +98,7 @@ namespace EbenTilerWindows
                 if (arg == "--layout-read-info") return ReadLayoutSnapshotInfo();
                 if (arg == "--layout-match-info") return PrintLayoutMatchInfo();
                 if (arg == "--layout-restore-plan") return PrintLayoutRestorePlan();
+                if (arg == "--layout-restore") return RestoreLayoutSnapshot();
                 if (arg == "--layout-read-file" && i + 1 < args.Length)
                 {
                     string snapshotPath = args[i + 1];
@@ -464,6 +465,82 @@ namespace EbenTilerWindows
             return 0;
         }
 
+        private static int RestoreLayoutSnapshot()
+        {
+            LayoutRestoreResult result = LayoutSnapshot.RestoreSaved();
+
+            Emit("path=" + result.FilePath);
+            Emit("exists=" + (result.FileExists ? "1" : "0"));
+            Emit("ready=" + (result.Ready ? "1" : "0"));
+
+            if (!result.Ready)
+            {
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    Emit("error=" + result.Error);
+                }
+                return 1;
+            }
+
+            Emit("saved=" + result.SavedWindowCount);
+            Emit("current=" + result.CurrentWindowCount);
+            Emit("applied=" + result.Applied.Count);
+            Emit("failed=" + result.Failed.Count);
+            Emit("missing-window=" + result.MissingWindows.Count);
+            Emit("skipped=" + result.Skipped.Count);
+            Emit("current-only=" + result.CurrentOnly.Count);
+
+            for (int i = 0; i < result.Applied.Count; i++)
+            {
+                LayoutRestoreAppliedItem item = result.Applied[i];
+                WindowSnapshotEntry saved = item.Plan.Match.Saved;
+                System.Drawing.Rectangle actual = item.ActualRect;
+
+                Emit("applied-item=" + i
+                    + " hwnd=0x" + item.Plan.Match.Current.Handle.ToInt64().ToString("X", CultureInfo.InvariantCulture)
+                    + " process=" + saved.ProcessName
+                    + " class=" + saved.WindowClass
+                    + " instance=" + saved.InstanceIndex
+                    + " monitor=" + item.Plan.TargetMonitorDeviceName
+                    + " actual=" + actual.Left + "," + actual.Top + "," + actual.Width + "," + actual.Height
+                    + " maximized=" + (item.Maximized ? "1" : "0"));
+            }
+
+            for (int i = 0; i < result.Failed.Count; i++)
+            {
+                LayoutRestoreFailedItem item = result.Failed[i];
+                WindowSnapshotEntry saved = item.Plan.Match.Saved;
+                Emit("failed-item=" + i
+                    + " reason=" + item.Reason
+                    + " hwnd=0x" + item.Plan.Match.Current.Handle.ToInt64().ToString("X", CultureInfo.InvariantCulture)
+                    + " process=" + saved.ProcessName
+                    + " class=" + saved.WindowClass
+                    + " instance=" + saved.InstanceIndex);
+            }
+
+            for (int i = 0; i < result.MissingWindows.Count; i++)
+            {
+                WindowSnapshotEntry item = result.MissingWindows[i];
+                Emit("missing-window-item=" + i
+                    + " process=" + item.ProcessName
+                    + " class=" + item.WindowClass
+                    + " instance=" + item.InstanceIndex);
+            }
+
+            for (int i = 0; i < result.Skipped.Count; i++)
+            {
+                LayoutRestorePlanSkippedItem item = result.Skipped[i];
+                WindowSnapshotEntry saved = item.Match.Saved;
+                Emit("skipped-item=" + i
+                    + " reason=" + item.Reason
+                    + " process=" + saved.ProcessName
+                    + " class=" + saved.WindowClass
+                    + " instance=" + saved.InstanceIndex);
+            }
+
+            return result.Failed.Count == 0 ? 0 : 1;
+        }
+
         private static int CheckHotkeys()
         {
             Config config = Config.Load();
@@ -523,6 +600,7 @@ namespace EbenTilerWindows
             Emit("  --layout-read-info   저장된 quick-layout.ini 를 읽고 검증 결과 출력");
             Emit("  --layout-match-info  저장된 snapshot과 현재 열린 창의 매칭 결과 출력");
             Emit("  --layout-restore-plan 실제 이동 없이 복원 대상 모니터/좌표 계산");
+            Emit("  --layout-restore     현재 열려 있고 매칭된 창을 저장 위치로 복원");
             Emit("  --layout-read-file <파일>  지정 snapshot 파일을 읽어 검증 (테스트용)");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");

@@ -12,6 +12,7 @@ $LegacyInstallDir = Join-Path $env:LOCALAPPDATA 'Programs\EbenTiler'
 $ModernInstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Tessdeck'
 $LegacyConfigDir = Join-Path $env:APPDATA 'EbenTiler'
 $ModernConfigDir = Join-Path $env:APPDATA 'Tessdeck'
+$QuickLayoutPath = Join-Path $ModernConfigDir 'quick-layout.ini'
 $RunKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 
 function Get-RunValue {
@@ -92,6 +93,13 @@ function Get-State {
         Version = $version
         Config = $config
         ConfigValues = Get-ConfigValues $config
+        QuickLayoutPath = $QuickLayoutPath
+        QuickLayoutExists = (Test-Path $QuickLayoutPath)
+        QuickLayoutHash = if (Test-Path $QuickLayoutPath) {
+            (Get-FileHash -Algorithm SHA256 -LiteralPath $QuickLayoutPath).Hash
+        } else {
+            $null
+        }
         StartupEnabled = (
             -not [string]::IsNullOrWhiteSpace($legacyStartup) -or
             -not [string]::IsNullOrWhiteSpace($tessdeckStartup)
@@ -109,6 +117,7 @@ function Write-State {
     Write-Host "Executable : $($State.Exe)"
     Write-Host "Version    : $($State.Version)"
     Write-Host "Config     : $($State.Config)"
+    Write-Host "QuickLayout: $($State.QuickLayoutExists)"
     Write-Host "Startup    : $($State.StartupEnabled)"
 }
 
@@ -152,7 +161,7 @@ if ($Mode -eq 'Before') {
     Write-State $state
     Write-Host "Baseline   : $BaselineFile"
     Write-Host ''
-    Write-Host 'Now use Settings > About > Check for updates and install Tessdeck 1.3.0.'
+    Write-Host 'Now open the public v1.3.0 Release from Settings > About > Check for updates, download Tessdeck-Setup.exe, and install it over the current version.'
     Write-Host 'Then run:'
     Write-Host 'powershell -ExecutionPolicy Bypass -File tools\verify-local-upgrade.ps1 -Mode After'
     exit 0
@@ -294,11 +303,29 @@ if ($Failures -eq 0) {
     Add-Pass "All $($beforeValues.Count) previous config values were preserved."
 }
 
+$beforeQuickLayoutExists = [bool]$before.QuickLayoutExists
+if ($beforeQuickLayoutExists) {
+    if (-not $after.QuickLayoutExists) {
+        Add-Fail 'quick-layout.ini existed before upgrade but is missing after upgrade.'
+    }
+    elseif ([string]$before.QuickLayoutHash -ne [string]$after.QuickLayoutHash) {
+        Add-Fail 'quick-layout.ini content changed during upgrade.'
+    }
+    else {
+        Add-Pass 'Existing quick-layout.ini was preserved byte-for-byte.'
+    }
+}
+else {
+    Add-Pass 'No pre-upgrade quick-layout.ini existed, so no snapshot preservation was required.'
+}
+
 Write-Host ''
 Write-Host 'Manual visual checks:'
 Write-Host '  1. Settings > About shows version 1.3.0.'
 Write-Host '  2. Taskbar/tray shows the new Tessdeck icon.'
 Write-Host '  3. Your usual window-layout hotkeys still work.'
+Write-Host '  4. Quick Layout save/restore hotkeys are still assigned as expected.'
+Write-Host '  5. Move saved windows to other monitors and confirm Quick Layout restore returns them to the saved monitors/positions.'
 Write-Host ''
 
 if ($Failures -eq 0) {

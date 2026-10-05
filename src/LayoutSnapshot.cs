@@ -137,6 +137,78 @@ namespace EbenTilerWindows
         }
     }
 
+    internal sealed class LayoutRestorePlanItem
+    {
+        public LayoutSnapshotMatchedWindow Match { get; private set; }
+        public string TargetMonitorDeviceName { get; private set; }
+        public Rectangle TargetWorkArea { get; private set; }
+        public Rectangle TargetRect { get; private set; }
+
+        public LayoutRestorePlanItem(
+            LayoutSnapshotMatchedWindow match,
+            string targetMonitorDeviceName,
+            Rectangle targetWorkArea,
+            Rectangle targetRect)
+        {
+            Match = match;
+            TargetMonitorDeviceName = targetMonitorDeviceName;
+            TargetWorkArea = targetWorkArea;
+            TargetRect = targetRect;
+        }
+    }
+
+    internal sealed class LayoutRestorePlanSkippedItem
+    {
+        public LayoutSnapshotMatchedWindow Match { get; private set; }
+        public string Reason { get; private set; }
+
+        public LayoutRestorePlanSkippedItem(
+            LayoutSnapshotMatchedWindow match,
+            string reason)
+        {
+            Match = match;
+            Reason = reason;
+        }
+    }
+
+    internal sealed class LayoutRestorePlanResult
+    {
+        public bool Ready { get; private set; }
+        public bool FileExists { get; private set; }
+        public string FilePath { get; private set; }
+        public string Error { get; private set; }
+        public int SavedWindowCount { get; private set; }
+        public int CurrentWindowCount { get; private set; }
+        public List<LayoutRestorePlanItem> Planned { get; private set; }
+        public List<WindowSnapshotEntry> MissingWindows { get; private set; }
+        public List<LayoutRestorePlanSkippedItem> Skipped { get; private set; }
+        public List<CurrentWindowSnapshot> CurrentOnly { get; private set; }
+
+        public LayoutRestorePlanResult(
+            bool ready,
+            bool fileExists,
+            string filePath,
+            string error,
+            int savedWindowCount,
+            int currentWindowCount,
+            List<LayoutRestorePlanItem> planned,
+            List<WindowSnapshotEntry> missingWindows,
+            List<LayoutRestorePlanSkippedItem> skipped,
+            List<CurrentWindowSnapshot> currentOnly)
+        {
+            Ready = ready;
+            FileExists = fileExists;
+            FilePath = filePath;
+            Error = error;
+            SavedWindowCount = savedWindowCount;
+            CurrentWindowCount = currentWindowCount;
+            Planned = planned ?? new List<LayoutRestorePlanItem>();
+            MissingWindows = missingWindows ?? new List<WindowSnapshotEntry>();
+            Skipped = skipped ?? new List<LayoutRestorePlanSkippedItem>();
+            CurrentOnly = currentOnly ?? new List<CurrentWindowSnapshot>();
+        }
+    }
+
     internal sealed class WindowSnapshotEntry
     {
         public string ProcessName { get; private set; }
@@ -418,6 +490,121 @@ namespace EbenTilerWindows
                 matched,
                 missing,
                 currentOnly);
+        }
+
+        /// <summary>
+        /// 매칭된 창의 복원 대상 모니터/픽셀 좌표를 계산한다.
+        /// 실제 창 이동은 수행하지 않는다.
+        /// </summary>
+        public static LayoutRestorePlanResult BuildRestorePlan()
+        {
+            LayoutSnapshotMatchResult match = MatchSavedToCurrent();
+            if (!match.Ready)
+            {
+                return new LayoutRestorePlanResult(
+                    false,
+                    match.FileExists,
+                    match.FilePath,
+                    match.Error,
+                    0,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null);
+            }
+
+            Dictionary<string, Screen> screens =
+                new Dictionary<string, Screen>(StringComparer.OrdinalIgnoreCase);
+            Screen[] allScreens = Screen.AllScreens;
+            for (int i = 0; i < allScreens.Length; i++)
+            {
+                Screen screen = allScreens[i];
+                if (!screens.ContainsKey(screen.DeviceName))
+                {
+                    screens[screen.DeviceName] = screen;
+                }
+            }
+
+            List<LayoutRestorePlanItem> planned = new List<LayoutRestorePlanItem>();
+            List<LayoutRestorePlanSkippedItem> skipped =
+                new List<LayoutRestorePlanSkippedItem>();
+
+            for (int i = 0; i < match.Matched.Count; i++)
+            {
+                LayoutSnapshotMatchedWindow item = match.Matched[i];
+                WindowSnapshotEntry saved = item.Saved;
+
+                Screen targetScreen;
+                if (!screens.TryGetValue(saved.MonitorDeviceName, out targetScreen))
+                {
+                    skipped.Add(new LayoutRestorePlanSkippedItem(item, "monitor-missing"));
+                    continue;
+                }
+
+                if (!IsRestorableNormalizedRect(saved))
+                {
+                    skipped.Add(new LayoutRestorePlanSkippedItem(item, "geometry-invalid"));
+                    continue;
+                }
+
+                Rectangle workArea = targetScreen.WorkingArea;
+                Rectangle targetRect = new Rectangle(
+                    workArea.Left + Denormalize(saved.NormalizedX, workArea.Width),
+                    workArea.Top + Denormalize(saved.NormalizedY, workArea.Height),
+                    Denormalize(saved.NormalizedWidth, workArea.Width),
+                    Denormalize(saved.NormalizedHeight, workArea.Height));
+
+                planned.Add(new LayoutRestorePlanItem(
+                    item,
+                    targetScreen.DeviceName,
+                    workArea,
+                    targetRect));
+            }
+
+            return new LayoutRestorePlanResult(
+                true,
+                true,
+                match.FilePath,
+                null,
+                match.SavedWindowCount,
+                match.CurrentWindowCount,
+                planned,
+                new List<WindowSnapshotEntry>(match.Missing),
+                skipped,
+                new List<CurrentWindowSnapshot>(match.CurrentOnly));
+        }
+
+        private static bool IsRestorableNormalizedRect(WindowSnapshotEntry entry)
+        {
+            if (entry.NormalizedX < 0 || entry.NormalizedY < 0
+                || entry.NormalizedWidth <= 0 || entry.NormalizedHeight <= 0)
+            {
+                return false;
+            }
+
+            if (entry.NormalizedX > CoordinateScale
+                || entry.NormalizedY > CoordinateScale
+                || entry.NormalizedWidth > CoordinateScale
+                || entry.NormalizedHeight > CoordinateScale)
+            {
+                return false;
+            }
+
+            return (long)entry.NormalizedX + entry.NormalizedWidth <= CoordinateScale
+                && (long)entry.NormalizedY + entry.NormalizedHeight <= CoordinateScale;
+        }
+
+        private static int Denormalize(int value, int total)
+        {
+            if (total <= 0)
+            {
+                return 0;
+            }
+
+            return (int)Math.Round(
+                (double)value * total / CoordinateScale,
+                MidpointRounding.AwayFromZero);
         }
 
         private static LayoutSnapshotMatchResult MatchFailure(

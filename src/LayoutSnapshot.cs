@@ -161,7 +161,45 @@ namespace EbenTilerWindows
         {
             StringBuilder className = new StringBuilder(256);
             int length = Native.GetClassName(hwnd, className, className.Capacity);
-            return length > 0 ? className.ToString() : string.Empty;
+            if (length <= 0)
+            {
+                return string.Empty;
+            }
+
+            return NormalizeWindowClassKey(className.ToString());
+        }
+
+        /// <summary>
+        /// WPF HwndWrapper 클래스의 실행마다 달라지는 런타임 식별자를 제거한다.
+        /// 다른 일반 Win32/Chromium/Terminal 클래스명은 그대로 유지한다.
+        /// </summary>
+        internal static string NormalizeWindowClassKey(string className)
+        {
+            if (string.IsNullOrEmpty(className))
+            {
+                return string.Empty;
+            }
+
+            const string prefix = "HwndWrapper[";
+            if (!className.StartsWith(prefix, StringComparison.Ordinal)
+                || !className.EndsWith("]", StringComparison.Ordinal))
+            {
+                return className;
+            }
+
+            int separator = className.IndexOf(";;", prefix.Length, StringComparison.Ordinal);
+            if (separator < 0)
+            {
+                return className;
+            }
+
+            string stableName = className.Substring(prefix.Length, separator - prefix.Length);
+            if (string.IsNullOrEmpty(stableName))
+            {
+                return className;
+            }
+
+            return prefix + stableName + "]";
         }
 
         private static int Normalize(int value, int total)

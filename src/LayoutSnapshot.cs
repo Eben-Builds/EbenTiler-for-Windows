@@ -73,6 +73,70 @@ namespace EbenTilerWindows
         }
     }
 
+    internal sealed class CurrentWindowSnapshot
+    {
+        public IntPtr Handle { get; private set; }
+        public WindowSnapshotEntry Entry { get; private set; }
+
+        public CurrentWindowSnapshot(IntPtr handle, WindowSnapshotEntry entry)
+        {
+            Handle = handle;
+            Entry = entry;
+        }
+    }
+
+    internal sealed class LayoutSnapshotMatchedWindow
+    {
+        public WindowSnapshotEntry Saved { get; private set; }
+        public CurrentWindowSnapshot Current { get; private set; }
+
+        public LayoutSnapshotMatchedWindow(
+            WindowSnapshotEntry saved,
+            CurrentWindowSnapshot current)
+        {
+            Saved = saved;
+            Current = current;
+        }
+    }
+
+    internal sealed class LayoutSnapshotMatchResult
+    {
+        public bool Ready { get; private set; }
+        public bool FileExists { get; private set; }
+        public string FilePath { get; private set; }
+        public string Error { get; private set; }
+        public int SkippedSavedWindowCount { get; private set; }
+        public int SavedWindowCount { get; private set; }
+        public int CurrentWindowCount { get; private set; }
+        public List<LayoutSnapshotMatchedWindow> Matched { get; private set; }
+        public List<WindowSnapshotEntry> Missing { get; private set; }
+        public List<CurrentWindowSnapshot> CurrentOnly { get; private set; }
+
+        public LayoutSnapshotMatchResult(
+            bool ready,
+            bool fileExists,
+            string filePath,
+            string error,
+            int skippedSavedWindowCount,
+            int savedWindowCount,
+            int currentWindowCount,
+            List<LayoutSnapshotMatchedWindow> matched,
+            List<WindowSnapshotEntry> missing,
+            List<CurrentWindowSnapshot> currentOnly)
+        {
+            Ready = ready;
+            FileExists = fileExists;
+            FilePath = filePath;
+            Error = error;
+            SkippedSavedWindowCount = skippedSavedWindowCount;
+            SavedWindowCount = savedWindowCount;
+            CurrentWindowCount = currentWindowCount;
+            Matched = matched ?? new List<LayoutSnapshotMatchedWindow>();
+            Missing = missing ?? new List<WindowSnapshotEntry>();
+            CurrentOnly = currentOnly ?? new List<CurrentWindowSnapshot>();
+        }
+    }
+
     internal sealed class WindowSnapshotEntry
     {
         public string ProcessName { get; private set; }
@@ -127,8 +191,21 @@ namespace EbenTilerWindows
         /// </summary>
         public static LayoutSnapshotData CaptureCurrent()
         {
-            List<IntPtr> handles = WindowManager.EnumerateManageableWindows();
+            List<CurrentWindowSnapshot> current = CaptureCurrentWindows();
             List<WindowSnapshotEntry> entries = new List<WindowSnapshotEntry>();
+
+            for (int i = 0; i < current.Count; i++)
+            {
+                entries.Add(current[i].Entry);
+            }
+
+            return new LayoutSnapshotData(DateTime.UtcNow, entries);
+        }
+
+        private static List<CurrentWindowSnapshot> CaptureCurrentWindows()
+        {
+            List<IntPtr> handles = WindowManager.EnumerateManageableWindows();
+            List<CurrentWindowSnapshot> current = new List<CurrentWindowSnapshot>();
             Dictionary<string, int> instanceCounts =
                 new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
@@ -169,7 +246,7 @@ namespace EbenTilerWindows
                 }
                 instanceCounts[instanceKey] = instanceIndex + 1;
 
-                entries.Add(new WindowSnapshotEntry(
+                WindowSnapshotEntry entry = new WindowSnapshotEntry(
                     processName,
                     windowClass,
                     instanceIndex,
@@ -179,10 +256,12 @@ namespace EbenTilerWindows
                     Normalize(visualRect.Top - workArea.Top, workArea.Height),
                     Normalize(visualRect.Width, workArea.Width),
                     Normalize(visualRect.Height, workArea.Height),
-                    Native.IsZoomed(hwnd)));
+                    Native.IsZoomed(hwnd));
+
+                current.Add(new CurrentWindowSnapshot(hwnd, entry));
             }
 
-            return new LayoutSnapshotData(DateTime.UtcNow, entries);
+            return current;
         }
 
         /// <summary>
@@ -261,6 +340,109 @@ namespace EbenTilerWindows
         public static LayoutSnapshotReadResult ReadSaved()
         {
             return ReadFromFile(FilePath);
+        }
+
+        /// <summary>
+        /// 저장된 snapshot 식별자와 현재 열린 일반 앱 창을 비교한다.
+        /// 매칭만 수행하며 창 이동/복원은 하지 않는다.
+        /// </summary>
+        public static LayoutSnapshotMatchResult MatchSavedToCurrent()
+        {
+            LayoutSnapshotReadResult read = ReadSaved();
+            if (!read.FileExists)
+            {
+                return MatchFailure(false, read.FilePath, "Snapshot file is missing.");
+            }
+
+            if (!read.Loaded || read.Snapshot == null)
+            {
+                return MatchFailure(
+                    true,
+                    read.FilePath,
+                    string.IsNullOrEmpty(read.Error) ? "Snapshot could not be loaded." : read.Error);
+            }
+
+            List<CurrentWindowSnapshot> current = CaptureCurrentWindows();
+            Dictionary<string, CurrentWindowSnapshot> available =
+                new Dictionary<string, CurrentWindowSnapshot>(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < current.Count; i++)
+            {
+                string key = BuildIdentityKey(current[i].Entry);
+                if (!available.ContainsKey(key))
+                {
+                    available[key] = current[i];
+                }
+            }
+
+            List<LayoutSnapshotMatchedWindow> matched =
+                new List<LayoutSnapshotMatchedWindow>();
+            List<WindowSnapshotEntry> missing = new List<WindowSnapshotEntry>();
+            HashSet<IntPtr> usedHandles = new HashSet<IntPtr>();
+
+            for (int i = 0; i < read.Snapshot.Windows.Count; i++)
+            {
+                WindowSnapshotEntry saved = read.Snapshot.Windows[i];
+                string key = BuildIdentityKey(saved);
+
+                CurrentWindowSnapshot found;
+                if (available.TryGetValue(key, out found))
+                {
+                    matched.Add(new LayoutSnapshotMatchedWindow(saved, found));
+                    usedHandles.Add(found.Handle);
+                    available.Remove(key);
+                }
+                else
+                {
+                    missing.Add(saved);
+                }
+            }
+
+            List<CurrentWindowSnapshot> currentOnly = new List<CurrentWindowSnapshot>();
+            for (int i = 0; i < current.Count; i++)
+            {
+                if (!usedHandles.Contains(current[i].Handle))
+                {
+                    currentOnly.Add(current[i]);
+                }
+            }
+
+            return new LayoutSnapshotMatchResult(
+                true,
+                true,
+                read.FilePath,
+                null,
+                read.SkippedWindowCount,
+                read.Snapshot.Windows.Count,
+                current.Count,
+                matched,
+                missing,
+                currentOnly);
+        }
+
+        private static LayoutSnapshotMatchResult MatchFailure(
+            bool fileExists,
+            string path,
+            string error)
+        {
+            return new LayoutSnapshotMatchResult(
+                false,
+                fileExists,
+                path,
+                error,
+                0,
+                0,
+                0,
+                null,
+                null,
+                null);
+        }
+
+        private static string BuildIdentityKey(WindowSnapshotEntry entry)
+        {
+            return entry.ProcessName + "\0"
+                + entry.WindowClass + "\0"
+                + entry.InstanceIndex.ToString(CultureInfo.InvariantCulture);
         }
 
         internal static LayoutSnapshotReadResult ReadFromFile(string path)

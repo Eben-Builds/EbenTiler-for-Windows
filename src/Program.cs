@@ -93,6 +93,7 @@ namespace EbenTilerWindows
                 }
                 if (arg == "--info") { infoOnly = true; continue; }
                 if (arg == "--window-filter-info") return PrintManageableWindows();
+                if (arg == "--layout-snapshot-info") return PrintLayoutSnapshotInfo();
                 if (arg == "--settings") return ShowSettingsOnly();
                 if (arg == "--check") return CheckHotkeys();
 
@@ -214,6 +215,31 @@ namespace EbenTilerWindows
             return 0;
         }
 
+        private static int PrintLayoutSnapshotInfo()
+        {
+            LayoutSnapshotData snapshot = LayoutSnapshot.CaptureCurrent();
+            Emit("captured=" + snapshot.CapturedAtUtc.ToString("o", CultureInfo.InvariantCulture));
+            Emit("count=" + snapshot.Windows.Count);
+
+            for (int i = 0; i < snapshot.Windows.Count; i++)
+            {
+                WindowSnapshotEntry entry = snapshot.Windows[i];
+                System.Drawing.Rectangle rect = entry.VisualRect;
+
+                Emit("snapshot=" + i
+                    + " process=" + entry.ProcessName
+                    + " class=" + entry.WindowClass
+                    + " instance=" + entry.InstanceIndex
+                    + " monitor=" + entry.MonitorDeviceName
+                    + " rect=" + rect.Left + "," + rect.Top + "," + rect.Width + "," + rect.Height
+                    + " normalized=" + entry.NormalizedX + "," + entry.NormalizedY + ","
+                        + entry.NormalizedWidth + "," + entry.NormalizedHeight
+                    + " maximized=" + (entry.Maximized ? "1" : "0"));
+            }
+
+            return 0;
+        }
+
         private static int CheckHotkeys()
         {
             Config config = Config.Load();
@@ -268,6 +294,7 @@ namespace EbenTilerWindows
             Emit("  --hwnd <핸들>        대상 창을 직접 지정 (10진수 또는 0x16진수)");
             Emit("  --info               대상 창의 현재 위치와 화면 작업 영역 출력");
             Emit("  --window-filter-info 관리 가능한 일반 앱 창 목록 출력 (창 제목 제외)");
+            Emit("  --layout-snapshot-info 현재 창들을 메모리 snapshot으로 변환해 출력");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");
             Emit("  --check              단축키가 다른 프로그램과 겹치는지 확인");

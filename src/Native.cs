@@ -18,6 +18,9 @@ namespace EbenTilerWindows
         public const int SW_SHOWNORMAL = 1;
         public const int SW_SHOWMAXIMIZED = 3;
         public const int SW_SHOWMINIMIZED = 2;
+        public const int SW_MINIMIZE = 6;
+        public const int SW_SHOWMINNOACTIVE = 7;
+        public const int SW_FORCEMINIMIZE = 11;
 
         public const uint SWP_NOZORDER = 0x0004;
         public const uint SWP_NOACTIVATE = 0x0010;

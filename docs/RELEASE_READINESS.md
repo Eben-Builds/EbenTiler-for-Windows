@@ -282,8 +282,14 @@ v1.3.0은 현재 열려 있는 여러 앱 창의 배치를 한 번 저장하고,
 - [x] v1.3.0 공개 Release workflow 실제 성공
 - [x] `Tessdeck-Setup.exe` / `Tessdeck-Setup.exe.sha256` 공개
 - [x] 최신 공개 Release가 `v1.3.0`을 가리키는지 확인
+- [x] 실제 Windows PC에서 `v1.2.0 → v1.3.0` 로컬 업그레이드 QA 통과
+  - 실행 파일 버전 `1.3.0.0` 확인
+  - 기존 설정 29개 전부 보존 확인
+  - Windows 자동시작 ON 상태 유지 확인
+  - 자동시작 경로가 설치본 `%LOCALAPPDATA%\Programs\Tessdeck\Tessdeck.exe`를 가리키는지 확인
+  - 기존 `quick-layout.ini` SHA-256이 업그레이드 전후 동일함을 확인
 
-2026-10-05 `v1.3.0` Release가 실제 게시되었습니다. 태그는 검증 완료 커밋 `9a95508dd717afc28ac65a6e3bd6cf442ff31578`을 가리키며, 최신 공개 Release는 `Tessdeck 1.3.0 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 설치파일 SHA-256은 `6f1bff46850cd4c3b5af87b3c9ae37b3fe68368871634604f0a36a6503c9ee56`입니다. 일회성 배포 workflow는 태그/설치본/Release 생성 성공 확인 후 main에서 제거했습니다.
+2026-10-05 `v1.3.0` Release가 실제 게시되었습니다. 태그는 검증 완료 커밋 `9a95508dd717afc28ac65a6e3bd6cf442ff31578`을 가리키며, 최신 공개 Release는 `Tessdeck 1.3.0 (unsigned)`입니다. 공개 자산은 `Tessdeck-Setup.exe`와 `Tessdeck-Setup.exe.sha256`이며 설치파일 SHA-256은 `6f1bff46850cd4c3b5af87b3c9ae37b3fe68368871634604f0a36a6503c9ee56`입니다. 일회성 배포 workflow는 태그/설치본/Release 생성 성공 확인 후 main에서 제거했습니다. 같은 날 실제 Windows PC에서 v1.2.0 → v1.3.0 덮어설치를 수행했고 `Local upgrade QA: PASS`를 확인했습니다. 설치 후 버전은 1.3.0.0, 기존 설정 29개와 Quick Layout 스냅샷은 그대로 보존되었고 자동시작 경로도 설치본 경로로 정상화되었습니다.
 
 ## 14. v1.3.0 이후 코드서명 승인 시
 

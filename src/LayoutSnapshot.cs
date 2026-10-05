@@ -260,7 +260,17 @@ namespace EbenTilerWindows
         /// </summary>
         public static LayoutSnapshotReadResult ReadSaved()
         {
-            string path = FilePath;
+            return ReadFromFile(FilePath);
+        }
+
+        internal static LayoutSnapshotReadResult ReadFromFile(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return new LayoutSnapshotReadResult(
+                    false, false, 0, 0, null, path, "Snapshot path is empty.");
+            }
+
             if (!File.Exists(path))
             {
                 return new LayoutSnapshotReadResult(

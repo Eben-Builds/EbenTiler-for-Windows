@@ -209,6 +209,78 @@ namespace EbenTilerWindows
         }
     }
 
+    internal sealed class LayoutRestoreAppliedItem
+    {
+        public LayoutRestorePlanItem Plan { get; private set; }
+        public Rectangle ActualRect { get; private set; }
+        public bool Maximized { get; private set; }
+
+        public LayoutRestoreAppliedItem(
+            LayoutRestorePlanItem plan,
+            Rectangle actualRect,
+            bool maximized)
+        {
+            Plan = plan;
+            ActualRect = actualRect;
+            Maximized = maximized;
+        }
+    }
+
+    internal sealed class LayoutRestoreFailedItem
+    {
+        public LayoutRestorePlanItem Plan { get; private set; }
+        public string Reason { get; private set; }
+
+        public LayoutRestoreFailedItem(
+            LayoutRestorePlanItem plan,
+            string reason)
+        {
+            Plan = plan;
+            Reason = reason;
+        }
+    }
+
+    internal sealed class LayoutRestoreResult
+    {
+        public bool Ready { get; private set; }
+        public bool FileExists { get; private set; }
+        public string FilePath { get; private set; }
+        public string Error { get; private set; }
+        public int SavedWindowCount { get; private set; }
+        public int CurrentWindowCount { get; private set; }
+        public List<LayoutRestoreAppliedItem> Applied { get; private set; }
+        public List<LayoutRestoreFailedItem> Failed { get; private set; }
+        public List<WindowSnapshotEntry> MissingWindows { get; private set; }
+        public List<LayoutRestorePlanSkippedItem> Skipped { get; private set; }
+        public List<CurrentWindowSnapshot> CurrentOnly { get; private set; }
+
+        public LayoutRestoreResult(
+            bool ready,
+            bool fileExists,
+            string filePath,
+            string error,
+            int savedWindowCount,
+            int currentWindowCount,
+            List<LayoutRestoreAppliedItem> applied,
+            List<LayoutRestoreFailedItem> failed,
+            List<WindowSnapshotEntry> missingWindows,
+            List<LayoutRestorePlanSkippedItem> skipped,
+            List<CurrentWindowSnapshot> currentOnly)
+        {
+            Ready = ready;
+            FileExists = fileExists;
+            FilePath = filePath;
+            Error = error;
+            SavedWindowCount = savedWindowCount;
+            CurrentWindowCount = currentWindowCount;
+            Applied = applied ?? new List<LayoutRestoreAppliedItem>();
+            Failed = failed ?? new List<LayoutRestoreFailedItem>();
+            MissingWindows = missingWindows ?? new List<WindowSnapshotEntry>();
+            Skipped = skipped ?? new List<LayoutRestorePlanSkippedItem>();
+            CurrentOnly = currentOnly ?? new List<CurrentWindowSnapshot>();
+        }
+    }
+
     internal sealed class WindowSnapshotEntry
     {
         public string ProcessName { get; private set; }
@@ -573,6 +645,118 @@ namespace EbenTilerWindows
                 new List<WindowSnapshotEntry>(match.Missing),
                 skipped,
                 new List<CurrentWindowSnapshot>(match.CurrentOnly));
+        }
+
+        /// <summary>
+        /// 저장된 snapshot을 현재 열려 있고 매칭된 창에 실제 적용한다.
+        /// 앱을 실행하지 않으며 missing/current-only 창은 건드리지 않는다.
+        /// </summary>
+        public static LayoutRestoreResult RestoreSaved()
+        {
+            LayoutRestorePlanResult plan = BuildRestorePlan();
+            if (!plan.Ready)
+            {
+                return new LayoutRestoreResult(
+                    false,
+                    plan.FileExists,
+                    plan.FilePath,
+                    plan.Error,
+                    0,
+                    0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null);
+            }
+
+            List<LayoutRestoreAppliedItem> applied =
+                new List<LayoutRestoreAppliedItem>();
+            List<LayoutRestoreFailedItem> failed =
+                new List<LayoutRestoreFailedItem>();
+
+            for (int i = 0; i < plan.Planned.Count; i++)
+            {
+                LayoutRestorePlanItem item = plan.Planned[i];
+                IntPtr hwnd = item.Match.Current.Handle;
+                WindowSnapshotEntry saved = item.Match.Saved;
+
+                if (!Native.IsWindow(hwnd))
+                {
+                    failed.Add(new LayoutRestoreFailedItem(item, "window-gone"));
+                    continue;
+                }
+
+                if (Native.IsIconic(hwnd) || Native.IsZoomed(hwnd))
+                {
+                    Native.ShowWindow(hwnd, Native.SW_RESTORE);
+                }
+
+                WindowManager.MoveTo(hwnd, item.TargetRect);
+                WindowManager.MoveTo(hwnd, item.TargetRect);
+
+                if (saved.Maximized)
+                {
+                    Native.ShowWindow(hwnd, Native.SW_SHOWMAXIMIZED);
+                }
+
+                Rectangle actual = WindowManager.GetVisualRect(hwnd);
+                bool isMaximized = Native.IsZoomed(hwnd);
+
+                if (saved.Maximized)
+                {
+                    if (!isMaximized)
+                    {
+                        failed.Add(new LayoutRestoreFailedItem(item, "maximize-failed"));
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (isMaximized)
+                    {
+                        failed.Add(new LayoutRestoreFailedItem(item, "unexpected-maximized"));
+                        continue;
+                    }
+
+                    if (!RectApproximatelyEquals(actual, item.TargetRect, 8))
+                    {
+                        failed.Add(new LayoutRestoreFailedItem(item, "position-mismatch"));
+                        continue;
+                    }
+                }
+
+                applied.Add(new LayoutRestoreAppliedItem(item, actual, isMaximized));
+            }
+
+            return new LayoutRestoreResult(
+                true,
+                true,
+                plan.FilePath,
+                null,
+                plan.SavedWindowCount,
+                plan.CurrentWindowCount,
+                applied,
+                failed,
+                new List<WindowSnapshotEntry>(plan.MissingWindows),
+                new List<LayoutRestorePlanSkippedItem>(plan.Skipped),
+                new List<CurrentWindowSnapshot>(plan.CurrentOnly));
+        }
+
+        private static bool RectApproximatelyEquals(
+            Rectangle actual,
+            Rectangle expected,
+            int tolerance)
+        {
+            if (actual.IsEmpty)
+            {
+                return false;
+            }
+
+            return Math.Abs(actual.Left - expected.Left) <= tolerance
+                && Math.Abs(actual.Top - expected.Top) <= tolerance
+                && Math.Abs(actual.Width - expected.Width) <= tolerance
+                && Math.Abs(actual.Height - expected.Height) <= tolerance;
         }
 
         private static bool IsRestorableNormalizedRect(WindowSnapshotEntry entry)

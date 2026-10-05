@@ -95,6 +95,7 @@ namespace EbenTilerWindows
                 if (arg == "--window-filter-info") return PrintManageableWindows();
                 if (arg == "--layout-snapshot-info") return PrintLayoutSnapshotInfo();
                 if (arg == "--layout-save") return SaveLayoutSnapshot();
+                if (arg == "--layout-read-info") return ReadLayoutSnapshotInfo();
                 if (arg == "--settings") return ShowSettingsOnly();
                 if (arg == "--check") return CheckHotkeys();
 
@@ -268,6 +269,50 @@ namespace EbenTilerWindows
             return 1;
         }
 
+        private static int ReadLayoutSnapshotInfo()
+        {
+            LayoutSnapshotReadResult result = LayoutSnapshot.ReadSaved();
+
+            Emit("path=" + result.FilePath);
+            Emit("exists=" + (result.FileExists ? "1" : "0"));
+            Emit("loaded=" + (result.Loaded ? "1" : "0"));
+
+            if (!result.FileExists)
+            {
+                Emit("reason=snapshot-missing");
+                return 1;
+            }
+
+            if (!result.Loaded || result.Snapshot == null)
+            {
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    Emit("error=" + result.Error);
+                }
+                return 1;
+            }
+
+            Emit("captured=" + result.Snapshot.CapturedAtUtc.ToString("o", CultureInfo.InvariantCulture));
+            Emit("declared=" + result.DeclaredWindowCount);
+            Emit("valid=" + result.Snapshot.Windows.Count);
+            Emit("skipped=" + result.SkippedWindowCount);
+
+            for (int i = 0; i < result.Snapshot.Windows.Count; i++)
+            {
+                WindowSnapshotEntry entry = result.Snapshot.Windows[i];
+                Emit("saved=" + i
+                    + " process=" + entry.ProcessName
+                    + " class=" + entry.WindowClass
+                    + " instance=" + entry.InstanceIndex
+                    + " monitor=" + entry.MonitorDeviceName
+                    + " normalized=" + entry.NormalizedX + "," + entry.NormalizedY + ","
+                        + entry.NormalizedWidth + "," + entry.NormalizedHeight
+                    + " maximized=" + (entry.Maximized ? "1" : "0"));
+            }
+
+            return 0;
+        }
+
         private static int CheckHotkeys()
         {
             Config config = Config.Load();
@@ -324,6 +369,7 @@ namespace EbenTilerWindows
             Emit("  --window-filter-info 관리 가능한 일반 앱 창 목록 출력 (창 제목 제외)");
             Emit("  --layout-snapshot-info 현재 창들을 메모리 snapshot으로 변환해 출력");
             Emit("  --layout-save        현재 관리 가능한 창 배치를 quick-layout.ini 에 저장");
+            Emit("  --layout-read-info   저장된 quick-layout.ini 를 읽고 검증 결과 출력");
             Emit("  --out <파일>         출력을 파일로도 저장 (스크립트에서 읽기 편하도록)");
             Emit("  --settings           설정 창만 열기");
             Emit("  --check              단축키가 다른 프로그램과 겹치는지 확인");

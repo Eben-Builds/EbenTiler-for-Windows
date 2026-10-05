@@ -425,8 +425,8 @@ namespace EbenTilerWindows
             {
                 LayoutRestorePlanItem item = result.Planned[i];
                 WindowSnapshotEntry saved = item.Match.Saved;
-                Rectangle work = item.TargetWorkArea;
-                Rectangle target = item.TargetRect;
+                System.Drawing.Rectangle work = item.TargetWorkArea;
+                System.Drawing.Rectangle target = item.TargetRect;
 
                 Emit("plan=" + i
                     + " hwnd=0x" + item.Match.Current.Handle.ToInt64().ToString("X", CultureInfo.InvariantCulture)

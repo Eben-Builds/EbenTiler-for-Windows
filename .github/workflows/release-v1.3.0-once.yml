@@ -49,7 +49,9 @@ jobs:
           }
 
           git ls-remote --exit-code --tags origin refs/tags/v1.3.0 *> $null
-          if ($LASTEXITCODE -eq 0) {
+          $tagExists = ($LASTEXITCODE -eq 0)
+          $global:LASTEXITCODE = 0
+          if ($tagExists) {
             throw 'v1.3.0 already exists on origin.'
           }
 

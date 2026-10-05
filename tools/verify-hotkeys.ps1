@@ -130,9 +130,21 @@ function Parse-Xywh {
     return [PSCustomObject]@{ X = [int]$n[0]; Y = [int]$n[1]; Width = [int]$n[2]; Height = [int]$n[3] }
 }
 
+function Rect-Near {
+    param($Actual, $Expected, [int]$Tolerance = 8)
+    return ([Math]::Abs($Actual.X - $Expected.X) -le $Tolerance -and
+            [Math]::Abs($Actual.Y - $Expected.Y) -le $Tolerance -and
+            [Math]::Abs($Actual.Width - $Expected.Width) -le $Tolerance -and
+            [Math]::Abs($Actual.Height - $Expected.Height) -le $Tolerance)
+}
+
 Get-Process Tessdeck -ErrorAction SilentlyContinue | Stop-Process -Force
 New-Item -ItemType Directory -Path $configDir -Force | Out-Null
 @'
+[Hotkeys]
+QuickLayoutSave=Ctrl+Alt+S
+QuickLayoutRestore=Ctrl+Alt+R
+
 [Options]
 Gap=0
 CycleHalves=true
@@ -263,6 +275,99 @@ if (-not [HK.U]::IsZoomed($hwnd)) {
     $pass++
 } else {
     Write-Host "[실패] Ctrl+Alt+Backspace      여전히 최대화" -ForegroundColor Red
+    $fail++
+}
+
+Write-Host ""
+Write-Host "Quick Layout 단축키 / 재시작 유지 검사"
+
+$savedQuick = Parse-Xywh (Get-Rect $handleArg)['window']
+Send-Hotkey 0x53
+Start-Sleep -Milliseconds 300
+
+$snapshotPath = Join-Path $configDir 'quick-layout.ini'
+if (Test-Path $snapshotPath) {
+    Write-Host "[통과] Ctrl+Alt+S              Quick Layout 저장 파일 생성" -ForegroundColor Green
+    $pass++
+} else {
+    Write-Host "[실패] Ctrl+Alt+S              Quick Layout 저장 파일 없음" -ForegroundColor Red
+    $fail++
+}
+
+Send-Hotkey 0x55
+$movedQuick = Parse-Xywh (Get-Rect $handleArg)['window']
+if (Rect-Near $movedQuick $savedQuick 8) {
+    Send-Hotkey 0x4B
+    $movedQuick = Parse-Xywh (Get-Rect $handleArg)['window']
+}
+
+if (-not (Rect-Near $movedQuick $savedQuick 8)) {
+    Write-Host "[통과] 복원 전 창 위치 변경 확인" -ForegroundColor Green
+    $pass++
+} else {
+    Write-Host "[실패] 복원 전 창 위치가 바뀌지 않음" -ForegroundColor Red
+    $fail++
+}
+
+Send-Hotkey 0x52
+$quickRestored = Parse-Xywh (Get-Rect $handleArg)['window']
+if (Rect-Near $quickRestored $savedQuick 8) {
+    Write-Host ("[통과] Ctrl+Alt+R              저장 위치 복원 {0},{1} {2}x{3}" -f $quickRestored.X, $quickRestored.Y, $quickRestored.Width, $quickRestored.Height) -ForegroundColor Green
+    $pass++
+} else {
+    Write-Host ("[실패] Ctrl+Alt+R              실제 {0},{1} {2}x{3} / 저장 {4},{5} {6}x{7}" -f $quickRestored.X, $quickRestored.Y, $quickRestored.Width, $quickRestored.Height, $savedQuick.X, $savedQuick.Y, $savedQuick.Width, $savedQuick.Height) -ForegroundColor Red
+    $fail++
+}
+
+$app | Stop-Process -Force -ErrorAction SilentlyContinue
+$app.WaitForExit(3000) | Out-Null
+Start-Sleep -Milliseconds 500
+$app = Start-Process -FilePath $exe -PassThru
+Start-Sleep -Seconds 2
+
+if ($app.HasExited) {
+    throw "Quick Layout 재시작 검사 중 Tessdeck.exe 가 바로 종료되었습니다."
+}
+
+$configAfterRestart = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
+if ($configAfterRestart -match '(?m)^QuickLayoutSave=Ctrl\+Alt\+S\s*
+$win | Stop-Process -Force -ErrorAction SilentlyContinue
+$app | Stop-Process -Force -ErrorAction SilentlyContinue
+Remove-Item $handleFile -Force -ErrorAction SilentlyContinue
+Restore-TestConfig
+Write-Host "정리 완료 (검증용 창과 Tessdeck.exe 종료, 원래 설정 복구)"
+
+if ($fail -gt 0) { exit 1 } else { exit 0 }
+ -and
+    $configAfterRestart -match '(?m)^QuickLayoutRestore=Ctrl\+Alt\+R\s*
+$win | Stop-Process -Force -ErrorAction SilentlyContinue
+$app | Stop-Process -Force -ErrorAction SilentlyContinue
+Remove-Item $handleFile -Force -ErrorAction SilentlyContinue
+Restore-TestConfig
+Write-Host "정리 완료 (검증용 창과 Tessdeck.exe 종료, 원래 설정 복구)"
+
+if ($fail -gt 0) { exit 1 } else { exit 0 }
+) {
+    Write-Host "[통과] 재시작 후 Quick Layout 단축키 설정 유지" -ForegroundColor Green
+    $pass++
+} else {
+    Write-Host "[실패] 재시작 후 Quick Layout 단축키 설정이 유지되지 않음" -ForegroundColor Red
+    $fail++
+}
+
+Send-Hotkey 0x55
+$movedAfterRestart = Parse-Xywh (Get-Rect $handleArg)['window']
+if (Rect-Near $movedAfterRestart $savedQuick 8) {
+    Send-Hotkey 0x4B
+}
+
+Send-Hotkey 0x52
+$restoredAfterRestart = Parse-Xywh (Get-Rect $handleArg)['window']
+if (Rect-Near $restoredAfterRestart $savedQuick 8) {
+    Write-Host "[통과] Tessdeck 재시작 후 Ctrl+Alt+R 복원 동작" -ForegroundColor Green
+    $pass++
+} else {
+    Write-Host ("[실패] 재시작 후 복원 실제 {0},{1} {2}x{3} / 저장 {4},{5} {6}x{7}" -f $restoredAfterRestart.X, $restoredAfterRestart.Y, $restoredAfterRestart.Width, $restoredAfterRestart.Height, $savedQuick.X, $savedQuick.Y, $savedQuick.Width, $savedQuick.Height) -ForegroundColor Red
     $fail++
 }
 
